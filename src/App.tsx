@@ -17,8 +17,10 @@ import { RestoredGallery } from './components/RestoredGallery';
 import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
 import { SearchResults } from './components/SearchResults';
+import { FavoritesPanel } from './components/FavoritesPanel';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
+import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
 
 // --- Components ---
 
@@ -175,13 +177,14 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, investigationEnabled }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, investigationEnabled }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
   onShop: () => void,
   onInvestigation: () => void,
   onFamilyTree: () => void,
+  onFavorites: () => void,
   investigationEnabled: boolean
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -243,6 +246,10 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               <button onClick={onShop} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4" />
                 Tienda
+              </button>
+              <button onClick={onFavorites} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                Favoritos
               </button>
               <button onClick={onFamilyTree} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -825,6 +832,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [isFav, setIsFav] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -866,6 +874,15 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
     loadViewCount();
   }, [story.id]);
 
+  // Cargar si está favoriteado
+  useEffect(() => {
+    const checkFavorite = async () => {
+      const fav = await isFavorited('story', story.id);
+      setIsFav(fav);
+    };
+    checkFavorite();
+  }, [story.id]);
+
   const handleLike = async () => {
     if (hasLiked) return;
 
@@ -903,6 +920,20 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      if (isFav) {
+        await removeFromFavorites('story', story.id);
+        setIsFav(false);
+      } else {
+        await addToFavorites('story', story.id, story.title, story.thumbnail);
+        setIsFav(true);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
   };
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -1035,6 +1066,14 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
             >
               <Heart className={`w-3 h-3 ${hasLiked ? 'fill-current' : ''}`} />
               {likes} {likes === 1 ? 'Me gusta' : 'Me gustas'}
+            </button>
+            <button 
+              onClick={toggleFavorite}
+              className={`flex items-center gap-2 px-4 py-1 rounded-full text-xs md:sm font-bold transition-all ${isFav ? 'bg-yellow-100 text-yellow-600' : 'bg-sepia-200 text-sepia-700 hover:bg-sepia-300'}`}
+              title={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            >
+              <Heart className={`w-3 h-3 ${isFav ? 'fill-current' : ''}`} />
+              {isFav ? 'Favorito' : 'Guardar'}
             </button>
           </div>
           <h1 className="text-4xl md:text-7xl font-serif mb-6 md:mb-8 leading-tight">{story.title}</h1>
@@ -1492,6 +1531,7 @@ export default function App() {
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFavorites, setShowFavorites] = useState(false);
   
   const publicStories = stories.filter(s => {
     if (s.isPrivate) return false;
@@ -1873,6 +1913,7 @@ export default function App() {
         onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onFavorites={() => setShowFavorites(true)}
         investigationEnabled={investigationEnabled}
       />
       
@@ -2118,6 +2159,16 @@ export default function App() {
           setShowShop(true);
           setShowSearchResults(false);
         }}
+      />
+
+      <FavoritesPanel
+        isOpen={showFavorites}
+        onClose={() => setShowFavorites(false)}
+        onSelectStory={(storyId) => {
+          const story = publicStories.find(s => s.id === storyId);
+          if (story) handleSelectStory(story);
+        }}
+        onViewShop={() => setShowShop(true)}
       />
 
       <Footer onLegalClick={setLegalView} />
