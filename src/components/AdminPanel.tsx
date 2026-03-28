@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor } from '../types';
 import { supabase } from '../supabase';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -63,7 +64,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'analytics'>('stories');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
@@ -826,7 +827,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {/* Sidebar - List of Stories */}
         <aside className="w-full md:w-80 border-r border-sepia-800 overflow-y-auto bg-sepia-950/30 flex flex-col">
           <div className="p-4 space-y-4">
-            <div className="grid grid-cols-5 gap-1 p-1 bg-sepia-950 rounded-xl border border-sepia-800">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-sepia-950 rounded-xl border border-sepia-800">
               <button 
                 onClick={() => setViewMode('stories')}
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'stories' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
@@ -868,6 +869,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'sponsors' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 Sponsors
+              </button>
+              <button 
+                onClick={() => setViewMode('analytics')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                Analíticas
               </button>
             </div>
 
@@ -2585,6 +2592,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
               </motion.form>
+            ) : viewMode === 'analytics' ? (
+              <motion.div 
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <AnalyticsDashboard />
+              </motion.div>
             ) : (
               <motion.div 
                 key="empty"

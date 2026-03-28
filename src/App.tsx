@@ -18,6 +18,7 @@ import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
 import { SearchResults } from './components/SearchResults';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
+import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 
 // --- Components ---
 
@@ -823,6 +824,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
   const [hasLiked, setHasLiked] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [viewCount, setViewCount] = useState<number | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -854,6 +856,15 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
       resetMetaTags();
     };
   }, [story.id, story.likes, story.title, story.description, story.thumbnail, story.slug]);
+
+  // Cargar conteo de vistas
+  useEffect(() => {
+    const loadViewCount = async () => {
+      const count = await getPageViews(story.id);
+      setViewCount(count);
+    };
+    loadViewCount();
+  }, [story.id]);
 
   const handleLike = async () => {
     if (hasLiked) return;
@@ -1000,6 +1011,12 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
           <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-6">
             <span className="bg-sepia-200 text-sepia-800 px-4 py-1 rounded-full text-xs md:sm font-medium">{story.category}</span>
             <span className="text-sepia-500 font-serif italic text-lg md:text-xl">Año {story.year}</span>
+            {viewCount !== null && (
+              <span className="bg-sepia-100 text-sepia-700 px-4 py-1 rounded-full text-xs md:sm font-medium flex items-center gap-2">
+                <Camera className="w-3 h-3" />
+                {formatViewCount(viewCount)} {viewCount === 1 ? 'vista' : 'vistas'}
+              </span>
+            )}
             {story.mapsUrl && (
               <a 
                 href={story.mapsUrl} 
@@ -1731,6 +1748,41 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isPresentationMode, stories, publicStories.length]);
 
+  // Track page views for gallery
+  useEffect(() => {
+    if (showGallery) {
+      trackPageView('gallery', undefined, 'Galería Restaurada');
+    }
+  }, [showGallery]);
+
+  // Track page views for shop
+  useEffect(() => {
+    if (showShop) {
+      trackPageView('shop', undefined, 'Tienda');
+    }
+  }, [showShop]);
+
+  // Track page views for investigation
+  useEffect(() => {
+    if (showInvestigation) {
+      trackPageView('investigation', undefined, 'Investiga tu Historia');
+    }
+  }, [showInvestigation]);
+
+  // Track page views for family tree
+  useEffect(() => {
+    if (showFamilyTree) {
+      trackPageView('family_tree', undefined, 'Árbol Genealógico');
+    }
+  }, [showFamilyTree]);
+
+  // Track home page view
+  useEffect(() => {
+    if (!selectedStory && !showGallery && !showShop && !showInvestigation && !showFamilyTree && !legalView) {
+      trackPageView('home', undefined, 'Inicio');
+    }
+  }, [selectedStory, showGallery, showShop, showInvestigation, showFamilyTree, legalView]);
+
   // Update URL hash when selected story changes
   useEffect(() => {
     if (selectedStory) {
@@ -1799,6 +1851,12 @@ export default function App() {
     if (!term.trim()) return;
     setSearchTerm(term);
     setShowSearchResults(true);
+  };
+
+  const handleSelectStory = (story: Story) => {
+    setSelectedStory(story);
+    // Registrar vista de historia
+    trackPageView('story', story.id, story.title);
   };
 
   const handleSeeAll = () => {
@@ -1960,7 +2018,7 @@ export default function App() {
             <Biography />
             <HistoriansSection historians={historians} />
             <TravelPhotosSection photos={travelPhotos} />
-            <Timeline stories={publicStories} onSelectStory={setSelectedStory} />
+            <Timeline stories={publicStories} onSelectStory={handleSelectStory} />
             <HowItWorks />
             {isLoading ? (
               <div className="py-24 text-center">
@@ -1970,7 +2028,7 @@ export default function App() {
             ) : (
               <FeaturedStories 
                 stories={publicStories} 
-                onSelectStory={setSelectedStory} 
+                onSelectStory={handleSelectStory} 
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
@@ -2049,7 +2107,7 @@ export default function App() {
         travelPhotos={travelPhotos}
         products={products}
         onSelectStory={(story) => {
-          setSelectedStory(story);
+          handleSelectStory(story);
           setShowSearchResults(false);
         }}
         onViewGallery={() => {
