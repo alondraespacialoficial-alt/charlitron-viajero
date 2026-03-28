@@ -16,7 +16,7 @@ Allow: /
 Crawl-delay: 0
 
 # Sitemap
-Sitemap: https://charlitron-viajero.vercel.app/sitemap.xml
+Sitemap: https://charlitronviajerdeltiempo.com/sitemap.xml
 
 # Especificar host preferido
-Host: charlitron-viajero.vercel.app
+Host: charlitronviajerdeltiempo.com

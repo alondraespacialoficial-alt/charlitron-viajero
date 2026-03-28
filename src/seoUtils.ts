@@ -34,7 +34,7 @@ export const updateMetaTags = (
   category?: string,
   year?: string
 ) => {
-  const baseUrl = 'https://charlitron-viajero.vercel.app';
+  const baseUrl = 'https://charlitronviajerdeltiempo.com';
   const url = `${baseUrl}/historia/${slug}`;
   
   // Actualizar título de la página
@@ -105,25 +105,25 @@ const updateBreadcrumbSchema = (title: string, slug: string, category?: string) 
         "@type": "ListItem",
         "position": 1,
         "name": "Inicio",
-        "item": "https://charlitron-viajero.vercel.app"
+        "item": "https://charlitronviajerdeltiempo.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Historias",
-        "item": "https://charlitron-viajero.vercel.app#historias"
+        "item": "https://charlitronviajerdeltiempo.com#historias"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": category || "Categoría",
-        "item": `https://charlitron-viajero.vercel.app#historias?cat=${category}`
+        "item": `https://charlitronviajerdeltiempo.com#historias?cat=${category}`
       },
       {
         "@type": "ListItem",
         "position": 4,
         "name": title,
-        "item": `https://charlitron-viajero.vercel.app/historia/${slug}`
+        "item": `https://charlitronviajerdeltiempo.com/historia/${slug}`
       }
     ]
   };
@@ -201,7 +201,7 @@ export const generateShareUrl = (
   slug: string,
   description?: string
 ): string => {
-  const url = `https://charlitron-viajero.vercel.app/historia/${slug}`;
+  const url = `https://charlitronviajerdeltiempo.com/historia/${slug}`;
   const text = encodeURIComponent(
     `📚 *${title}*\n\n${description || 'Mira esta historia en Charlitron®'}\n\n${url}`
   );
@@ -218,7 +218,7 @@ export const resetMetaTags = () => {
     'Charlitron® Viajero del Tiempo: Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional.'
   );
   
-  const baseUrl = 'https://charlitron-viajero.vercel.app';
+  const baseUrl = 'https://charlitronviajerdeltiempo.com';
   updateOrCreateMetaTag('og:title', 'Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos');
   updateOrCreateMetaTag(
     'og:description',
