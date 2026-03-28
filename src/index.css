@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  
+  --color-sepia-50: #fdfaf6;
+  --color-sepia-100: #f7f1e6;
+  --color-sepia-200: #eee0c9;
+  --color-sepia-300: #e1c9a0;
+  --color-sepia-400: #d2ae76;
+  --color-sepia-500: #c19251;
+  --color-sepia-600: #ab7941;
+  --color-sepia-700: #8e6136;
+  --color-sepia-800: #744f2f;
+  --color-sepia-900: #60422a;
+  --color-sepia-950: #342216;
+}
+
+@layer base {
+  body {
+    @apply bg-sepia-100 text-sepia-950 font-sans;
+  }
+  
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.cinematic-overlay {
+  background: linear-gradient(to bottom, rgba(52, 34, 22, 0.4), rgba(52, 34, 22, 0.8));
+}
+
+.sepia-filter {
+  filter: sepia(0.3) contrast(1.1) brightness(0.9);
+}
+
+.glass-card {
+  @apply bg-white/10 backdrop-blur-md border border-white/20;
+}
+
+/* Image Protection */
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.watermark-text {
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  pointer-events: none;
+}

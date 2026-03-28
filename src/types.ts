@@ -1,0 +1,79 @@
+export interface Story {
+  id: string;
+  title: string;
+  description: string;
+  fullNarrative: string;
+  year: string;
+  category: string;
+  thumbnail: string;
+  videoUrl: string;
+  audioUrl?: string;
+  mapsUrl?: string;
+  likes?: number;
+  gallery: string[];
+  isPrivate?: boolean;
+  isVideoVertical?: boolean;
+  password?: string;
+  expires_at?: string;
+}
+
+export interface Historian {
+  id: string;
+  name: string;
+  bio: string;
+  photo: string;
+  specialty: string;
+  books: { title: string; url: string; cover?: string }[];
+  contact_link?: string;
+  social_link?: string;
+  created_at?: string;
+}
+
+export interface RestoredPhoto {
+  id: string;
+  title: string;
+  url: string;
+  place?: string;
+  era?: string;
+  intervention_type?: string;
+  description?: string;
+  category?: string;
+  is_vertical?: boolean;
+  created_at?: string;
+  images?: { url: string; title: string; is_vertical?: boolean }[];
+}
+
+export interface TravelPhoto {
+  id: string;
+  url: string;
+  character_name: string;
+  year?: string;
+  description?: string;
+  external_link?: string;
+  created_at?: string;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  image_url: string;
+  is_sold_out: boolean;
+  category?: string;
+  created_at?: string;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface Sponsor {
+  id: string;
+  name: string;
+  logo_url: string;
+  website_url?: string;
+  is_active: boolean;
+  created_at?: string;
+}
