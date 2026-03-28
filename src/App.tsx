@@ -1578,11 +1578,18 @@ export default function App() {
         if (data && data.length > 0) {
           setStories(data);
           
-          // Check for story ID in URL hash
-          const hash = window.location.hash.replace('#', '');
+          // Check for story slug in URL hash (supports slugs like "historia-titulo-12345")
+          const hash = window.location.hash.replace('#', '').trim();
           if (hash) {
-            const found = data.find(s => s.id === hash);
-            if (found) setSelectedStory(found);
+            // Try to find by slug first
+            const foundBySlug = data.find(s => s.slug && s.slug === hash);
+            if (foundBySlug) {
+              setSelectedStory(foundBySlug);
+            } else {
+              // Fallback to ID for backward compatibility
+              const foundById = data.find(s => s.id === hash);
+              if (foundById) setSelectedStory(foundById);
+            }
           }
         }
       } catch (error) {
@@ -1600,10 +1607,17 @@ export default function App() {
 
     // Listen for hash changes
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
+      const hash = window.location.hash.replace('#', '').trim();
       if (hash) {
-        const found = stories.find(s => s.id === hash);
-        if (found) setSelectedStory(found);
+        // Try to find by slug first (supports slugs like "historia-titulo-12345")
+        const foundBySlug = stories.find(s => s.slug && s.slug === hash);
+        if (foundBySlug) {
+          setSelectedStory(foundBySlug);
+        } else {
+          // Fallback to ID for backward compatibility
+          const foundById = stories.find(s => s.id === hash);
+          if (foundById) setSelectedStory(foundById);
+        }
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -1624,6 +1638,16 @@ export default function App() {
     }
     return () => clearInterval(interval);
   }, [isPresentationMode, stories, publicStories.length]);
+
+  // Update URL hash when selected story changes
+  useEffect(() => {
+    if (selectedStory) {
+      const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
+      window.location.hash = `#${slug}`;
+    } else {
+      window.location.hash = '';
+    }
+  }, [selectedStory?.id]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
