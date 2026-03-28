@@ -1578,17 +1578,28 @@ export default function App() {
         if (data && data.length > 0) {
           setStories(data);
           
-          // Check for story slug in URL hash (supports slugs like "historia-titulo-12345")
+          // Check for story slug or section in URL hash
           const hash = window.location.hash.replace('#', '').trim();
           if (hash) {
-            // Try to find by slug first
-            const foundBySlug = data.find(s => s.slug && s.slug === hash);
-            if (foundBySlug) {
-              setSelectedStory(foundBySlug);
-            } else {
-              // Fallback to ID for backward compatibility
-              const foundById = data.find(s => s.id === hash);
-              if (foundById) setSelectedStory(foundById);
+            // Check for section URLs first
+            if (hash === 'galeria') {
+              setShowGallery(true);
+            } else if (hash === 'tienda') {
+              setShowShop(true);
+            } else if (hash === 'investiga') {
+              setShowInvestigation(true);
+            } else if (hash === 'arbol') {
+              setShowFamilyTree(true);
+            } else if (hash !== 'historias') {
+              // Try to find by slug first (supports slugs like "historia-titulo-12345")
+              const foundBySlug = data.find(s => s.slug && s.slug === hash);
+              if (foundBySlug) {
+                setSelectedStory(foundBySlug);
+              } else {
+                // Fallback to ID for backward compatibility
+                const foundById = data.find(s => s.id === hash);
+                if (foundById) setSelectedStory(foundById);
+              }
             }
           }
         }
@@ -1609,15 +1620,65 @@ export default function App() {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '').trim();
       if (hash) {
-        // Try to find by slug first (supports slugs like "historia-titulo-12345")
-        const foundBySlug = stories.find(s => s.slug && s.slug === hash);
-        if (foundBySlug) {
-          setSelectedStory(foundBySlug);
+        // Check for section URLs first
+        if (hash === 'galeria') {
+          setShowGallery(true);
+          setShowShop(false);
+          setShowInvestigation(false);
+          setShowFamilyTree(false);
+          setSelectedStory(null);
+        } else if (hash === 'tienda') {
+          setShowShop(true);
+          setShowGallery(false);
+          setShowInvestigation(false);
+          setShowFamilyTree(false);
+          setSelectedStory(null);
+        } else if (hash === 'investiga') {
+          setShowInvestigation(true);
+          setShowGallery(false);
+          setShowShop(false);
+          setShowFamilyTree(false);
+          setSelectedStory(null);
+        } else if (hash === 'arbol') {
+          setShowFamilyTree(true);
+          setShowGallery(false);
+          setShowShop(false);
+          setShowInvestigation(false);
+          setSelectedStory(null);
+        } else if (hash === 'historias') {
+          setShowGallery(false);
+          setShowShop(false);
+          setShowInvestigation(false);
+          setShowFamilyTree(false);
+          setSelectedStory(null);
         } else {
-          // Fallback to ID for backward compatibility
-          const foundById = stories.find(s => s.id === hash);
-          if (foundById) setSelectedStory(foundById);
+          // Try to find by slug (story)
+          const foundBySlug = stories.find(s => s.slug && s.slug === hash);
+          if (foundBySlug) {
+            setSelectedStory(foundBySlug);
+            setShowGallery(false);
+            setShowShop(false);
+            setShowInvestigation(false);
+            setShowFamilyTree(false);
+          } else {
+            // Fallback to ID for backward compatibility
+            const foundById = stories.find(s => s.id === hash);
+            if (foundById) {
+              setSelectedStory(foundById);
+              setShowGallery(false);
+              setShowShop(false);
+              setShowInvestigation(false);
+              setShowFamilyTree(false);
+            }
+          }
         }
+      } else {
+        // Empty hash = home
+        setShowGallery(false);
+        setShowShop(false);
+        setShowInvestigation(false);
+        setShowFamilyTree(false);
+        setSelectedStory(null);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -1645,9 +1706,20 @@ export default function App() {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
       window.location.hash = `#${slug}`;
     } else {
-      window.location.hash = '';
+      // If no story selected, show section URL instead
+      if (showGallery) {
+        window.location.hash = '#galeria';
+      } else if (showShop) {
+        window.location.hash = '#tienda';
+      } else if (showInvestigation) {
+        window.location.hash = '#investiga';
+      } else if (showFamilyTree) {
+        window.location.hash = '#arbol';
+      } else {
+        window.location.hash = '#historias';
+      }
     }
-  }, [selectedStory?.id]);
+  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showFamilyTree]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
