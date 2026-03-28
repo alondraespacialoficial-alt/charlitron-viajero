@@ -108,7 +108,7 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
           <div className="space-y-4">
             <button 
               onClick={onBack}
-              className="flex items-center gap-2 text-sepia-600 hover:text-sepia-950 transition-colors group"
+              className="flex items-center gap-2 text-sepia-600 hover:text-sepia-950 transition-colors group relative z-50"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="text-xs font-bold uppercase tracking-widest">Volver al inicio</span>

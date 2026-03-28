@@ -64,7 +64,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
       <div className="max-w-7xl mx-auto">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sepia-600 hover:text-sepia-950 transition-colors mb-12 group"
+          className="flex items-center gap-2 text-sepia-600 hover:text-sepia-950 transition-colors mb-12 group relative z-50"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="uppercase tracking-widest text-sm font-bold">Volver al Baúl</span>

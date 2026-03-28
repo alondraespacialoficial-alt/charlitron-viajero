@@ -361,11 +361,11 @@ export const InvestigationSection = ({ onBack }: InvestigationSectionProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-sepia-950 py-20 px-6">
+    <div className="min-h-screen bg-sepia-950 py-20 px-6 relative">
       <div className="max-w-4xl mx-auto">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors mb-10 group"
+          className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors mb-10 group relative z-50"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           Volver al Baúl
