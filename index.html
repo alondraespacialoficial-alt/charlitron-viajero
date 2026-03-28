@@ -1,13 +1,119 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    
+    <!-- SEO Principal -->
+    <title>Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos</title>
+    <meta name="description" content="Charlitron® Viajero del Tiempo: Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional. Explora el Baúl de los Recuerdos de San Luis Potosí." />
+    <meta name="keywords" content="Charlitron, viajero del tiempo, recuerdos, historia, San Luis Potosí, genealogía, restauración de fotos, memorias, IA, investigación genealógica" />
+    <meta name="author" content="Charlitron® - Adrián Álvarez Carlos" />
+    <meta name="creator" content="Charlitron®" />
+    <meta name="publisher" content="Charlitron®" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="language" content="Spanish" />
+    <meta name="revisit-after" content="3 days" />
+    <meta name="theme-color" content="#5a3a28" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://charlitron-viajero.vercel.app" />
+    
+    <!-- Open Graph (Redes Sociales) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://charlitron-viajero.vercel.app" />
+    <meta property="og:title" content="Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos" />
+    <meta property="og:description" content="Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial. Portal histórico de San Luis Potosí." />
+    <meta property="og:image" content="https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo de Charlitron® - Viajero del Tiempo" />
+    <meta property="og:site_name" content="Charlitron®" />
+    <meta property="og:locale" content="es_MX" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://charlitron-viajero.vercel.app" />
+    <meta name="twitter:title" content="Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos" />
+    <meta name="twitter:description" content="Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial. Portal histórico de San Luis Potosí." />
+    <meta name="twitter:image" content="https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png" />
+    <meta name="twitter:image:alt" content="Logo de Charlitron® - Viajero del Tiempo" />
+    <meta name="twitter:creator" content="@charlitronviajerotiempo" />
+    
+    <!-- Facebook -->
+    <meta property="fb:app_id" content="" />
+    
+    <!-- Schema.org JSON-LD (Datos Estructurados) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Charlitron® Viajero del Tiempo",
+      "description": "Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional.",
+      "url": "https://charlitron-viajero.vercel.app",
+      "image": "https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png",
+      "creator": {
+        "@type": "Person",
+        "name": "Adrián Álvarez Carlos",
+        "title": "Fundador de Charlitron®"
+      },
+      "sameAs": [
+        "https://www.facebook.com/CharlitronViajeroTiempo",
+        "https://www.tiktok.com/@charlitronviajerotiempo"
+      ],
+      "keywords": "Charlitron, viajero del tiempo, recuerdos, historia, San Luis Potosí",
+      "inLanguage": "es-MX"
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Charlitron®",
+      "url": "https://charlitron-viajero.vercel.app",
+      "logo": "https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png",
+      "description": "Plataforma de rescate y restauración de recuerdos históricos usando IA",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Service",
+        "url": "https://wa.me/4444237092"
+      },
+      "sameAs": [
+        "https://www.facebook.com/CharlitronViajeroTiempo",
+        "https://www.tiktok.com/@charlitronviajerotiempo"
+      ]
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png" />
+    <link rel="apple-touch-icon" href="https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png" />
+    
+    <!-- Preconnect para externos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://image2url.com" />
+    <link rel="dns-prefetch" href="https://osulhjzqgqzodyjamrmn.supabase.co" />
+    <link rel="dns-prefetch" href="https://www.youtube.com" />
+    
+    <!-- Alternate para otros idiomas (si en futuro tendrás) -->
+    <link rel="alternate" hreflang="es-MX" href="https://charlitron-viajero.vercel.app" />
+    <link rel="alternate" hreflang="x-default" href="https://charlitron-viajero.vercel.app" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Google Analytics (si lo necesitas después) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script> -->
   </body>
 </html>
 

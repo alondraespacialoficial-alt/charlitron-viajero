@@ -1,0 +1,22 @@
+# Robots.txt para Charlitron® Viajero del Tiempo
+User-agent: *
+Allow: /
+Allow: /src/
+Disallow: /admin
+Disallow: /*.html$
+
+# Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# Sitemap
+Sitemap: https://charlitron-viajero.vercel.app/sitemap.xml
+
+# Especificar host preferido
+Host: charlitron-viajero.vercel.app

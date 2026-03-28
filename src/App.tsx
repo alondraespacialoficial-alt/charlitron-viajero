@@ -16,6 +16,7 @@ import { HistoriansSection } from './components/HistoriansSection';
 import { RestoredGallery } from './components/RestoredGallery';
 import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
+import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
 
 // --- Components ---
 
@@ -825,6 +826,20 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    // Generar slug si no existe
+    const slug = story.slug || generateSlug(story.title, story.id);
+    
+    // Actualizar meta tags con información de la historia
+    updateMetaTags(
+      story.title,
+      story.description || story.fullNarrative.slice(0, 160),
+      story.thumbnail,
+      slug,
+      story.category,
+      story.year
+    );
+    
     // Check if user already liked this story in this session/localstorage
     const likedStories = JSON.parse(localStorage.getItem('charlitron_likes') || '[]');
     if (likedStories.includes(story.id)) {
@@ -832,7 +847,12 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
     }
     // Sync likes from story prop if it changed externally
     setLikes(story.likes || 0);
-  }, [story.id, story.likes]);
+    
+    // Cleanup: restaurar meta tags generales cuando se vuelve atrás
+    return () => {
+      resetMetaTags();
+    };
+  }, [story.id, story.likes, story.title, story.description, story.thumbnail, story.slug]);
 
   const handleLike = async () => {
     if (hasLiked) return;
@@ -858,9 +878,9 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
   };
 
   const handleShare = () => {
-    const text = `Mira esta historia increíble en Charlitron®: ${story.title}\n${window.location.origin}/#${story.id}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    const slug = story.slug || generateSlug(story.title, story.id);
+    const shareUrl = generateShareUrl(story.title, slug, story.description);
+    window.open(shareUrl, '_blank');
   };
 
   const toggleAudio = () => {

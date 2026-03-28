@@ -15,6 +15,7 @@ export interface Story {
   isVideoVertical?: boolean;
   password?: string;
   expires_at?: string;
+  slug?: string; // URL-friendly identifier (e.g., "la-bodega-el-pasado-1920")
 }
 
 export interface Historian {
