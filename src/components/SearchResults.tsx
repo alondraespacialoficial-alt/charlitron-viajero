@@ -32,40 +32,56 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onViewGallery,
   onViewShop
 }) => {
-  const lowerTerm = searchTerm.toLowerCase().trim();
+  // Normalizar término de búsqueda (remover acentos)
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remover marcas diacríticas (acentos)
+  };
+  
+  const lowerTerm = normalizeText(searchTerm);
+
+  // Función auxiliar para normalizar y comparar
+  const matchesSearch = (text?: string) => {
+    if (!text) return false;
+    return normalizeText(text).includes(lowerTerm);
+  };
 
   // Filter results from each section
   const filteredStories = stories.filter(s =>
-    s.title.toLowerCase().includes(lowerTerm) ||
-    s.description?.toLowerCase().includes(lowerTerm) ||
-    s.category?.toLowerCase().includes(lowerTerm) ||
+    matchesSearch(s.title) ||
+    matchesSearch(s.description) ||
+    matchesSearch(s.fullNarrative) ||
+    matchesSearch(s.category) ||
     s.year?.includes(lowerTerm)
   );
 
   const filteredHistorians = historians.filter(h =>
-    h.name.toLowerCase().includes(lowerTerm) ||
-    h.bio?.toLowerCase().includes(lowerTerm) ||
-    h.specialty?.toLowerCase().includes(lowerTerm)
+    matchesSearch(h.name) ||
+    matchesSearch(h.bio) ||
+    matchesSearch(h.specialty)
   );
 
   const filteredRestoredPhotos = restoredPhotos.filter(p =>
-    p.title.toLowerCase().includes(lowerTerm) ||
-    p.description?.toLowerCase().includes(lowerTerm) ||
-    p.place?.toLowerCase().includes(lowerTerm) ||
-    p.era?.toLowerCase().includes(lowerTerm) ||
-    p.category?.toLowerCase().includes(lowerTerm)
+    matchesSearch(p.title) ||
+    matchesSearch(p.description) ||
+    matchesSearch(p.place) ||
+    matchesSearch(p.era) ||
+    matchesSearch(p.category)
   );
 
   const filteredTravelPhotos = travelPhotos.filter(p =>
-    p.character_name.toLowerCase().includes(lowerTerm) ||
-    p.description?.toLowerCase().includes(lowerTerm) ||
+    matchesSearch(p.character_name) ||
+    matchesSearch(p.description) ||
     p.year?.includes(lowerTerm)
   );
 
   const filteredProducts = products.filter(p =>
-    p.title.toLowerCase().includes(lowerTerm) ||
-    p.description?.toLowerCase().includes(lowerTerm) ||
-    p.category?.toLowerCase().includes(lowerTerm)
+    matchesSearch(p.title) ||
+    matchesSearch(p.description) ||
+    matchesSearch(p.category)
   );
 
   const hasResults = 
