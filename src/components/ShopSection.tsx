@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, Tag, Clock, ArrowLeft, Package, ExternalLink, AlertCircle, Plus, Minus, Trash2, X, Send } from 'lucide-react';
+import { ShoppingBag, Tag, Clock, ArrowLeft, Package, ExternalLink, AlertCircle, Plus, Minus, Trash2, X, Send, Heart } from 'lucide-react';
 import { supabase } from '../supabase';
 import { Product, CartItem } from '../types';
+import { isFavorited, addToFavorites, removeFromFavorites } from '../favoritesUtils';
 
 interface ShopSectionProps {
   onBack: () => void;
@@ -14,9 +15,11 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchProducts();
+    loadFavorites();
     // Load cart from localStorage if exists
     const savedCart = localStorage.getItem('charlitron_cart');
     if (savedCart) {
@@ -28,9 +31,48 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
     }
   }, []);
 
+  const loadFavorites = async () => {
+    try {
+      const favSet = new Set<string>();
+      for (const product of products) {
+        const isFav = await isFavorited('product', product.id);
+        if (isFav) {
+          favSet.add(product.id);
+        }
+      }
+      setFavorites(favSet);
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+    }
+  };
+
+  const toggleFavorite = async (product: Product) => {
+    try {
+      if (favorites.has(product.id)) {
+        await removeFromFavorites('product', product.id);
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(product.id);
+          return newSet;
+        });
+      } else {
+        await addToFavorites('product', product.id, product.title, product.image_url);
+        setFavorites(prev => new Set(prev).add(product.id));
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem('charlitron_cart', JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      loadFavorites();
+    }
+  }, [products]);
 
   const fetchProducts = async () => {
     try {
@@ -188,6 +230,14 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                         </span>
                       )}
                     </div>
+
+                    {/* Favorite Button */}
+                    <button
+                      onClick={() => toggleFavorite(product)}
+                      className="absolute top-6 right-6 p-3 rounded-full bg-white/90 backdrop-blur-md hover:bg-sepia-950 text-sepia-950 hover:text-sepia-100 transition-all shadow-lg"
+                    >
+                      <Heart className={`w-5 h-5 ${favorites.has(product.id) ? 'fill-current text-sepia-500' : ''}`} />
+                    </button>
 
                     {/* Price Tag */}
                     {!product.is_sold_out && (

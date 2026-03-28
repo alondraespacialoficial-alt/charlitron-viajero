@@ -2169,6 +2169,7 @@ export default function App() {
           if (story) handleSelectStory(story);
         }}
         onViewShop={() => setShowShop(true)}
+        onViewGallery={() => setShowGallery(true)}
       />
 
       <Footer onLegalClick={setLegalView} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, ArrowLeft, Scroll, ShoppingBag, Trash2, ExternalLink } from 'lucide-react';
+import { X, Heart, ArrowLeft, Scroll, ShoppingBag, Trash2, ExternalLink, Camera } from 'lucide-react';
 import { getAllFavorites, removeFromFavorites, UserFavorite } from '../favoritesUtils';
 
 interface FavoritesPanelProps {
@@ -8,6 +8,7 @@ interface FavoritesPanelProps {
   onClose: () => void;
   onSelectStory?: (storyId: string) => void;
   onViewShop?: () => void;
+  onViewGallery?: () => void;
 }
 
 export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
@@ -15,10 +16,11 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
   onClose,
   onSelectStory,
   onViewShop,
+  onViewGallery,
 }) => {
   const [favorites, setFavorites] = useState<UserFavorite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'story' | 'product'>('all');
+  const [filter, setFilter] = useState<'all' | 'story' | 'product' | 'photo'>('all');
 
   useEffect(() => {
     if (isOpen) {
@@ -43,6 +45,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
 
   const storyCount = favorites.filter((f) => f.favorite_type === 'story').length;
   const productCount = favorites.filter((f) => f.favorite_type === 'product').length;
+  const photoCount = favorites.filter((f) => f.favorite_type === 'photo').length;
 
   return (
     <AnimatePresence>
@@ -69,7 +72,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
             </div>
 
             {/* Stats */}
-            <div className="flex gap-4 text-xs">
+            <div className="flex gap-3 text-xs">
               <div className="bg-sepia-800/50 rounded-lg px-3 py-2">
                 <p className="text-sepia-400">Historias</p>
                 <p className="text-lg font-bold text-sepia-100">{storyCount}</p>
@@ -78,14 +81,18 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                 <p className="text-sepia-400">Productos</p>
                 <p className="text-lg font-bold text-sepia-100">{productCount}</p>
               </div>
+              <div className="bg-sepia-800/50 rounded-lg px-3 py-2">
+                <p className="text-sepia-400">Fotos</p>
+                <p className="text-lg font-bold text-sepia-100">{photoCount}</p>
+              </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex gap-2 p-4 border-b border-sepia-800">
+          <div className="grid grid-cols-4 gap-2 p-4 border-b border-sepia-800">
             <button
               onClick={() => setFilter('all')}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+              className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
                 filter === 'all'
                   ? 'bg-red-500 text-white'
                   : 'bg-sepia-800/30 text-sepia-400 hover:text-sepia-100'
@@ -95,25 +102,36 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
             </button>
             <button
               onClick={() => setFilter('story')}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${
+              className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
                 filter === 'story'
                   ? 'bg-red-500 text-white'
                   : 'bg-sepia-800/30 text-sepia-400 hover:text-sepia-100'
               }`}
+              title="Historias"
             >
-              <Scroll className="w-3 h-3" />
-              Historias
+              📜
             </button>
             <button
               onClick={() => setFilter('product')}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${
+              className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
                 filter === 'product'
                   ? 'bg-red-500 text-white'
                   : 'bg-sepia-800/30 text-sepia-400 hover:text-sepia-100'
               }`}
+              title="Productos"
             >
-              <ShoppingBag className="w-3 h-3" />
-              Tienda
+              🛍️
+            </button>
+            <button
+              onClick={() => setFilter('photo')}
+              className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
+                filter === 'photo'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-sepia-800/30 text-sepia-400 hover:text-sepia-100'
+              }`}
+              title="Fotos"
+            >
+              📷
             </button>
           </div>
 
@@ -167,7 +185,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                               {favorite.favorite_title || 'Sin título'}
                             </p>
                             <p className="text-[10px] text-sepia-500 uppercase tracking-widest font-semibold">
-                              {favorite.favorite_type === 'story' ? '📜 Historia' : '🛍️ Producto'}
+                              {favorite.favorite_type === 'story' ? '📜 Historia' : favorite.favorite_type === 'product' ? '🛍️ Producto' : '📷 Foto'}
                             </p>
                           </div>
                           <button
@@ -192,7 +210,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                             <ExternalLink className="w-3 h-3" />
                             Ver Historia
                           </button>
-                        ) : (
+                        ) : favorite.favorite_type === 'product' ? (
                           <button
                             onClick={() => {
                               if (onViewShop) {
@@ -204,6 +222,19 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                           >
                             <ShoppingBag className="w-3 h-3" />
                             Ver Tienda
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (onViewGallery) {
+                                onViewGallery();
+                                onClose();
+                              }
+                            }}
+                            className="w-full mt-2 bg-sepia-700 hover:bg-sepia-600 text-sepia-100 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Camera className="w-3 h-3" />
+                            Ver Galería
                           </button>
                         )}
                       </div>

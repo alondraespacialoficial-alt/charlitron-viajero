@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Maximize2, X, Clock, Camera, MapPin, Calendar, ShieldCheck, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Maximize2, X, Clock, Camera, MapPin, Calendar, ShieldCheck, MessageCircle, Heart } from 'lucide-react';
 import { supabase } from '../supabase';
 import { RestoredPhoto } from '../types';
 import { WHATSAPP_LINK } from '../constants';
+import { isFavorited, addToFavorites, removeFromFavorites } from '../favoritesUtils';
 
 const CATEGORIES = [
   'Todos',
@@ -32,6 +33,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -45,15 +47,51 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
           .select('*')
           .order('created_at', { ascending: false });
         if (error) throw error;
-        if (data) setPhotos(data);
+        if (data) {
+          setPhotos(data);
+          await loadFavorites(data);
+        }
       } catch (err) {
         console.error('Error fetching restored photos:', err);
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchPhotos();
   }, []);
+
+  const loadFavorites = async (photoList: RestoredPhoto[]) => {
+    try {
+      const favSet = new Set<string>();
+      for (const photo of photoList) {
+        const isFav = await isFavorited('photo', photo.id);
+        if (isFav) {
+          favSet.add(photo.id);
+        }
+      }
+      setFavorites(favSet);
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+    }
+  };
+
+  const toggleFavorite = async (photo: RestoredPhoto) => {
+    try {
+      if (favorites.has(photo.id)) {
+        await removeFromFavorites('photo', photo.id);
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(photo.id);
+          return newSet;
+        });
+      } else {
+        await addToFavorites('photo', photo.id, photo.title, photo.url);
+        setFavorites(prev => new Set(prev).add(photo.id));
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   const filteredPhotos = activeCategory === 'Todos' 
     ? photos 
@@ -122,6 +160,17 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                   className={`${photo.is_vertical ? 'aspect-[4/5]' : 'aspect-video'} rounded-2xl overflow-hidden shadow-xl border-8 border-white cursor-zoom-in relative bg-sepia-200 group-hover:shadow-2xl transition-all duration-500`}
                   onClick={() => setActivePhoto(photo)}
                 >
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(photo);
+                    }}
+                    className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 backdrop-blur-md hover:bg-sepia-950 text-sepia-950 hover:text-sepia-100 transition-all shadow-lg z-20"
+                  >
+                    <Heart className={`w-5 h-5 ${favorites.has(photo.id) ? 'fill-current text-sepia-500' : ''}`} />
+                  </button>
+
                   {/* The "Old Photo" Filtered Image */}
                   <div className="absolute inset-0 z-0">
                     <img 
