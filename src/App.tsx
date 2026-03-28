@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
-import { Story, TravelPhoto, Historian, Sponsor } from './types';
+import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product } from './types';
 import { FamilyTreeManager } from './components/FamilyTreeManager';
 import { supabase } from './supabase';
 import { AdminPanel } from './components/AdminPanel';
@@ -16,6 +16,7 @@ import { HistoriansSection } from './components/HistoriansSection';
 import { RestoredGallery } from './components/RestoredGallery';
 import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
+import { SearchResults } from './components/SearchResults';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
 
 // --- Components ---
@@ -1464,12 +1465,16 @@ export default function App() {
   const [historians, setHistorians] = useState<Historian[]>([]);
   const [travelPhotos, setTravelPhotos] = useState<TravelPhoto[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [restoredPhotos, setRestoredPhotos] = useState<RestoredPhoto[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const publicStories = stories.filter(s => {
     if (s.isPrivate) return false;
@@ -1566,6 +1571,30 @@ export default function App() {
     }
   };
 
+  const fetchRestoredPhotos = async () => {
+    try {
+      const { data } = await supabase
+        .from('restored_photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (data) setRestoredPhotos(data);
+    } catch (err) {
+      console.error('Error fetching restored photos:', err);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (data) setProducts(data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    }
+  };
+
   useEffect(() => {
     const fetchStories = async () => {
       try {
@@ -1615,6 +1644,8 @@ export default function App() {
     fetchHistorians();
     fetchTravelPhotos();
     fetchSponsors();
+    fetchRestoredPhotos();
+    fetchProducts();
 
     // Listen for hash changes
     const handleHashChange = () => {
@@ -1765,23 +1796,9 @@ export default function App() {
   };
 
   const handleSearch = (term: string) => {
-    if (!term) return;
-    
-    const lowerTerm = term.toLowerCase();
-    // Only search in public stories
-    const found = publicStories.find(s => 
-      s.title.toLowerCase().includes(lowerTerm) || 
-      s.description.toLowerCase().includes(lowerTerm)
-    );
-
-    if (found) {
-      setSelectedStory(found);
-    } else {
-      // If not found in public, don't fallback to private ones
-      if (publicStories.length > 0) {
-        setSelectedStory(publicStories[0]);
-      }
-    }
+    if (!term.trim()) return;
+    setSearchTerm(term);
+    setShowSearchResults(true);
   };
 
   const handleSeeAll = () => {
@@ -2021,6 +2038,29 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SearchResults
+        isOpen={showSearchResults}
+        onClose={() => setShowSearchResults(false)}
+        searchTerm={searchTerm}
+        stories={publicStories}
+        historians={historians}
+        restoredPhotos={restoredPhotos}
+        travelPhotos={travelPhotos}
+        products={products}
+        onSelectStory={(story) => {
+          setSelectedStory(story);
+          setShowSearchResults(false);
+        }}
+        onViewGallery={() => {
+          setShowGallery(true);
+          setShowSearchResults(false);
+        }}
+        onViewShop={() => {
+          setShowShop(true);
+          setShowSearchResults(false);
+        }}
+      />
 
       <Footer onLegalClick={setLegalView} />
     </div>
