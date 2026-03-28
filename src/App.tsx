@@ -1716,7 +1716,7 @@ export default function App() {
       } else if (showFamilyTree) {
         window.location.hash = '#arbol';
       } else {
-        window.location.hash = '#historias';
+        window.location.hash = '';
       }
     }
   }, [selectedStory?.id, showGallery, showShop, showInvestigation, showFamilyTree]);
