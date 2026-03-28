@@ -232,18 +232,44 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
     if (!containerRef.current) return;
     
     try {
-      // Esperar un poco para asegurar que las imágenes estén cargadas
+      // Esperar a que todas las imágenes estén cargadas en el SVG
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
+
+      // Actualizar todos los xlink:href a href para html2canvas
+      const svg = containerRef.current.querySelector('svg');
+      if (svg) {
+        const images = svg.querySelectorAll('image');
+        images.forEach((img) => {
+          const href = img.getAttribute('xlink:href');
+          if (href) {
+            img.setAttribute('href', href);
+            img.removeAttribute('xlink:href');
+          }
+        });
+      }
+
       const canvas = await html2canvas(containerRef.current, {
         backgroundColor: '#fdfaf6',
         scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        imageTimeout: 10000,
         onclone: (clonedDoc) => {
-          // Asegurarse de que el SVG sea visible en el clon
-          const svg = clonedDoc.querySelector('svg');
-          if (svg) {
-            svg.style.overflow = 'visible';
+          const clonedSvg = clonedDoc.querySelector('svg');
+          if (clonedSvg) {
+            clonedSvg.style.overflow = 'visible';
+            // Asegurar que las imágenes en el clon también tienen href correcto
+            const clonedImages = clonedSvg.querySelectorAll('image');
+            clonedImages.forEach((img) => {
+              const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+              if (href) {
+                img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
+                img.setAttribute('href', href);
+              }
+            });
           }
         }
       });
@@ -263,6 +289,17 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
 
       pdf.addImage(imgData, 'PNG', x, y, width, height);
       pdf.save('arbol-genealogico-charlitron.pdf');
+
+      // Restaurar xlink:href después de descargar
+      if (svg) {
+        const images = svg.querySelectorAll('image');
+        images.forEach((img) => {
+          const href = img.getAttribute('href');
+          if (href) {
+            img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
+          }
+        });
+      }
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Hubo un error al generar el PDF. Inténtalo de nuevo.');
