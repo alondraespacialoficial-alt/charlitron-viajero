@@ -313,6 +313,13 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               Tienda
             </button>
             <button 
+              onClick={() => { onFavorites(); setIsMenuOpen(false); }}
+              className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
+            >
+              <Heart className="w-6 h-6" />
+              Favoritos
+            </button>
+            <button 
               onClick={() => { onFamilyTree(); setIsMenuOpen(false); }}
               className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
             >
