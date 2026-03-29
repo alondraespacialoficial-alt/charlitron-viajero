@@ -3,8 +3,8 @@
   "short_name": "Charlitron®",
   "description": "Plataforma de rescate y restauración de recuerdos históricos usando IA. Revitaliza historias y reconstruye legados.",
   "start_url": "/",
-  "display": "standalone",
   "scope": "/",
+  "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#5a3a28",
   "background_color": "#0a0a0a",
@@ -39,12 +39,16 @@
     {
       "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
       "sizes": "540x720",
-      "type": "image/png"
+      "type": "image/png",
+      "platform": "narrow",
+      "form_factor": "narrow"
     },
     {
       "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
       "sizes": "1080x1440",
-      "type": "image/png"
+      "type": "image/png",
+      "platform": "wide",
+      "form_factor": "wide"
     }
   ],
   "categories": ["history", "education", "lifestyle"],
