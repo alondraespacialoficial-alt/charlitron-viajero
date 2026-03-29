@@ -19,6 +19,7 @@ import { ShopSection } from './components/ShopSection';
 import { ContestsSection } from './components/ContestsSection';
 import { SearchResults } from './components/SearchResults';
 import { FavoritesPanel } from './components/FavoritesPanel';
+import { InstallPrompt } from './components/InstallPrompt';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
@@ -1940,6 +1941,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
+      <InstallPrompt />
       <Navbar 
         onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}

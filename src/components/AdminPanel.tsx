@@ -36,6 +36,7 @@ import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest
 import { supabase } from '../supabase';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
+import { InstallPromptAdmin } from './InstallPromptAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -66,7 +67,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt'>('stories');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
@@ -883,6 +884,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'analytics' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 Analíticas
+              </button>
+              <button 
+                onClick={() => setViewMode('install_prompt')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'install_prompt' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                📱 App
               </button>
             </div>
 
@@ -2619,6 +2626,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-6xl mx-auto"
               >
                 <AnalyticsDashboard />
+              </motion.div>
+            ) : viewMode === 'install_prompt' ? (
+              <motion.div 
+                key="install_prompt"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <InstallPromptAdmin onClose={onClose} />
               </motion.div>
             ) : (
               <motion.div 
