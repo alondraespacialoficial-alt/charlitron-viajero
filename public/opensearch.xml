@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>Charlitron®</ShortName>
+  <Description>Busca historias en Charlitron® Viajero del Tiempo</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <OutputEncoding>UTF-8</OutputEncoding>
+  
+  <!-- Imagen de 16x16 en base64 (opcional) -->
+  <Image height="16" width="16" type="image/x-icon">data:image/x-icon;base64,</Image>
+  
+  <!-- URL de búsqueda -->
+  <Url type="text/html" template="https://charlitronviajerdeltiempo.com/?buscar={searchTerms}" />
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://charlitronviajerdeltiempo.com/opensearch.xml" />
+  
+  <!-- Resultados sugeridos (opcional) -->
+  <Url type="application/x-suggestions+json" template="https://charlitronviajerdeltiempo.com/api/suggerir?q={searchTerms}" />
+  
+  <!-- Contacto -->
+  <Contact>info@charlitronviajerdeltiempo.com</Contact>
+  
+  <!-- Sindicación -->
+  <SyndicationRight>open</SyndicationRight>
+</OpenSearchDescription>

@@ -163,7 +163,7 @@ const updateArticleSchema = (
       "name": "Charlitron®",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png"
+        "url": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png"
       }
     },
     "articleSection": category,
@@ -224,7 +224,7 @@ export const resetMetaTags = () => {
     'og:description',
     'Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial.'
   );
-  updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774668136806-85dec898-5480-417e-8508-56b1711c785b.png');
+  updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png');
   updateOrCreateMetaTag('og:url', baseUrl);
   updateOrCreateMetaTag('og:type', 'website');
 };

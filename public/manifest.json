@@ -1,0 +1,79 @@
+{
+  "name": "Charlitron® Viajero del Tiempo",
+  "short_name": "Charlitron®",
+  "description": "Plataforma de rescate y restauración de recuerdos históricos usando IA. Revitaliza historias y reconstruye legados.",
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/",
+  "orientation": "portrait-primary",
+  "theme_color": "#5a3a28",
+  "background_color": "#0a0a0a",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    },
+    {
+      "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "sizes": "1080x1440",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["history", "education", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Ver Historias",
+      "short_name": "Historias",
+      "description": "Explora las historias restauradas",
+      "url": "/?section=historias",
+      "icons": [
+        {
+          "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Árbol Genealógico",
+      "short_name": "Genealogía",
+      "description": "Accede al árbol genealógico",
+      "url": "/?section=familytree",
+      "icons": [
+        {
+          "src": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

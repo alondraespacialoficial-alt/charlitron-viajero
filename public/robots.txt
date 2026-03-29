@@ -1,22 +1,41 @@
 # Robots.txt para Charlitron® Viajero del Tiempo
+# Permitir acceso a buscadores y rastreadores
+
 User-agent: *
 Allow: /
 Allow: /src/
+Allow: /public/
 Disallow: /admin
-Disallow: /*.html$
+Disallow: /api/admin
+Disallow: /*.json$
+Disallow: /private/
 
 # Google
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
+Request-rate: 10/1s
+
+# Google Images
+User-agent: Googlebot-Image
+Allow: /
 
 # Bing
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 0
 
+# Pinterest
+User-agent: Pinterestbot
+Allow: /
+
+# Meta/Facebook
+User-agent: facebookexternalhit
+Allow: /
+
 # Sitemap
 Sitemap: https://charlitronviajerdeltiempo.com/sitemap.xml
 
-# Especificar host preferido
+# Host preferido
 Host: charlitronviajerdeltiempo.com
+
