@@ -1506,8 +1506,7 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
       <p className="text-sepia-600 text-sm uppercase tracking-widest font-medium">
         Arte cinematográfico para recuerdos que no merecen el olvido.
       </p>
-      <div className="mt-12 pt-12 border-t border-sepia-900/50 flex flex-col md:flex-row justify-between items-center gap-6">
-        <p className="text-sepia-700 text-xs">© {new Date().getFullYear()} Charlitron®. Todos los derechos reservados.</p>
+      <div className="mt-12 pt-12 border-t border-sepia-900/50 flex flex-col gap-6 items-center">
         <div className="flex gap-8">
           <button 
             onClick={() => onLegalClick('privacy')}
@@ -1522,6 +1521,7 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
             ⚖️ Términos
           </button>
         </div>
+        <p className="text-sepia-700 text-xs">© {new Date().getFullYear()} Charlitron®. Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
