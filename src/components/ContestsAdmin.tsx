@@ -28,6 +28,8 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [useImageUrl, setUseImageUrl] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [winner, setWinner] = useState<ContestWinner | null>(null);
 
@@ -91,6 +93,8 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
       { contest_id: contest.id, answer_text: '', is_correct: false, answer_order: 2 },
       { contest_id: contest.id, answer_text: '', is_correct: false, answer_order: 3 },
     ]);
+    setUseImageUrl(false);
+    setImageUrlInput('');
     fetchContestAnswers(contest.id);
     fetchWinner(contest.id);
   };
@@ -102,6 +106,8 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
       { answer_text: '', is_correct: false, answer_order: 2 },
       { answer_text: '', is_correct: false, answer_order: 3 },
     ]);
+    setUseImageUrl(false);
+    setImageUrlInput('');
     setWinner(null);
   };
 
@@ -363,31 +369,93 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
 
           {/* Imagen */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Imagen *
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Imagen * (Elige un método)
             </label>
+            
+            {/* Preview */}
             {editingContest.image_url ? (
-              <div className="mb-2">
+              <div className="mb-3">
                 <img
                   src={editingContest.image_url}
                   alt="preview"
-                  className="w-full h-40 object-cover rounded-lg"
+                  className="w-full h-40 object-cover rounded-lg border-2 border-amber-200"
                 />
               </div>
             ) : null}
-            <label className="flex items-center justify-center px-4 py-2 border-2 border-dashed border-amber-300 rounded-lg cursor-pointer hover:bg-amber-100 transition-all">
-              <ImageIcon className="w-5 h-5 mr-2 text-amber-600" />
-              <span className="text-amber-700 font-semibold">
-                {isUploading ? 'Subiendo...' : 'Seleccionar Imagen'}
-              </span>
-              <input
-                type="file"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-                className="hidden"
-                accept="image/*"
-              />
-            </label>
+
+            {/* Toggle Buttons */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setUseImageUrl(false);
+                  setImageUrlInput('');
+                }}
+                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  !useImageUrl
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Subir Archivo
+              </button>
+              <button
+                type="button"
+                onClick={() => setUseImageUrl(true)}
+                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  useImageUrl
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Pegar URL
+              </button>
+            </div>
+
+            {/* Subir Archivo */}
+            {!useImageUrl ? (
+              <label className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-amber-300 rounded-lg cursor-pointer hover:bg-amber-100 transition-all">
+                <ImageIcon className="w-5 h-5 mr-2 text-amber-600" />
+                <span className="text-amber-700 font-semibold">
+                  {isUploading ? 'Subiendo...' : 'Seleccionar Imagen'}
+                </span>
+                <input
+                  type="file"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="hidden"
+                  accept="image/*"
+                />
+              </label>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (imageUrlInput.trim()) {
+                      setEditingContest({ ...editingContest, image_url: imageUrlInput.trim() });
+                      setMessage({ type: 'success', text: 'URL de imagen agregada' });
+                    } else {
+                      setMessage({ type: 'error', text: 'Ingresa una URL válida' });
+                    }
+                  }}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg font-semibold transition-all"
+                >
+                  Confirmar URL
+                </button>
+                <p className="text-xs text-gray-500">
+                  Usa URLs de Unsplash, Wikipedia, Dropbox, Google Drive, etc.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Pregunta */}
