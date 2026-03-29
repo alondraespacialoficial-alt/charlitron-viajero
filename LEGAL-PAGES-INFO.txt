@@ -1,0 +1,14 @@
+// Esta página está disponible en dos formas:
+// 1. A través del botón en el footer → abre la página legal inline
+// 2. A través de archivos públicos:
+//    - /PRIVACIDAD.md
+//    - /TERMINOS.md
+
+// Si necesitas acceder directamente a las páginas legales desde el código, 
+// puedes importar el componente LegalPage y usar:
+// <LegalPage type="privacy" onBack={() => {}} />
+// <LegalPage type="terms" onBack={() => {}} />
+
+// Los botones en el footer están configurados en App.tsx línea ~1510:
+// - Botón "Privacidad" → onClick={() => onLegalClick('privacy')}
+// - Botón "Términos" → onClick={() => onLegalClick('terms')}

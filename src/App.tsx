@@ -1511,15 +1511,15 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
         <div className="flex gap-8">
           <button 
             onClick={() => onLegalClick('privacy')}
-            className="text-sepia-700 hover:text-sepia-400 transition-colors text-xs uppercase tracking-widest"
+            className="text-sepia-400 hover:text-sepia-200 hover:bg-sepia-900/50 px-4 py-2 rounded transition-all text-xs uppercase tracking-widest font-medium"
           >
-            Privacidad
+            📋 Privacidad
           </button>
           <button 
             onClick={() => onLegalClick('terms')}
-            className="text-sepia-700 hover:text-sepia-400 transition-colors text-xs uppercase tracking-widest"
+            className="text-sepia-400 hover:text-sepia-200 hover:bg-sepia-900/50 px-4 py-2 rounded transition-all text-xs uppercase tracking-widest font-medium"
           >
-            Términos
+            ⚖️ Términos
           </button>
         </div>
       </div>
