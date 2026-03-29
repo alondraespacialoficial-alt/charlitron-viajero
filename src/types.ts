@@ -78,3 +78,57 @@ export interface Sponsor {
   is_active: boolean;
   created_at?: string;
 }
+
+// ==========================================
+// TIPOS PARA CONCURSOS
+// ==========================================
+export interface Contest {
+  id: string;
+  title: string;
+  description?: string;
+  image_url: string;
+  question: string;
+  is_active: boolean;
+  winner_name?: string;
+  winner_code_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ContestAnswer {
+  id: string;
+  contest_id: string;
+  answer_text: string;
+  is_correct: boolean;
+  answer_order: number;
+  created_at?: string;
+}
+
+export interface ContestParticipation {
+  id: string;
+  contest_id: string;
+  user_session_id: string;
+  selected_answer_id: string;
+  is_correct: boolean;
+  created_at?: string;
+}
+
+export interface ContestCode {
+  id: string;
+  contest_id: string;
+  code: string;
+  is_used: boolean;
+  used_by_session?: string;
+  used_at?: string;
+  created_at?: string;
+}
+
+export interface ContestWinner {
+  id: string;
+  contest_id: string;
+  user_session_id: string;
+  code_id: string;
+  user_name?: string;
+  shared_on_social: boolean;
+  created_at?: string;
+}

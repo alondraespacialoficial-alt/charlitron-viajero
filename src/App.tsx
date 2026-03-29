@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
-import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product } from './types';
+import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
 import { FamilyTreeManager } from './components/FamilyTreeManager';
 import { supabase } from './supabase';
 import { AdminPanel } from './components/AdminPanel';
@@ -16,6 +16,7 @@ import { HistoriansSection } from './components/HistoriansSection';
 import { RestoredGallery } from './components/RestoredGallery';
 import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
+import { ContestsSection } from './components/ContestsSection';
 import { SearchResults } from './components/SearchResults';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
@@ -177,7 +178,7 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, investigationEnabled }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, investigationEnabled }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
@@ -185,6 +186,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onInvestigation: () => void,
   onFamilyTree: () => void,
   onFavorites: () => void,
+  onContests: () => void,
   investigationEnabled: boolean
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -261,6 +263,10 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
                   Investiga tu Historia
                 </button>
               )}
+              <button onClick={onContests} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Concursos
+              </button>
               <a href="#historias" className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium">Historias</a>
               <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-all">Contacto</a>
             </div>
@@ -335,6 +341,13 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
                 Investiga tu Historia
               </button>
             )}
+            <button 
+              onClick={() => { onContests(); setIsMenuOpen(false); }}
+              className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
+            >
+              <Trophy className="w-6 h-6" />
+              Concursos
+            </button>
             <a 
               href="#historias" 
               onClick={() => setIsMenuOpen(false)}
@@ -1521,6 +1534,7 @@ export default function App() {
   const [showGallery, setShowGallery] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showInvestigation, setShowInvestigation] = useState(false);
+  const [showContests, setShowContests] = useState(false);
   const [showFamilyTree, setShowFamilyTree] = useState(false);
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -1681,6 +1695,8 @@ export default function App() {
               setShowShop(true);
             } else if (hash === 'investiga') {
               setShowInvestigation(true);
+            } else if (hash === 'concursos') {
+              setShowContests(true);
             } else if (hash === 'arbol') {
               setShowFamilyTree(true);
             } else if (hash !== 'historias') {
@@ -1720,18 +1736,28 @@ export default function App() {
           setShowGallery(true);
           setShowShop(false);
           setShowInvestigation(false);
+          setShowContests(false);
           setShowFamilyTree(false);
           setSelectedStory(null);
         } else if (hash === 'tienda') {
           setShowShop(true);
           setShowGallery(false);
           setShowInvestigation(false);
+          setShowContests(false);
           setShowFamilyTree(false);
           setSelectedStory(null);
         } else if (hash === 'investiga') {
           setShowInvestigation(true);
           setShowGallery(false);
           setShowShop(false);
+          setShowContests(false);
+          setShowFamilyTree(false);
+          setSelectedStory(null);
+        } else if (hash === 'concursos') {
+          setShowContests(true);
+          setShowGallery(false);
+          setShowShop(false);
+          setShowInvestigation(false);
           setShowFamilyTree(false);
           setSelectedStory(null);
         } else if (hash === 'arbol') {
@@ -1739,6 +1765,7 @@ export default function App() {
           setShowGallery(false);
           setShowShop(false);
           setShowInvestigation(false);
+          setShowContests(false);
           setSelectedStory(null);
         } else if (hash === 'historias') {
           setShowGallery(false);
@@ -1914,13 +1941,14 @@ export default function App() {
   return (
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
       <Navbar 
-        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setIsPresentationMode(false); }} 
+        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}
-        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFavorites={() => setShowFavorites(true)}
+        onContests={() => { setShowContests(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         investigationEnabled={investigationEnabled}
       />
       
@@ -2034,6 +2062,16 @@ export default function App() {
             transition={{ duration: 0.5 }}
           >
             <InvestigationSection onBack={() => setShowInvestigation(false)} />
+          </motion.div>
+        ) : showContests ? (
+          <motion.div
+            key="contests"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ContestsSection />
           </motion.div>
         ) : showFamilyTree ? (
           <motion.div

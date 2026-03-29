@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Plus, 
   Trash2, 
   Edit2, 
@@ -29,11 +29,13 @@ import {
   Scroll,
   ShoppingBag,
   Tag,
-  DollarSign
+  DollarSign,
+  Trophy
 } from 'lucide-react';
-import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor } from '../types';
+import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest } from '../types';
 import { supabase } from '../supabase';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ContestsAdmin } from './ContestsAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -64,7 +66,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'analytics'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics'>('stories');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
@@ -869,6 +871,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'sponsors' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 Sponsors
+              </button>
+              <button 
+                onClick={() => setViewMode('contests')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'contests' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                Concursos
               </button>
               <button 
                 onClick={() => setViewMode('analytics')}
@@ -2592,6 +2600,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
               </motion.form>
+            ) : viewMode === 'contests' ? (
+              <motion.div 
+                key="contests"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <ContestsAdmin />
+              </motion.div>
             ) : viewMode === 'analytics' ? (
               <motion.div 
                 key="analytics"
