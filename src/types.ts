@@ -80,6 +80,19 @@ export interface Sponsor {
 }
 
 // ==========================================
+// TIPOS PARA MURAL DE ENCUENTROS
+// ==========================================
+export interface MuralPhoto {
+  id: string;
+  person_name: string;
+  encounter_text?: string;
+  photo_url: string;
+  is_vertical?: boolean;
+  display_order?: number;
+  created_at?: string;
+}
+
+// ==========================================
 // TIPOS PARA CONCURSOS
 // ==========================================
 export interface Contest {

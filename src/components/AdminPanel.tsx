@@ -32,7 +32,7 @@ import {
   DollarSign,
   Trophy
 } from 'lucide-react';
-import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest } from '../types';
+import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto } from '../types';
 import { supabase } from '../supabase';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
@@ -67,7 +67,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt' | 'mural'>('stories');
+  const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
+  const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
@@ -89,7 +91,65 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     fetchFamilyKeys();
     fetchProducts();
     fetchSponsors();
+    fetchMuralPhotos();
   }, [initialStories]);
+
+  const fetchMuralPhotos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mural_photos')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+      if (!error && data) setMuralPhotos(data);
+    } catch (err) {
+      console.error('Error fetching mural photos:', err);
+    }
+  };
+
+  const handleSaveMuralPhoto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMuralPhoto) return;
+    setIsSaving(true);
+    try {
+      const toSave = {
+        ...editingMuralPhoto,
+        id: editingMuralPhoto.id || crypto.randomUUID(),
+        is_vertical: editingMuralPhoto.is_vertical || false,
+        display_order: editingMuralPhoto.display_order || 0,
+      };
+      const { data, error } = await supabase.from('mural_photos').upsert(toSave).select();
+      if (error) throw error;
+      if (data) {
+        const saved = data[0] as MuralPhoto;
+        const updated = editingMuralPhoto.id
+          ? muralPhotos.map(p => p.id === editingMuralPhoto.id ? saved : p)
+          : [saved, ...muralPhotos];
+        setMuralPhotos(updated);
+        setEditingMuralPhoto(null);
+        setMessage({ type: 'success', text: 'Foto del mural guardada' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: `Error al guardar: ${err.message || 'Desconocido'}` });
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  const handleDeleteMuralPhoto = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta foto del mural?')) return;
+    setIsDeleting(id);
+    try {
+      const { error } = await supabase.from('mural_photos').delete().eq('id', id);
+      if (error) throw error;
+      setMuralPhotos(muralPhotos.filter(p => p.id !== id));
+    } catch (err: any) {
+      setMessage({ type: 'error', text: `Error al eliminar: ${err.message || 'Desconocido'}` });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   const fetchSponsors = async () => {
     try {
@@ -886,6 +946,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 Analíticas
               </button>
               <button 
+                onClick={() => setViewMode('mural')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'mural' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                Mural
+              </button>
+              <button 
                 onClick={() => setViewMode('install_prompt')}
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'install_prompt' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
@@ -1018,6 +1084,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               >
                 <Plus className="w-5 h-5" />
                 Nuevo Patrocinador
+              </button>
+            ) : viewMode === 'mural' ? (
+              <button
+                onClick={() => {
+                  setEditingMuralPhoto({ person_name: '', photo_url: '', encounter_text: '', is_vertical: false, display_order: 0 });
+                  setEditingStory(null);
+                  setEditingHistorian(null);
+                  setEditingRestoredPhoto(null);
+                  setEditingTravelPhoto(null);
+                  setEditingProduct(null);
+                  setEditingSponsor(null);
+                }}
+                className="w-full bg-sepia-500 hover:bg-sepia-400 text-sepia-950 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Nueva Foto Mural
               </button>
             ) : null}
 
@@ -1152,6 +1234,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : viewMode === 'mural' ? (
+                muralPhotos.map(p => (
+                  <div key={p.id} className="group">
+                    <div
+                      className={`p-4 rounded-xl transition-all cursor-pointer flex items-center justify-between ${editingMuralPhoto?.id === p.id ? 'bg-sepia-800/50 border border-sepia-500/30' : 'hover:bg-sepia-900/50 border border-transparent'}`}
+                      onClick={() => setEditingMuralPhoto(p)}
+                    >
+                      <div className="overflow-hidden">
+                        <h4 className="text-sepia-100 font-medium truncate">{p.person_name}</h4>
+                        <p className="text-sepia-500 text-[10px] uppercase tracking-widest">{p.is_vertical ? 'Vertical' : 'Horizontal'}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMuralPhoto(p.id); }}
+                        className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        disabled={isDeleting === p.id}
+                      >
+                        {isDeleting === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
@@ -2607,6 +2710,133 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
               </motion.form>
+            ) : viewMode === 'mural' && editingMuralPhoto ? (
+              <motion.div
+                key="mural-editor"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <form onSubmit={handleSaveMuralPhoto} className="space-y-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-serif text-sepia-100">
+                      {editingMuralPhoto.id ? 'Editar Foto del Mural' : 'Nueva Foto del Mural'}
+                    </h2>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setEditingMuralPhoto(null)}
+                        className="px-6 py-3 rounded-xl font-bold text-sepia-400 hover:bg-sepia-800 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+                      >
+                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="bg-sepia-950/50 border border-sepia-800 rounded-3xl p-8 space-y-6">
+                        <div>
+                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Nombre de la Persona</label>
+                          <input
+                            type="text"
+                            value={editingMuralPhoto.person_name || ''}
+                            onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, person_name: e.target.value })}
+                            className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
+                            placeholder="Ej: María González, Don Roberto..."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Texto del Encuentro</label>
+                          <textarea
+                            rows={3}
+                            value={editingMuralPhoto.encounter_text || ''}
+                            onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, encounter_text: e.target.value })}
+                            className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all resize-none"
+                            placeholder="Ej: Encontrados en el Mercado de San Luis, Enero 2026"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Orden de Aparición</label>
+                          <input
+                            type="number"
+                            value={editingMuralPhoto.display_order ?? 0}
+                            onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, display_order: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
+                            min={0}
+                          />
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setEditingMuralPhoto({ ...editingMuralPhoto, is_vertical: !editingMuralPhoto.is_vertical })}
+                            className={`w-12 h-6 rounded-full transition-all relative ${editingMuralPhoto.is_vertical ? 'bg-sepia-500' : 'bg-sepia-800'}`}
+                          >
+                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${editingMuralPhoto.is_vertical ? 'left-7' : 'left-1'}`} />
+                          </button>
+                          <span className="text-sepia-300 text-sm">Foto vertical (retrato)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="bg-sepia-950/50 border border-sepia-800 rounded-3xl p-8 space-y-6">
+                        <div>
+                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">URL de la Foto</label>
+                          <input
+                            type="url"
+                            value={editingMuralPhoto.photo_url || ''}
+                            onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, photo_url: e.target.value })}
+                            className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
+                            placeholder="https://..."
+                            required
+                          />
+                        </div>
+                        {editingMuralPhoto.photo_url && (
+                          <div>
+                            <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Vista Previa</label>
+                            <div className={`overflow-hidden rounded-2xl border border-sepia-800 bg-sepia-900 ${editingMuralPhoto.is_vertical ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
+                              <img
+                                src={editingMuralPhoto.photo_url}
+                                alt="Preview"
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </motion.div>
+            ) : viewMode === 'mural' ? (
+              <motion.div
+                key="mural-empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="h-full flex flex-col items-center justify-center text-center space-y-6"
+              >
+                <div className="w-24 h-24 bg-sepia-800/30 rounded-full flex items-center justify-center">
+                  <Users className="text-sepia-700 w-10 h-10" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-serif text-sepia-100">Mural de Encuentros</h3>
+                  <p className="text-sepia-500 max-w-xs mx-auto mt-2">
+                    Selecciona una foto o crea una nueva para agregarla al mural.
+                  </p>
+                </div>
+              </motion.div>
             ) : viewMode === 'contests' ? (
               <motion.div 
                 key="contests"
