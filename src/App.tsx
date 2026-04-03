@@ -684,9 +684,14 @@ const Biography = () => (
                     cover: 'https://image2url.com/r2/default/images/1775196639063-785f29e7-3933-4b4f-b083-48efed064b4e.jpg',
                     url: 'https://www.amazon.com.mx/stores/author/B0FKY392PJ',
                   },
+                  {
+                    title: 'El Mapa del Éxito Real: 12 llaves invisibles para construir sin forzar y liderar desde el alma',
+                    cover: 'https://image2url.com/r2/default/images/1775197036814-cd9d796f-b4c4-4036-be6f-db2de668141f.jpg',
+                    url: 'https://www.amazon.com.mx/Mapa-del-%C3%89xito-Real-invisibles/dp/B0FQ32CKS5/ref=tmm_pap_swatch_0',
+                  },
                 ].map((book) => (
                   <motion.a
-                    key={book.title}
+                    key={book.url}
                     href={book.url}
                     target="_blank"
                     rel="noopener noreferrer"
