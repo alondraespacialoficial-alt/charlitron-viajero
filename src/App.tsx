@@ -672,6 +672,59 @@ const Biography = () => (
             <p className="text-sepia-100 font-serif text-2xl italic pt-4 text-center lg:text-left">
               "No vinimos solo a avanzar… Vinimos a recordar."
             </p>
+
+            {/* Books Section */}
+            <div className="pt-10 border-t border-sepia-800">
+              <p className="text-sepia-400 text-sm uppercase tracking-[0.2em] mb-2">Obras Publicadas:</p>
+              <h4 className="text-sepia-100 text-xl font-serif mb-6">Adquiere los libros de Adrián Álvarez Carlos</h4>
+              <div className="flex flex-wrap gap-6">
+                {[
+                  {
+                    title: '¿A qué realmente vengo al mundo?: 12 claves para recordar lo que el sistema quiso que olvidaras',
+                    cover: 'https://image2url.com/r2/default/images/1775196639063-785f29e7-3933-4b4f-b083-48efed064b4e.jpg',
+                    url: 'https://www.amazon.com.mx/stores/author/B0FKY392PJ',
+                  },
+                ].map((book) => (
+                  <motion.a
+                    key={book.title}
+                    href={book.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.04, y: -4 }}
+                    className="group flex flex-col items-center w-36 md:w-44 flex-shrink-0"
+                    title={book.title}
+                  >
+                    <div className="w-full aspect-[2/3] rounded-xl overflow-hidden border-2 border-sepia-700 shadow-xl group-hover:border-sepia-400 transition-all duration-300 relative">
+                      <img
+                        src={book.cover}
+                        alt={book.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                        onContextMenu={(e) => e.preventDefault()}
+                        onDragStart={(e) => e.preventDefault()}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-sepia-950/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                        <span className="text-sepia-100 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" /> Ver en Amazon
+                        </span>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sepia-300 text-xs font-medium text-center leading-snug line-clamp-3 group-hover:text-sepia-100 transition-colors">
+                      {book.title}
+                    </p>
+                  </motion.a>
+                ))}
+              </div>
+              <a
+                href="https://www.amazon.com.mx/stores/author/B0FKY392PJ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-6 text-sepia-400 hover:text-sepia-100 transition-colors text-xs uppercase tracking-widest font-bold border border-sepia-700 hover:border-sepia-400 px-5 py-2.5 rounded-full"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Ver todos mis libros en Amazon
+              </a>
+            </div>
           </div>
         </motion.div>
       </div>
