@@ -22,6 +22,7 @@ export const ContestsSection: React.FC = () => {
     return sid;
   });
   const [hasParticipated, setHasParticipated] = useState(false);
+  const [userName, setUserName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -133,6 +134,10 @@ export const ContestsSection: React.FC = () => {
       setError('Selecciona una respuesta');
       return;
     }
+    if (!userName.trim()) {
+      setError('Ingresa tu nombre para participar');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -187,7 +192,7 @@ export const ContestsSection: React.FC = () => {
               contest_id: selectedContest.id,
               user_session_id: userSessionId,
               code_id: codeData[0].id,
-              user_name: 'Anónimo',
+              user_name: userName.trim(),
             });
         }
       } else {
@@ -316,24 +321,53 @@ export const ContestsSection: React.FC = () => {
                 {/* Pregunta */}
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">{selectedContest.question}</h2>
 
+                {/* Concurso bloqueado - ya tiene ganador */}
+                {winner && !generatedCode && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-6 mb-4 text-center"
+                  >
+                    <Trophy className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                    <p className="text-xl font-bold text-amber-800 mb-1">¡Este concurso ya tiene ganador!</p>
+                    <p className="text-gray-600 text-sm">Sigue participando en otro viaje 🚀</p>
+                  </motion.div>
+                )}
+
                 {/* Opciones de Respuesta */}
-                {!hasParticipated && !generatedCode ? (
-                  <div className="space-y-3 mb-6">
-                    {answers.map((answer) => (
-                      <motion.button
-                        key={answer.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedAnswer(answer.id)}
-                        className={`w-full p-4 rounded-xl border-2 font-semibold transition-all ${
-                          selectedAnswer === answer.id
-                            ? 'border-amber-600 bg-amber-50 text-amber-900'
-                            : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-amber-300'
-                        }`}
-                      >
-                        {answer.answer_text}
-                      </motion.button>
-                    ))}
+                {!hasParticipated && !generatedCode && !winner ? (
+                  <div className="mb-6">
+                    {/* Nombre del participante */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Tu nombre *
+                      </label>
+                      <input
+                        type="text"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-800"
+                        placeholder="¿Cómo te llamas?"
+                        maxLength={50}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      {answers.map((answer) => (
+                        <motion.button
+                          key={answer.id}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setSelectedAnswer(answer.id)}
+                          className={`w-full p-4 rounded-xl border-2 font-semibold transition-all ${
+                            selectedAnswer === answer.id
+                              ? 'border-amber-600 bg-amber-50 text-amber-900'
+                              : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-amber-300'
+                          }`}
+                        >
+                          {answer.answer_text}
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 
@@ -356,24 +390,26 @@ export const ContestsSection: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 mb-6"
                   >
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Check className="w-6 h-6 text-green-600" />
-                      <span className="text-lg font-bold text-green-700">¡CORRECTO!</span>
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <Trophy className="w-7 h-7 text-amber-500" />
+                      <span className="text-xl font-bold text-green-700">¡GANASTE, {userName || 'Viajero'}!</span>
                     </div>
-                    <p className="text-center text-gray-600 mb-4">Tu código ganador:</p>
+                    <p className="text-center text-gray-600 mb-3">Tu código ganador:</p>
                     <div className="bg-white rounded-lg p-4 border-2 border-green-300 mb-4">
-                      <code className="text-2xl font-mono font-bold text-green-700 text-center block">
+                      <code className="text-2xl font-mono font-bold text-green-700 text-center block break-all">
                         {generatedCode.code}
                       </code>
                     </div>
-                    <p className="text-center text-sm text-gray-600 mb-4">
-                      📱 Comparte este código en los comentarios de la publicación en redes
-                    </p>
+                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-center">
+                      <p className="text-amber-800 font-semibold text-sm">
+                        👇 Copia este código y súbelo a los comentarios del video participante para reclamar tu premio
+                      </p>
+                    </div>
                   </motion.div>
                 )}
 
                 {/* Botones de Acción */}
-                {!hasParticipated && !generatedCode && (
+                {!hasParticipated && !generatedCode && !winner && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
