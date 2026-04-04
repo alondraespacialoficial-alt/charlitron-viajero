@@ -22,6 +22,7 @@ export const ContestsSection: React.FC = () => {
     return sid;
   });
   const [hasParticipated, setHasParticipated] = useState(false);
+  const [participatedWrong, setParticipatedWrong] = useState(false);
   const [userName, setUserName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +82,7 @@ export const ContestsSection: React.FC = () => {
       if (error) throw error;
       if (data && data.length > 0) {
         setHasParticipated(true);
-        // Si ya participó, mostrar si ganó
+        // Si ya participó, mostrar si ganó o falló
         if (data[0].is_correct) {
           const codeData = await supabase
             .from('contest_codes')
@@ -93,6 +94,8 @@ export const ContestsSection: React.FC = () => {
           if (codeData.data && codeData.data.length > 0) {
             setGeneratedCode(codeData.data[0]);
           }
+        } else {
+          setParticipatedWrong(true);
         }
       }
     } catch (err) {
@@ -124,6 +127,7 @@ export const ContestsSection: React.FC = () => {
     setSelectedAnswer(null);
     setGeneratedCode(null);
     setHasParticipated(false);
+    setParticipatedWrong(false);
     setError(null);
     fetchAnswers(contest.id);
     checkWinner(contest.id);
@@ -196,7 +200,7 @@ export const ContestsSection: React.FC = () => {
             });
         }
       } else {
-        setError('❌ Respuesta incorrecta. Intenta en el siguiente concurso.');
+        setParticipatedWrong(true);
         setHasParticipated(true);
       }
     } catch (err) {
@@ -331,6 +335,19 @@ export const ContestsSection: React.FC = () => {
                     <Trophy className="w-12 h-12 text-amber-500 mx-auto mb-3" />
                     <p className="text-xl font-bold text-amber-800 mb-1">¡Este concurso ya tiene ganador!</p>
                     <p className="text-gray-600 text-sm">Sigue participando en otro viaje 🚀</p>
+                  </motion.div>
+                )}
+
+                {/* Ya participó con respuesta incorrecta */}
+                {hasParticipated && participatedWrong && !generatedCode && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-6 mb-4 text-center"
+                  >
+                    <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                    <p className="text-xl font-bold text-red-700 mb-1">Respuesta incorrecta</p>
+                    <p className="text-gray-600 text-sm">Solo hay una oportunidad por concurso. ¡Mucha suerte en el próximo! 🚀</p>
                   </motion.div>
                 )}
 
