@@ -297,11 +297,11 @@ export const ContestsSection: React.FC = () => {
               className="bg-white rounded-2xl shadow-xl overflow-hidden"
             >
               {/* Imagen del Concurso */}
-              <div className="relative h-64 md:h-80 overflow-hidden">
+              <div className="relative w-full overflow-hidden bg-black" style={{aspectRatio: '16/9'}}>
                 <img
                   src={selectedContest.image_url}
                   alt={selectedContest.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
                 {winner?.user_name && (
                   <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-1">
@@ -350,7 +350,7 @@ export const ContestsSection: React.FC = () => {
                 )}
 
                 {/* Código Generado */}
-                {generatedCode && !hasParticipated && (
+                {generatedCode && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

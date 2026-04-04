@@ -149,7 +149,14 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
       return;
     }
 
-    if (!editingContest.image_url) {
+    // Si usaban URL pero no dieron clic a "Confirmar URL", aplicar automáticamente
+    let finalContest = editingContest;
+    if (useImageUrl && imageUrlInput.trim() && !editingContest.image_url) {
+      finalContest = { ...editingContest, image_url: imageUrlInput.trim() };
+      setEditingContest(finalContest);
+    }
+
+    if (!finalContest.image_url) {
       setMessage({ type: 'error', text: 'Debes agregar una imagen al concurso (sube un archivo o pega una URL)' });
       return;
     }
@@ -165,11 +172,11 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
     try {
       // Guardar concurso
       const contestData = {
-        title: editingContest.title,
-        description: editingContest.description,
-        image_url: editingContest.image_url,
-        question: editingContest.question,
-        is_active: editingContest.is_active,
+        title: finalContest.title,
+        description: finalContest.description,
+        image_url: finalContest.image_url,
+        question: finalContest.question,
+        is_active: finalContest.is_active,
         updated_at: new Date().toISOString(),
       };
 
