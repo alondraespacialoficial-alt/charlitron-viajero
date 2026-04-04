@@ -149,6 +149,11 @@ export const ContestsAdmin: React.FC<ContestsAdminProps> = ({ onClose }) => {
       return;
     }
 
+    if (!editingContest.image_url) {
+      setMessage({ type: 'error', text: 'Debes agregar una imagen al concurso (sube un archivo o pega una URL)' });
+      return;
+    }
+
     // Validar que hay una respuesta correcta
     const hasCorrectAnswer = editingAnswers.some((a) => a.is_correct);
     if (!hasCorrectAnswer) {
