@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Maximize2, X, Download, Camera, Calendar, MapPin, User, Info } from 'lucide-react';
+import { ArrowLeft, Maximize2, X, Download, Camera, Calendar, MapPin, User, Info, RotateCcw, Lock, Unlock } from 'lucide-react';
 import { supabase } from '../supabase';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -15,6 +15,8 @@ interface FamilyMember {
   birth_date?: string;
   death_date?: string;
   bio?: string;
+  pos_x?: number | null;
+  pos_y?: number | null;
 }
 
 interface FamilyTreeViewProps {
@@ -25,9 +27,11 @@ interface FamilyTreeViewProps {
 export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const simulationRef = useRef<d3.Simulation<any, any> | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
+  const [pinned, setPinned] = useState(true);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -102,11 +106,23 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
         target: m.id
       }));
 
-    const simulation = d3.forceSimulation(members as any)
+    // Inicializar nodos con posiciones guardadas si existen
+    const nodesWithPos = members.map((m: any) => ({
+      ...m,
+      x: m.pos_x ?? undefined,
+      y: m.pos_y ?? undefined,
+      fx: m.pos_x != null ? m.pos_x : null,
+      fy: m.pos_y != null ? m.pos_y : null,
+    }));
+
+    const simulation = d3.forceSimulation(nodesWithPos as any)
       .force("link", d3.forceLink(links).id((d: any) => d.id).distance(150))
       .force("charge", d3.forceManyBody().strength(-1000))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(80));
+      .force("collision", d3.forceCollide().radius(80))
+      .alphaDecay(0.05);
+
+    simulationRef.current = simulation;
 
     // Links (Branches)
     const link = g.append("g")
@@ -219,11 +235,19 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
       event.subject.fy = event.y;
     }
 
-    function dragended(event: any) {
+    async function dragended(event: any) {
       if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
+      // Mantener fx/fy para que el nodo quede fijo donde lo soltaste
       d3.select(this).style("cursor", "grab");
+      // Guardar posición en Supabase
+      try {
+        await supabase
+          .from('family_members')
+          .update({ pos_x: event.subject.fx, pos_y: event.subject.fy })
+          .eq('id', event.subject.id);
+      } catch (e) {
+        console.error('Error saving position:', e);
+      }
     }
 
   }, [members]);
@@ -323,12 +347,40 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
             <p className="text-sepia-500 text-[10px] uppercase tracking-[0.3em] font-bold mt-1">Charlitron — El Viajero del Tiempo</p>
           </div>
 
-          <button 
-            onClick={handleDownload}
-            className="flex items-center gap-2 bg-sepia-950 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-sepia-800 transition-all shadow-xl"
-          >
-            <Download className="w-4 h-4" /> Descargar PDF
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                if (!simulationRef.current) return;
+                const sim = simulationRef.current;
+                const ids = (sim.nodes() as any[]).map((n: any) => n.id);
+                // Liberar pines visuales
+                (sim.nodes() as any[]).forEach((n: any) => {
+                  n.fx = null;
+                  n.fy = null;
+                });
+                sim.alpha(0.8).restart();
+                // Limpiar posiciones guardadas en Supabase
+                try {
+                  await supabase
+                    .from('family_members')
+                    .update({ pos_x: null, pos_y: null })
+                    .in('id', ids);
+                } catch (e) {
+                  console.error('Error resetting positions:', e);
+                }
+              }}
+              title="Resetear posiciones"
+              className="flex items-center gap-2 border border-sepia-300 text-sepia-700 px-5 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-sepia-100 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset Layout
+            </button>
+            <button 
+              onClick={handleDownload}
+              className="flex items-center gap-2 bg-sepia-950 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-sepia-800 transition-all shadow-xl"
+            >
+              <Download className="w-4 h-4" /> Descargar PDF
+            </button>
+          </div>
         </div>
 
         <div 
@@ -342,6 +394,11 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
           ) : (
             <svg ref={svgRef} className="max-w-none"></svg>
           )}
+
+          {/* Drag hint */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-sepia-950/70 text-white text-[9px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full pointer-events-none opacity-60">
+            Arrastra las burbujas para acomodarlas · Click para ver detalles
+          </div>
 
           {/* Watermark */}
           <div className="absolute bottom-8 right-12 opacity-10 pointer-events-none no-select">
