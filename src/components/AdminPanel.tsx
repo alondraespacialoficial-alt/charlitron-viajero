@@ -430,6 +430,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const deleteFamilyKey = async (id: string) => {
     if (!window.confirm('¿Eliminar esta clave de acceso?')) return;
     try {
+      // Desvincular árboles que usen esta clave antes de borrarla
+      await supabase
+        .from('family_trees')
+        .update({ access_key_id: null })
+        .eq('access_key_id', id);
+
       const { error } = await supabase
         .from('access_keys')
         .delete()

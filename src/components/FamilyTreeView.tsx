@@ -253,77 +253,78 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
   }, [members]);
 
   const handleDownload = async () => {
-    if (!containerRef.current) return;
-    
+    if (!svgRef.current) return;
+
     try {
-      // Esperar a que todas las imágenes estén cargadas en el SVG
-      await new Promise((resolve) => {
-        setTimeout(resolve, 1000);
-      });
+      const svgEl = svgRef.current;
+      const bbox = svgEl.getBBox();
+      const padding = 60;
+      const svgW = bbox.width + padding * 2;
+      const svgH = bbox.height + padding * 2;
 
-      // Actualizar todos los xlink:href a href para html2canvas
-      const svg = containerRef.current.querySelector('svg');
-      if (svg) {
-        const images = svg.querySelectorAll('image');
-        images.forEach((img) => {
-          const href = img.getAttribute('xlink:href');
-          if (href) {
-            img.setAttribute('href', href);
-            img.removeAttribute('xlink:href');
-          }
-        });
-      }
+      // Clonar el SVG y ajustar viewBox para que quepan todos los nodos
+      const clone = svgEl.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      clone.setAttribute('width', String(svgW));
+      clone.setAttribute('height', String(svgH));
+      clone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${svgW} ${svgH}`);
 
-      const canvas = await html2canvas(containerRef.current, {
-        backgroundColor: '#fdfaf6',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        imageTimeout: 10000,
-        onclone: (clonedDoc) => {
-          const clonedSvg = clonedDoc.querySelector('svg');
-          if (clonedSvg) {
-            clonedSvg.style.overflow = 'visible';
-            // Asegurar que las imágenes en el clon también tienen href correcto
-            const clonedImages = clonedSvg.querySelectorAll('image');
-            clonedImages.forEach((img) => {
-              const href = img.getAttribute('href') || img.getAttribute('xlink:href');
-              if (href) {
-                img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
-                img.setAttribute('href', href);
-              }
-            });
-          }
-        }
-      });
+      // Descartar el <g> de transform zoom para que no quede cortado
+      const mainG = clone.querySelector('g');
+      if (mainG) mainG.removeAttribute('transform');
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('l', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgProps = pdf.getImageProperties(imgData);
-      const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
-      const width = imgProps.width * ratio;
-      const height = imgProps.height * ratio;
-      
-      const x = (pdfWidth - width) / 2;
-      const y = (pdfHeight - height) / 2;
+      // Fondo blanco-vintage
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('x', String(bbox.x - padding));
+      bg.setAttribute('y', String(bbox.y - padding));
+      bg.setAttribute('width', String(svgW));
+      bg.setAttribute('height', String(svgH));
+      bg.setAttribute('fill', '#fdfaf6');
+      clone.insertBefore(bg, clone.firstChild);
 
-      pdf.addImage(imgData, 'PNG', x, y, width, height);
-      pdf.save('arbol-genealogico-charlitron.pdf');
+      // Watermark
+      const wm = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      wm.setAttribute('x', String(bbox.x + bbox.width - padding));
+      wm.setAttribute('y', String(bbox.y + bbox.height + padding - 10));
+      wm.setAttribute('text-anchor', 'end');
+      wm.setAttribute('font-family', 'serif');
+      wm.setAttribute('font-size', '28');
+      wm.setAttribute('fill', '#342216');
+      wm.setAttribute('opacity', '0.08');
+      wm.textContent = 'Charlitron® — El Viajero del Tiempo';
+      clone.appendChild(wm);
 
-      // Restaurar xlink:href después de descargar
-      if (svg) {
-        const images = svg.querySelectorAll('image');
-        images.forEach((img) => {
-          const href = img.getAttribute('href');
-          if (href) {
-            img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
-          }
-        });
-      }
+      const svgData = new XMLSerializer().serializeToString(clone);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = svgW * scale;
+        canvas.height = svgH * scale;
+        const ctx = canvas.getContext('2d')!;
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = pdf.internal.pageSize.getHeight();
+        const ratio = Math.min(pdfW / canvas.width, pdfH / canvas.height);
+        const w = canvas.width * ratio;
+        const h = canvas.height * ratio;
+        pdf.addImage(imgData, 'PNG', (pdfW - w) / 2, (pdfH - h) / 2, w, h);
+        pdf.save('arbol-genealogico-charlitron.pdf');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        alert('Error al generar el PDF. Inténtalo de nuevo.');
+      };
+      img.src = url;
     } catch (err) {
       console.error('Error generating PDF:', err);
       alert('Hubo un error al generar el PDF. Inténtalo de nuevo.');
