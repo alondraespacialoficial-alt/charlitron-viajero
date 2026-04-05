@@ -137,7 +137,7 @@ export const FamilyTreeView = ({ treeId, onBack }: FamilyTreeViewProps) => {
     // Nodes (Family Members)
     const node = g.append("g")
       .selectAll(".node")
-      .data(members)
+      .data(nodesWithPos)
       .join("g")
       .attr("class", "node")
       .style("cursor", "grab")
