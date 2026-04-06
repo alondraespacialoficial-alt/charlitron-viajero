@@ -2204,6 +2204,20 @@ export default function App() {
               heroBgUrl={heroBgUrl}
             />
             <About />
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="w-full overflow-hidden"
+            >
+              <img
+                src="https://image2url.com/r2/default/images/1775456732330-72e615ee-61fa-4811-8409-a452b2ec805f.png"
+                alt="Banner Charlitron® Viajero del Tiempo"
+                className="w-full h-auto object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </motion.section>
             <Biography />
             <HistoriansSection historians={historians} />
             <TravelPhotosSection photos={travelPhotos} />
