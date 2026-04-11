@@ -1786,6 +1786,8 @@ export default function App() {
               setShowContests(true);
             } else if (hash === 'mural') {
               setShowMural(true);
+            } else if (hash === 'colaboradores') {
+              setShowCollaborators(true);
             } else if (hash === 'arbol') {
               setShowFamilyTree(true);
             } else if (hash !== 'historias') {
@@ -1852,6 +1854,16 @@ export default function App() {
           setSelectedStory(null);
         } else if (hash === 'mural') {
           setShowMural(true);
+          setShowGallery(false);
+          setShowShop(false);
+          setShowInvestigation(false);
+          setShowContests(false);
+          setShowFamilyTree(false);
+          setShowCollaborators(false);
+          setSelectedStory(null);
+        } else if (hash === 'colaboradores') {
+          setShowCollaborators(true);
+          setShowMural(false);
           setShowGallery(false);
           setShowShop(false);
           setShowInvestigation(false);
@@ -1977,11 +1989,13 @@ export default function App() {
         window.location.hash = '#arbol';
       } else if (showMural) {
         window.location.hash = '#mural';
+      } else if (showCollaborators) {
+        window.location.hash = '#colaboradores';
       } else {
         window.location.hash = '';
       }
     }
-  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showFamilyTree, showMural]);
+  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showFamilyTree, showMural, showCollaborators]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
