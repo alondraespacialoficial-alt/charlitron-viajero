@@ -19,6 +19,7 @@ import { ShopSection } from './components/ShopSection';
 import { ContestsSection } from './components/ContestsSection';
 import { MuralSection } from './components/MuralSection';
 import { SearchResults } from './components/SearchResults';
+import { CollaboratorsSection } from './components/CollaboratorsSection';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { InstallPrompt } from './components/InstallPrompt';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
@@ -180,7 +181,7 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onMural, investigationEnabled }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onMural, onCollaborators, investigationEnabled }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
@@ -190,6 +191,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onFavorites: () => void,
   onContests: () => void,
   onMural: () => void,
+  onCollaborators: () => void,
   investigationEnabled: boolean
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -273,6 +275,10 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               <button onClick={onMural} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <Frame className="w-4 h-4" />
                 Mural
+              </button>
+              <button onClick={onCollaborators} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Colaboradores
               </button>
               <a href="#historias" className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium">Historias</a>
               <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-all">Contacto</a>
@@ -361,6 +367,13 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             >
               <Frame className="w-6 h-6" />
               Mural
+            </button>
+            <button 
+              onClick={() => { onCollaborators(); setIsMenuOpen(false); }}
+              className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
+            >
+              <Users className="w-6 h-6" />
+              Colaboradores
             </button>
             <a 
               href="#historias" 
@@ -1608,6 +1621,7 @@ export default function App() {
   const [showInvestigation, setShowInvestigation] = useState(false);
   const [showContests, setShowContests] = useState(false);
   const [showMural, setShowMural] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
   const [showFamilyTree, setShowFamilyTree] = useState(false);
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -2033,15 +2047,16 @@ export default function App() {
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
       <InstallPrompt />
       <Navbar 
-        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setIsPresentationMode(false); }} 
+        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}
-        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowMural(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFavorites={() => setShowFavorites(true)}
-        onContests={() => { setShowContests(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onContests={() => { setShowContests(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         investigationEnabled={investigationEnabled}
       />
       
@@ -2175,6 +2190,16 @@ export default function App() {
             transition={{ duration: 0.5 }}
           >
             <MuralSection onBack={() => setShowMural(false)} />
+          </motion.div>
+        ) : showCollaborators ? (
+          <motion.div
+            key="collaborators"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+          >
+            <CollaboratorsSection onBack={() => setShowCollaborators(false)} />
           </motion.div>
         ) : showFamilyTree ? (
           <motion.div

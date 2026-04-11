@@ -145,3 +145,38 @@ export interface ContestWinner {
   shared_on_social: boolean;
   created_at?: string;
 }
+
+// ==========================================
+// TIPOS PARA COLABORADORES
+// ==========================================
+export interface Collaborator {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface PendingStory {
+  id: string;
+  collaborator_id?: string;
+  collaborator_name?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  title: string;
+  description?: string;
+  full_narrative?: string;
+  year?: string;
+  category?: string;
+  thumbnail?: string;
+  video_url?: string;
+  audio_url?: string;
+  maps_url?: string;
+  gallery?: string[];
+  is_private?: boolean;
+  is_video_vertical?: boolean;
+  expires_at?: string;
+  created_at?: string;
+  reviewed_at?: string;
+}

@@ -30,13 +30,15 @@ import {
   ShoppingBag,
   Tag,
   DollarSign,
-  Trophy
+  Trophy,
+  UserCheck
 } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto } from '../types';
 import { supabase } from '../supabase';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
 import { InstallPromptAdmin } from './InstallPromptAdmin';
+import { CollaboratorsAdmin } from './CollaboratorsAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -67,7 +69,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt' | 'mural'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators'>('stories');
   const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
   const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -962,6 +964,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'install_prompt' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 📱 App
+              </button>
+              <button 
+                onClick={() => setViewMode('collaborators')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'collaborators' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                👥 Colab.
               </button>
             </div>
 
@@ -2872,6 +2880,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-6xl mx-auto"
               >
                 <InstallPromptAdmin onClose={onClose} />
+              </motion.div>
+            ) : viewMode === 'collaborators' ? (
+              <motion.div 
+                key="collaborators"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <CollaboratorsAdmin onStoriesUpdate={onStoriesUpdate} />
               </motion.div>
             ) : (
               <motion.div 
