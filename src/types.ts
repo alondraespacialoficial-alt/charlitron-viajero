@@ -162,6 +162,9 @@ export interface PendingStory {
   id: string;
   collaborator_id?: string;
   collaborator_name?: string;
+  historian_id?: string;
+  historian_name?: string;
+  historian_photo?: string;
   status: 'pending' | 'approved' | 'rejected';
   admin_notes?: string;
   title: string;

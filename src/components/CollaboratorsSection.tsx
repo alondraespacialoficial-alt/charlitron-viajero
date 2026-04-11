@@ -15,9 +15,10 @@ import {
   ChevronLeft,
   Upload,
   LogOut,
+  User,
 } from 'lucide-react';
 import { supabase } from '../supabase';
-import { Collaborator, PendingStory } from '../types';
+import { Collaborator, PendingStory, Historian } from '../types';
 
 interface CollaboratorsSectionProps {
   onBack: () => void;
@@ -38,6 +39,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
   const [loginError, setLoginError] = useState('');
 
   const [pendingStories, setPendingStories] = useState<PendingStory[]>([]);
+  const [historians, setHistorians] = useState<Historian[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -56,6 +58,9 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
     gallery: [],
     is_private: false,
     is_video_vertical: false,
+    historian_id: '',
+    historian_name: '',
+    historian_photo: '',
   });
   const [newGalleryUrl, setNewGalleryUrl] = useState('');
 
@@ -83,6 +88,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
     if (data) {
       setCollaborator(data);
       fetchMyStories(data.id);
+      fetchHistorians();
     } else {
       localStorage.removeItem('collaborator_session');
     }
@@ -109,6 +115,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
       setCollaborator(data);
       localStorage.setItem('collaborator_session', JSON.stringify(data));
       fetchMyStories(data.id);
+      fetchHistorians();
     } catch {
       setLoginError('Error al verificar el código. Intenta de nuevo.');
     } finally {
@@ -131,6 +138,14 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
       .eq('collaborator_id', collaboratorId)
       .order('created_at', { ascending: false });
     if (data) setPendingStories(data);
+  };
+
+  const fetchHistorians = async () => {
+    const { data } = await supabase
+      .from('historians')
+      .select('id, name, photo, specialty')
+      .order('created_at', { ascending: true });
+    if (data) setHistorians(data);
   };
 
   const handleImageUpload = async (file: File): Promise<string | null> => {
@@ -240,6 +255,9 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
       gallery: [],
       is_private: false,
       is_video_vertical: false,
+      historian_id: '',
+      historian_name: '',
+      historian_photo: '',
     });
     setNewGalleryUrl('');
   };
@@ -388,6 +406,73 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* ── Selector de Guardián de la Historia ── */}
+                {historians.length > 0 && (
+                  <div>
+                    <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-3">
+                      <User className="w-3 h-3 inline mr-1" /> ¿Quién escribió esta historia?
+                      <span className="ml-2 text-sepia-700 normal-case tracking-normal font-normal">(opcional)</span>
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {/* Opción "Ninguno" */}
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, historian_id: '', historian_name: '', historian_photo: '' }))}
+                        className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-left ${
+                          !form.historian_id
+                            ? 'border-sepia-500 bg-sepia-800'
+                            : 'border-sepia-800 bg-sepia-950 hover:border-sepia-700'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-sepia-800 border-2 border-sepia-700 flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-sepia-500" />
+                        </div>
+                        <span className="text-sepia-400 text-xs text-center leading-tight">Sin asignar</span>
+                      </button>
+
+                      {historians.map(h => (
+                        <button
+                          key={h.id}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, historian_id: h.id, historian_name: h.name, historian_photo: h.photo }))}
+                          className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
+                            form.historian_id === h.id
+                              ? 'border-sepia-400 bg-sepia-800 shadow-lg'
+                              : 'border-sepia-800 bg-sepia-950 hover:border-sepia-700'
+                          }`}
+                        >
+                          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-sepia-700 flex-shrink-0">
+                            {h.photo ? (
+                              <img src={h.photo} alt={h.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-full h-full bg-sepia-800 flex items-center justify-center">
+                                <User className="w-5 h-5 text-sepia-500" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <p className={`text-xs font-bold leading-tight line-clamp-2 ${form.historian_id === h.id ? 'text-sepia-100' : 'text-sepia-300'}`}>
+                              {h.name}
+                            </p>
+                            {h.specialty && (
+                              <p className="text-sepia-600 text-[10px] mt-0.5 line-clamp-1">{h.specialty}</p>
+                            )}
+                          </div>
+                          {form.historian_id === h.id && (
+                            <CheckCircle2 className="w-4 h-4 text-sepia-400 flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    {form.historian_id && (
+                      <p className="mt-2 text-sepia-500 text-xs">
+                        ✓ Historia atribuida a <span className="text-sepia-300 font-bold">{form.historian_name}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left column */}
                   <div className="space-y-4">

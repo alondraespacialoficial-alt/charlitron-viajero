@@ -482,6 +482,20 @@ export const CollaboratorsAdmin: React.FC<CollaboratorsAdminProps> = ({ onStorie
                                 {' · '}{story.category} · {story.year}
                                 {' · '}{new Date(story.created_at!).toLocaleDateString('es-MX')}
                               </p>
+                              {story.historian_id && (
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  {story.historian_photo && (
+                                    <img
+                                      src={story.historian_photo}
+                                      alt={story.historian_name}
+                                      className="w-5 h-5 rounded-full object-cover border border-sepia-700"
+                                    />
+                                  )}
+                                  <span className="text-sepia-500 text-xs">
+                                    Guardián: <span className="text-amber-400 font-bold">{story.historian_name}</span>
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <span className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border flex-shrink-0 ${cfg.bg} ${cfg.color}`}>
                               <StatusIcon className="w-3.5 h-3.5" />

@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS pending_stories (
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'approved', 'rejected')),
   admin_notes TEXT,
-  -- Campos de historia (igual que stories)
   title TEXT NOT NULL,
   description TEXT,
   full_narrative TEXT,
@@ -35,9 +34,11 @@ CREATE TABLE IF NOT EXISTS pending_stories (
   is_private BOOLEAN DEFAULT false,
   is_video_vertical BOOLEAN DEFAULT false,
   expires_at TIMESTAMP WITH TIME ZONE,
-  -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  reviewed_at TIMESTAMP WITH TIME ZONE
+  reviewed_at TIMESTAMP WITH TIME ZONE,
+  historian_id UUID,
+  historian_name TEXT,
+  historian_photo TEXT
 );
 
 -- ============================================================
@@ -47,53 +48,39 @@ CREATE TABLE IF NOT EXISTS pending_stories (
 ALTER TABLE collaborators ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pending_stories ENABLE ROW LEVEL SECURITY;
 
--- Collaborators: solo lectura pública (para verificar código de acceso)
--- El admin gestiona todo mediante service_role o anon con políticas abiertas.
--- NOTA: Ajusta según tu setup (si usas service_role key en el admin, 
--- puedes hacer las policies más restrictivas).
+-- Políticas con DROP IF EXISTS para evitar el error de duplicado
+DROP POLICY IF EXISTS "collaborators_public_read"   ON collaborators;
+DROP POLICY IF EXISTS "collaborators_public_insert" ON collaborators;
+DROP POLICY IF EXISTS "collaborators_public_update" ON collaborators;
+DROP POLICY IF EXISTS "collaborators_public_delete" ON collaborators;
+DROP POLICY IF EXISTS "pending_stories_public_read"   ON pending_stories;
+DROP POLICY IF EXISTS "pending_stories_public_insert" ON pending_stories;
+DROP POLICY IF EXISTS "pending_stories_public_update" ON pending_stories;
+DROP POLICY IF EXISTS "pending_stories_public_delete" ON pending_stories;
 
--- Política: cualquiera puede leer (para validar código en el portal)
-CREATE POLICY "collaborators_public_read"
-  ON collaborators FOR SELECT
-  USING (true);
+CREATE POLICY "collaborators_public_read"   ON collaborators FOR SELECT USING (true);
+CREATE POLICY "collaborators_public_insert" ON collaborators FOR INSERT WITH CHECK (true);
+CREATE POLICY "collaborators_public_update" ON collaborators FOR UPDATE USING (true);
+CREATE POLICY "collaborators_public_delete" ON collaborators FOR DELETE USING (true);
 
--- Política: solo inserción/actualización/eliminación sin restricción
--- (el panel admin usa la misma anon key con estas policies abiertas)
-CREATE POLICY "collaborators_public_insert"
-  ON collaborators FOR INSERT
-  WITH CHECK (true);
-
-CREATE POLICY "collaborators_public_update"
-  ON collaborators FOR UPDATE
-  USING (true);
-
-CREATE POLICY "collaborators_public_delete"
-  ON collaborators FOR DELETE
-  USING (true);
-
--- Pending stories: lectura y escritura abierta
--- (el colaborador necesita leer sus propias historias y el admin todas)
-CREATE POLICY "pending_stories_public_read"
-  ON pending_stories FOR SELECT
-  USING (true);
-
-CREATE POLICY "pending_stories_public_insert"
-  ON pending_stories FOR INSERT
-  WITH CHECK (true);
-
-CREATE POLICY "pending_stories_public_update"
-  ON pending_stories FOR UPDATE
-  USING (true);
-
-CREATE POLICY "pending_stories_public_delete"
-  ON pending_stories FOR DELETE
-  USING (true);
+CREATE POLICY "pending_stories_public_read"   ON pending_stories FOR SELECT USING (true);
+CREATE POLICY "pending_stories_public_insert" ON pending_stories FOR INSERT WITH CHECK (true);
+CREATE POLICY "pending_stories_public_update" ON pending_stories FOR UPDATE USING (true);
+CREATE POLICY "pending_stories_public_delete" ON pending_stories FOR DELETE USING (true);
 
 -- ============================================================
--- ÍNDICES para rendimiento
+-- ÍNDICES
 -- ============================================================
-CREATE INDEX IF NOT EXISTS idx_collaborators_code ON collaborators(code);
-CREATE INDEX IF NOT EXISTS idx_collaborators_is_active ON collaborators(is_active);
+CREATE INDEX IF NOT EXISTS idx_collaborators_code        ON collaborators(code);
+CREATE INDEX IF NOT EXISTS idx_collaborators_is_active   ON collaborators(is_active);
 CREATE INDEX IF NOT EXISTS idx_pending_stories_collaborator ON pending_stories(collaborator_id);
-CREATE INDEX IF NOT EXISTS idx_pending_stories_status ON pending_stories(status);
-CREATE INDEX IF NOT EXISTS idx_pending_stories_created ON pending_stories(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pending_stories_status    ON pending_stories(status);
+CREATE INDEX IF NOT EXISTS idx_pending_stories_created   ON pending_stories(created_at DESC);
+
+-- ============================================================
+-- MIGRACIÓN DE COLUMNAS (se agregan solo si no existen)
+-- ============================================================
+ALTER TABLE pending_stories ADD COLUMN IF NOT EXISTS historian_id    UUID;
+ALTER TABLE pending_stories ADD COLUMN IF NOT EXISTS historian_name  TEXT;
+ALTER TABLE pending_stories ADD COLUMN IF NOT EXISTS historian_photo TEXT;
+
