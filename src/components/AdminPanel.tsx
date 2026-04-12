@@ -2503,42 +2503,51 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               className="w-full bg-sepia-900 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
                               placeholder="Link de descarga o compra"
                             />
-                            <div className="flex gap-2">
-                              <input 
-                                type="text"
-                                value={book.cover || ''}
-                                onChange={e => {
-                                  const newBooks = [...(editingHistorian.books || [])];
-                                  newBooks[idx].cover = e.target.value;
-                                  setEditingHistorian({...editingHistorian, books: newBooks});
-                                }}
-                                className="flex-1 bg-sepia-900 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
-                                placeholder="URL portada o sube →"
-                              />
-                              <label
-                                className={`cursor-pointer flex items-center px-3 rounded-lg border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                                title="Subir portada a Supabase"
-                              >
-                                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    const uploadedUrl = await handleImageUpload(file);
-                                    if (uploadedUrl) {
-                                      setEditingHistorian(prev => {
-                                        if (!prev) return prev;
-                                        const newBooks = [...(prev.books || [])];
-                                        newBooks[idx] = { ...newBooks[idx], cover: uploadedUrl };
-                                        return { ...prev, books: newBooks };
-                                      });
-                                    }
+                            <div className="space-y-1">
+                              <label className="text-sepia-600 text-[10px] uppercase font-bold tracking-widest">Portada del libro</label>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="text"
+                                  value={book.cover || ''}
+                                  onChange={e => {
+                                    const newBooks = [...(editingHistorian.books || [])];
+                                    newBooks[idx].cover = e.target.value;
+                                    setEditingHistorian({...editingHistorian, books: newBooks});
                                   }}
+                                  className="flex-1 bg-sepia-900 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
+                                  placeholder="URL portada o sube →"
                                 />
-                              </label>
+                                <label
+                                  className={`cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sepia-600 bg-sepia-700 hover:bg-sepia-600 text-sepia-100 text-xs font-bold transition-all whitespace-nowrap ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                                  title="Subir imagen desde PC o celular"
+                                >
+                                  {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                  Subir foto
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      const uploadedUrl = await handleImageUpload(file);
+                                      if (uploadedUrl) {
+                                        setEditingHistorian(prev => {
+                                          if (!prev) return prev;
+                                          const newBooks = [...(prev.books || [])];
+                                          newBooks[idx] = { ...newBooks[idx], cover: uploadedUrl };
+                                          return { ...prev, books: newBooks };
+                                        });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                              {book.cover && (
+                                <img src={book.cover} alt="portada" className="h-16 rounded-lg object-cover border border-sepia-700 mt-1"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              )}
                             </div>
                           </div>
                         ))}
