@@ -732,14 +732,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .from('images')
         .getPublicUrl(filePath);
 
+      setMessage({ type: 'success', text: '✅ Imagen subida correctamente' });
       return publicUrl;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading image:', err);
-      setMessage({ type: 'error', text: 'Error al subir la imagen' });
+      const msg = err?.message || '';
+      let texto = 'Error al subir la imagen';
+      if (msg.includes('Bucket not found') || msg.includes('bucket')) {
+        texto = 'Bucket "images" no existe en Supabase. Ve a Storage y créalo como público.';
+      } else if (msg.includes('not authorized') || msg.includes('policy') || msg.includes('violates')) {
+        texto = 'Sin permisos para subir. Ve a Supabase → Storage → Policies y añade política INSERT pública.';
+      } else if (msg) {
+        texto = `Error: ${msg}`;
+      }
+      setMessage({ type: 'error', text: texto });
       return null;
     } finally {
       setIsUploading(false);
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => setMessage(null), 6000);
     }
   };
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2428,7 +2438,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               const file = e.target.files?.[0];
                               if (!file) return;
                               const url = await handleImageUpload(file);
-                              if (url) setEditingHistorian({...editingHistorian, photo: url});
+                              if (url) setEditingHistorian(prev => prev ? {...prev, photo: url} : prev);
                             }}
                           />
                         </label>
@@ -2519,9 +2529,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     if (!file) return;
                                     const uploadedUrl = await handleImageUpload(file);
                                     if (uploadedUrl) {
-                                      const newBooks = [...(editingHistorian.books || [])];
-                                      newBooks[idx].cover = uploadedUrl;
-                                      setEditingHistorian({...editingHistorian, books: newBooks});
+                                      setEditingHistorian(prev => {
+                                        if (!prev) return prev;
+                                        const newBooks = [...(prev.books || [])];
+                                        newBooks[idx] = { ...newBooks[idx], cover: uploadedUrl };
+                                        return { ...prev, books: newBooks };
+                                      });
                                     }
                                   }}
                                 />
