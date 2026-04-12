@@ -2224,25 +2224,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     className="w-full bg-sepia-950 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
                                     placeholder="Título de esta restauración (Ej: Fachada Exterior)"
                                   />
-                                  <input 
-                                    type="text" 
-                                    value={img.url}
-                                    onChange={e => {
-                                      const newUrl = e.target.value;
-                                      setEditingRestoredPhoto(prev => {
-                                        if (!prev) return prev;
-                                        const newImages = [...(prev.images || [])];
-                                        newImages[idx].url = newUrl;
-                                        return {
-                                          ...prev,
-                                          images: newImages,
-                                          url: idx === 0 ? newUrl : prev.url
-                                        };
-                                      });
-                                    }}
-                                    className="w-full bg-sepia-950 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
-                                    placeholder="URL de la imagen (https://...)"
-                                  />
+                                  <div className="flex gap-2">
+                                    <input 
+                                      type="text" 
+                                      value={img.url}
+                                      onChange={e => {
+                                        const newUrl = e.target.value;
+                                        setEditingRestoredPhoto(prev => {
+                                          if (!prev) return prev;
+                                          const newImages = [...(prev.images || [])];
+                                          newImages[idx].url = newUrl;
+                                          return {
+                                            ...prev,
+                                            images: newImages,
+                                            url: idx === 0 ? newUrl : prev.url
+                                          };
+                                        });
+                                      }}
+                                      className="flex-1 bg-sepia-950 border border-sepia-800 rounded-lg p-2 text-xs text-sepia-100"
+                                      placeholder="URL o sube →"
+                                    />
+                                    <label
+                                      className={`cursor-pointer flex items-center px-3 rounded-lg border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                                      title="Subir imagen a Supabase"
+                                    >
+                                      {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          const uploadedUrl = await handleImageUpload(file);
+                                          if (uploadedUrl) {
+                                            setEditingRestoredPhoto(prev => {
+                                              if (!prev) return prev;
+                                              const newImages = [...(prev.images || [])];
+                                              newImages[idx].url = uploadedUrl;
+                                              return {
+                                                ...prev,
+                                                images: newImages,
+                                                url: idx === 0 ? uploadedUrl : prev.url
+                                              };
+                                            });
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
                                   <div className="flex items-center gap-2 pt-1">
                                     <input 
                                       type="checkbox" 
@@ -2375,14 +2405,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div className="space-y-6">
                     <div className="bg-sepia-950/50 p-6 rounded-2xl border border-sepia-800">
-                      <label className="text-sepia-400 text-xs uppercase font-bold mb-2 block">Foto de Perfil (URL)</label>
-                      <input 
-                        type="text"
-                        value={editingHistorian.photo}
-                        onChange={e => setEditingHistorian({...editingHistorian, photo: e.target.value})}
-                        className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-3 text-sepia-100 outline-none focus:border-sepia-500"
-                        placeholder="https://..."
-                      />
+                      <label className="text-sepia-400 text-xs uppercase font-bold mb-2 block">Foto de Perfil</label>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text"
+                          value={editingHistorian.photo}
+                          onChange={e => setEditingHistorian({...editingHistorian, photo: e.target.value})}
+                          className="flex-1 bg-sepia-900 border border-sepia-800 rounded-xl p-3 text-sepia-100 outline-none focus:border-sepia-500"
+                          placeholder="https://... o sube desde tu dispositivo →"
+                        />
+                        <label
+                          className={`cursor-pointer flex items-center gap-2 px-4 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-sm font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                          title="Subir foto a Supabase"
+                        >
+                          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          <span className="hidden sm:inline">Subir</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const url = await handleImageUpload(file);
+                              if (url) setEditingHistorian({...editingHistorian, photo: url});
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
                     <div className="bg-sepia-950/50 p-6 rounded-2xl border border-sepia-800">
                       <label className="text-sepia-400 text-xs uppercase font-bold mb-2 block">Link de Red Social (Instagram/Facebook)</label>
@@ -2567,15 +2617,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                        <ImageIcon className="w-4 h-4" /> Portada (URL)
+                        <ImageIcon className="w-4 h-4" /> Portada
                       </label>
-                      <input 
-                        type="text"
-                        value={editingStory.thumbnail}
-                        onChange={e => setEditingStory({...editingStory, thumbnail: e.target.value})}
-                        className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
-                        placeholder="https://..."
-                      />
+                      <div className="flex gap-2">
+                        <input 
+                          type="text"
+                          value={editingStory.thumbnail}
+                          onChange={e => setEditingStory({...editingStory, thumbnail: e.target.value})}
+                          className="flex-1 bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                          placeholder="https://... o sube desde tu dispositivo →"
+                        />
+                        <label
+                          className={`cursor-pointer flex items-center gap-2 px-4 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-sm font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                          title="Subir imagen a Supabase"
+                        >
+                          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          <span className="hidden sm:inline">Subir</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const url = await handleImageUpload(file);
+                              if (url) setEditingStory({...editingStory, thumbnail: url});
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
