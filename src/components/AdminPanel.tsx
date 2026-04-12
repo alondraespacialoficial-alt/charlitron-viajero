@@ -1425,14 +1425,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <p className="text-sepia-400 text-sm">Esta imagen aparecerá de fondo en la página principal.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">URL de la Imagen</label>
-                          <input 
-                            type="text"
-                            value={heroBgUrl}
-                            onChange={e => setHeroBgUrl(e.target.value)}
-                            className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
-                            placeholder="https://..."
-                          />
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">URL o subir imagen</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text"
+                              value={heroBgUrl}
+                              onChange={e => setHeroBgUrl(e.target.value)}
+                              className="flex-1 bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                              placeholder="https://... o sube desde tu dispositivo →"
+                            />
+                            <label
+                              className={`cursor-pointer flex items-center gap-2 px-4 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-sm font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Subir imagen directamente a Supabase"
+                            >
+                              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              <span className="hidden sm:inline">Subir</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const url = await handleImageUpload(file);
+                                  if (url) setHeroBgUrl(url);
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-sepia-600 text-xs">Puedes pegar una URL o subir directamente desde tu celular/computadora.</p>
                         </div>
                         {heroBgUrl && (
                           <div className="aspect-video rounded-xl overflow-hidden border-2 border-sepia-800">
@@ -2807,15 +2828,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="space-y-6">
                       <div className="bg-sepia-950/50 border border-sepia-800 rounded-3xl p-8 space-y-6">
                         <div>
-                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">URL de la Foto</label>
-                          <input
-                            type="url"
-                            value={editingMuralPhoto.photo_url || ''}
-                            onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, photo_url: e.target.value })}
-                            className="w-full bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
-                            placeholder="https://..."
-                            required
-                          />
+                          <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Foto</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="url"
+                              value={editingMuralPhoto.photo_url || ''}
+                              onChange={e => setEditingMuralPhoto({ ...editingMuralPhoto, photo_url: e.target.value })}
+                              className="flex-1 bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
+                              placeholder="https://... o sube desde tu dispositivo →"
+                            />
+                            <label
+                              className={`cursor-pointer flex items-center gap-2 px-4 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-sm font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Subir foto directamente a Supabase"
+                            >
+                              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              <span className="hidden sm:inline">Subir</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const url = await handleImageUpload(file);
+                                  if (url) setEditingMuralPhoto({ ...editingMuralPhoto, photo_url: url });
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-sepia-600 text-xs mt-1">Puedes pegar una URL o subir directamente desde tu celular/computadora.</p>
                         </div>
                         {editingMuralPhoto.photo_url && (
                           <div>
