@@ -180,6 +180,12 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                       referrerPolicy="no-referrer"
                       onContextMenu={(e) => e.preventDefault()}
                       onDragStart={(e) => e.preventDefault()}
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = 'none';
+                        const parent = img.parentElement;
+                        if (parent) parent.style.background = '#2c1810';
+                      }}
                     />
                     {/* Watermark Overlay */}
                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-5 group-hover:opacity-10 transition-opacity">

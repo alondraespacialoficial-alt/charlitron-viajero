@@ -3,14 +3,16 @@
  * Permite que la app se descargue y funcione offline
  */
 
-const CACHE_NAME = 'charlitron-v1';
+const CACHE_NAME = 'charlitron-v2';
+const IMAGE_CACHE_NAME = 'charlitron-images-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
   '/robots.txt',
   '/sitemap.xml',
-  '/opensearch.xml'
+  '/opensearch.xml',
+  '/images/charlitron-logo.svg'
 ];
 
 /**
@@ -46,7 +48,7 @@ self.addEventListener('activate', event => {
       .then(cacheNames => {
         return Promise.all(
           cacheNames.map(cacheName => {
-            if (cacheName !== CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && cacheName !== IMAGE_CACHE_NAME) {
               console.log('🗑️  Eliminando cache antiguo:', cacheName);
               return caches.delete(cacheName);
             }
@@ -59,7 +61,9 @@ self.addEventListener('activate', event => {
 });
 
 /**
- * Maneja las peticiones (fetch strategy: network first, fallback to cache)
+ * Maneja las peticiones (fetch strategy)
+ * - Imágenes externas: cache first → si no está en cache, intenta red y guarda si es OK
+ * - Resto: network first, fallback a cache
  */
 self.addEventListener('fetch', event => {
   // Ignorar peticiones que no sean GET
@@ -67,7 +71,32 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Network first strategy
+  const url = new URL(event.request.url);
+  const isImage = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url.pathname);
+  const isExternalImage = isImage && url.hostname !== self.location.hostname;
+
+  // Cache-first para imágenes externas (evita 429 repetidos en image2url.com)
+  if (isExternalImage) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE_NAME).then(cache =>
+        cache.match(event.request).then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Si la red falla y no hay cache, retornar respuesta vacía
+            return new Response('', { status: 503 });
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  // Network first strategy para el resto
   event.respondWith(
     fetch(event.request)
       .then(response => {

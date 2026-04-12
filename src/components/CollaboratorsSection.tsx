@@ -444,7 +444,9 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
                         >
                           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-sepia-700 flex-shrink-0">
                             {h.photo ? (
-                              <img src={h.photo} alt={h.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              <img src={h.photo} alt={h.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
                             ) : (
                               <div className="w-full h-full bg-sepia-800 flex items-center justify-center">
                                 <User className="w-5 h-5 text-sepia-500" />
@@ -708,6 +710,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
                         src={story.thumbnail}
                         alt=""
                         className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-sepia-800"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
                     )}
                     <div className="flex-1 min-w-0">

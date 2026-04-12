@@ -154,6 +154,12 @@ export const MuralSection: React.FC<MuralSectionProps> = ({ onBack }) => {
                         referrerPolicy="no-referrer"
                         onContextMenu={(e) => e.preventDefault()}
                         onDragStart={(e) => e.preventDefault()}
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = 'none';
+                          const parent = img.parentElement;
+                          if (parent) parent.style.background = '#2c1810';
+                        }}
                       />
 
                       {/* Grain overlay - textura de película */}
@@ -268,6 +274,12 @@ export const MuralSection: React.FC<MuralSectionProps> = ({ onBack }) => {
                     referrerPolicy="no-referrer"
                     onContextMenu={(e) => e.preventDefault()}
                     onDragStart={(e) => e.preventDefault()}
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.style.display = 'none';
+                      const parent = img.parentElement;
+                      if (parent) parent.style.background = '#2c1810';
+                    }}
                   />
 
                   {/* Grain en lightbox */}

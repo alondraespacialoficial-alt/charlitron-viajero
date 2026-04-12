@@ -74,6 +74,7 @@ export const FamilyTreeAccess = ({ onAccess }: FamilyTreeAccessProps) => {
           alt="Fondo Árbol Genealógico" 
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
         {/* Overlay para mejorar legibilidad */}
         <div className="absolute inset-0 bg-sepia-950/40 backdrop-blur-[3px]"></div>

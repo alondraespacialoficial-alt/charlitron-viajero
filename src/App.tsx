@@ -222,6 +222,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
                 alt="Charlitron Logo" 
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
               />
             </button>
             <button 
@@ -290,6 +291,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
                 alt="Logo Charlitron" 
                 className="h-10 md:h-12 w-auto object-contain"
                 referrerPolicy="no-referrer"
+                onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
               />
               <button 
                 onClick={toggleMenu}
@@ -436,6 +438,7 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
           alt="Charlitron® Portada" 
           className="w-full h-full object-cover object-center sepia-filter scale-110 blur-sm"
           referrerPolicy="no-referrer"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
         <div className="absolute inset-0 cinematic-overlay"></div>
       </div>
@@ -451,6 +454,7 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
             alt="Charlitron Logo" 
             className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-8 object-contain drop-shadow-2xl"
             referrerPolicy="no-referrer"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
           />
           <h2 className="text-sepia-400 uppercase tracking-[0.4em] text-sm md:text-base font-bold mb-4 block">
             Charlitron® Viajero del Tiempo
@@ -580,6 +584,7 @@ const About = () => (
           alt="Charlitron Logo" 
           className="w-16 h-16 mx-auto mb-6 object-contain opacity-80"
           referrerPolicy="no-referrer"
+          onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
         />
         <span className="text-sepia-600 uppercase tracking-[0.3em] text-sm font-bold mb-4 block">Charlitron® Viajero del Tiempo</span>
         <h2 className="text-4xl md:text-5xl font-serif mb-8">Un archivo vivo de memoria</h2>
@@ -612,6 +617,7 @@ const Biography = () => (
               alt="Adrián Álvarez Carlos - El Viajero del Tiempo" 
               className="w-full h-auto object-cover sepia-filter grayscale-[0.2] hover:scale-105 transition-transform duration-700"
               referrerPolicy="no-referrer"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-sepia-950/60 to-transparent"></div>
           </div>
@@ -718,6 +724,7 @@ const Biography = () => (
                         alt={book.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         onContextMenu={(e) => e.preventDefault()}
                         onDragStart={(e) => e.preventDefault()}
                       />
@@ -1570,6 +1577,7 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
             alt="Charlitron Logo" 
             className="w-12 h-12 object-contain"
             referrerPolicy="no-referrer"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
           />
           <span className="font-serif text-2xl font-bold text-sepia-100 tracking-wider uppercase leading-none">Charlitron®</span>
         </div>
@@ -2255,6 +2263,7 @@ export default function App() {
                 alt="Banner Charlitron® Viajero del Tiempo"
                 className="w-full h-auto object-cover"
                 referrerPolicy="no-referrer"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </motion.section>
             <Biography />

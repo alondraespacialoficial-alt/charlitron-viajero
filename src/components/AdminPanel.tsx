@@ -864,6 +864,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               alt="Charlitron Logo" 
               className="w-full h-full object-contain"
               referrerPolicy="no-referrer"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
             />
           </div>
           <div>
