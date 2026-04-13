@@ -2836,7 +2836,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 setEditingStory({...editingStory, gallery: newGallery});
                               }}
                               className="flex-grow bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 text-sm outline-none"
+                              placeholder="https://... o usa el botón para subir →"
                             />
+                            <label
+                              className={`cursor-pointer flex items-center gap-1 px-3 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-xs font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Subir foto desde PC"
+                            >
+                              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const uploaded = await handleImageUpload(file);
+                                  if (uploaded) {
+                                    const newGallery = [...(editingStory.gallery || [])];
+                                    newGallery[idx] = uploaded;
+                                    setEditingStory({...editingStory, gallery: newGallery});
+                                  }
+                                }}
+                              />
+                            </label>
                             <button 
                               type="button"
                               onClick={() => {
@@ -2849,13 +2871,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             </button>
                           </div>
                         ))}
-                        <button 
-                          type="button"
-                          onClick={() => setEditingStory({...editingStory, gallery: [...(editingStory.gallery || []), '']})}
-                          className="w-full py-3 border-2 border-dashed border-sepia-800 rounded-xl text-sepia-500 hover:border-sepia-500 hover:text-sepia-400 transition-all text-sm font-bold"
-                        >
-                          + Añadir Foto
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            type="button"
+                            onClick={() => setEditingStory({...editingStory, gallery: [...(editingStory.gallery || []), '']})}
+                            className="flex-1 py-3 border-2 border-dashed border-sepia-800 rounded-xl text-sepia-500 hover:border-sepia-500 hover:text-sepia-400 transition-all text-sm font-bold"
+                          >
+                            + Añadir URL
+                          </button>
+                          <label
+                            className={`cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-sepia-700 rounded-xl text-sepia-400 hover:border-sepia-500 hover:text-sepia-300 transition-all text-sm font-bold ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                            title="Subir foto(s) desde PC"
+                          >
+                            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            Subir desde PC
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (!files.length) return;
+                                const urls: string[] = [];
+                                for (const file of files) {
+                                  const uploaded = await handleImageUpload(file);
+                                  if (uploaded) urls.push(uploaded);
+                                }
+                                if (urls.length) {
+                                  setEditingStory({
+                                    ...editingStory,
+                                    gallery: [...(editingStory.gallery || []).filter(u => u !== ''), ...urls]
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
