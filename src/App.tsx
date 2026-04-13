@@ -860,6 +860,18 @@ const StoryCard = ({ story, onClick }: { story: Story, onClick: () => void }) =>
     <div className="p-8 flex flex-col flex-grow">
       <h3 className="text-2xl font-serif mb-3 leading-tight group-hover:text-sepia-600 transition-colors">{story.title}</h3>
       <p className="text-sepia-700 mb-8 line-clamp-2 font-light">{story.description}</p>
+      {story.historian_name && (
+        <div className="flex items-center gap-2 mb-4">
+          {story.historian_photo ? (
+            <img src={story.historian_photo} alt={story.historian_name} className="w-6 h-6 rounded-full object-cover border border-sepia-300" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-sepia-200 flex items-center justify-center">
+              <Users className="w-3 h-3 text-sepia-500" />
+            </div>
+          )}
+          <span className="text-xs text-sepia-500 font-medium">Por <span className="text-sepia-700 font-bold">{story.historian_name}</span></span>
+        </div>
+      )}
       <button 
         className="mt-auto flex items-center gap-2 text-sepia-900 font-bold uppercase tracking-widest text-xs hover:text-sepia-600 transition-colors group/btn"
       >
@@ -1189,6 +1201,21 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
             </button>
           </div>
           <h1 className="text-4xl md:text-7xl font-serif mb-6 md:mb-8 leading-tight">{story.title}</h1>
+          {story.historian_name && (
+            <div className="flex items-center gap-3 mb-6">
+              {story.historian_photo ? (
+                <img src={story.historian_photo} alt={story.historian_name} className="w-10 h-10 rounded-full object-cover border-2 border-sepia-300" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-sepia-200 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-sepia-500" />
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-sepia-500 uppercase tracking-widest font-bold">Publicado por</p>
+                <p className="text-sepia-800 font-bold text-sm">{story.historian_name}</p>
+              </div>
+            </div>
+          )}
           <p className="text-lg md:text-2xl text-sepia-800 font-light leading-relaxed max-w-3xl border-l-4 border-sepia-300 pl-6 md:pl-8 italic">
             {story.description}
           </p>

@@ -16,6 +16,9 @@ export interface Story {
   password?: string;
   expires_at?: string;
   slug?: string; // URL-friendly identifier (e.g., "la-bodega-el-pasado-1920")
+  historian_id?: string;
+  historian_name?: string;
+  historian_photo?: string;
 }
 
 export interface Historian {

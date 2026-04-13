@@ -168,6 +168,9 @@ export const CollaboratorsAdmin: React.FC<CollaboratorsAdminProps> = ({ onStorie
         isPrivate: story.is_private || false,
         isVideoVertical: story.is_video_vertical || false,
         expires_at: story.expires_at,
+        historian_id: story.historian_id || undefined,
+        historian_name: story.historian_name || undefined,
+        historian_photo: story.historian_photo || undefined,
       };
       const { data: storyData, error: storyError } = await supabase
         .from('stories')
