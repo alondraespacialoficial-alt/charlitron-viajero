@@ -4,7 +4,7 @@ import { Key, Clock, ShieldCheck, ArrowRight, Lock, Volume2, Loader2, X } from '
 import { supabase } from '../supabase';
 
 interface FamilyTreeAccessProps {
-  onAccess: (keyId: string, treeId: string | null) => void;
+  onAccess: (keyId: string, treeId: string | null, readOnly?: boolean) => void;
 }
 
 export const FamilyTreeAccess = ({ onAccess }: FamilyTreeAccessProps) => {
@@ -35,7 +35,19 @@ export const FamilyTreeAccess = ({ onAccess }: FamilyTreeAccessProps) => {
 
       // 2. Verificar expiración
       if (keyData.expires_at && new Date(keyData.expires_at) < new Date()) {
-        throw new Error('Esta clave ha caducado.');
+        // Clave vencida: verificar si tiene árbol guardado para modo lectura
+        const { data: expiredTree } = await supabase
+          .from('family_trees')
+          .select('id')
+          .eq('access_key_id', keyData.id)
+          .single();
+
+        if (expiredTree?.id) {
+          // Tiene árbol: permitir entrada en modo solo lectura
+          onAccess(keyData.id, expiredTree.id, true);
+          return;
+        }
+        throw new Error('Esta clave ha caducado. Contacta a Charlitron para renovar tu acceso.');
       }
 
       // 3. Si la clave es válida pero no tiene fecha de expiración, 

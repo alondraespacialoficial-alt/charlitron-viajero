@@ -80,7 +80,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [investigationCodes, setInvestigationCodes] = useState<{ id: string, code: string, is_used: boolean, created_at: string }[]>([]);
-  const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string }[]>([]);
+  const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string, expires_at?: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -424,6 +424,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } catch (err) {
       console.error('Error generating family key:', err);
       setMessage({ type: 'error', text: 'Error al generar clave' });
+    } finally {
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  const renewFamilyKey = async (id: string, durationDays: number) => {
+    try {
+      const newExpiry = new Date();
+      newExpiry.setDate(newExpiry.getDate() + durationDays);
+      const { error } = await supabase
+        .from('access_keys')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      setFamilyKeys(familyKeys.map(k => k.id === id ? { ...k, expires_at: newExpiry.toISOString() } : k));
+      setMessage({ type: 'success', text: `Clave renovada por ${durationDays} días más` });
+    } catch (err) {
+      console.error('Error renovando clave:', err);
+      setMessage({ type: 'error', text: 'Error al renovar la clave' });
     } finally {
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1568,6 +1587,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             >
                               <Share2 className="w-4 h-4" />
                             </button>
+                            {k.expires_at && new Date(k.expires_at) < new Date() && (
+                              <button 
+                                onClick={() => renewFamilyKey(k.id, k.duration_days)}
+                                className="p-2 text-green-400 hover:text-green-100 hover:bg-green-900/20 rounded-lg transition-all"
+                                title={`Renovar ${k.duration_days} días más`}
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            )}
                             <button 
                               onClick={() => deleteFamilyKey(k.id)}
                               className="p-2 text-red-400 hover:text-red-100 hover:bg-red-900/20 rounded-lg transition-all"

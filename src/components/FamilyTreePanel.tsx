@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, Edit2, Save, X, Camera, MapPin, Calendar, User, Users, ArrowLeft, Share2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Camera, MapPin, Calendar, User, Users, ArrowLeft, Share2, ExternalLink, Lock, Volume2 } from 'lucide-react';
 import { supabase } from '../supabase';
 
 interface FamilyMember {
@@ -18,9 +18,10 @@ interface FamilyTreePanelProps {
   treeId: string;
   onBack: () => void;
   onView: () => void;
+  readOnly?: boolean;
 }
 
-export const FamilyTreePanel = ({ treeId, onBack, onView }: FamilyTreePanelProps) => {
+export const FamilyTreePanel = ({ treeId, onBack, onView, readOnly = false }: FamilyTreePanelProps) => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingMember, setEditingMember] = useState<Partial<FamilyMember> | null>(null);
@@ -124,6 +125,32 @@ export const FamilyTreePanel = ({ treeId, onBack, onView }: FamilyTreePanelProps
   return (
     <div className="min-h-screen bg-sepia-50 pt-32 pb-24 px-6">
       <div className="max-w-7xl mx-auto">
+
+        {/* Banner modo solo lectura */}
+        {readOnly && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-amber-50 border-2 border-amber-300 rounded-3xl px-6 py-5"
+          >
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-amber-800 font-bold text-sm">Acceso vencido — Modo solo lectura</p>
+                <p className="text-amber-600 text-xs mt-0.5">Tu clave ha expirado. Tu árbol está guardado de forma segura. Renueva tu acceso para editar.</p>
+              </div>
+            </div>
+            <a
+              href="https://wa.me/5214444237092?text=Hola%20Charlitron%2C%20quiero%20renovar%20mi%20acceso%20al%20Árbol%20Genealógico."
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 bg-[#25D366] text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-md"
+            >
+              <Volume2 className="w-4 h-4" /> Renovar Ahora
+            </a>
+          </motion.div>
+        )}
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div className="flex items-center gap-6">
             <button 
@@ -147,12 +174,14 @@ export const FamilyTreePanel = ({ treeId, onBack, onView }: FamilyTreePanelProps
             >
               <Users className="w-4 h-4" /> Ver Árbol
             </button>
-            <button 
-              onClick={() => setEditingMember({})}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-sepia-500 text-sepia-950 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-sepia-400 transition-all shadow-xl"
-            >
-              <Plus className="w-4 h-4" /> Añadir Familiar
-            </button>
+            {!readOnly && (
+              <button 
+                onClick={() => setEditingMember({})}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-sepia-500 text-sepia-950 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-sepia-400 transition-all shadow-xl"
+              >
+                <Plus className="w-4 h-4" /> Añadir Familiar
+              </button>
+            )}
           </div>
         </div>
 
@@ -186,18 +215,22 @@ export const FamilyTreePanel = ({ treeId, onBack, onView }: FamilyTreePanelProps
                 className="bg-white rounded-[2rem] p-6 shadow-xl border border-sepia-100 group hover:shadow-2xl transition-all duration-500 relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => setEditingMember(member)}
-                    className="p-2 bg-sepia-100 text-sepia-600 rounded-full hover:bg-sepia-200 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => setMemberToDelete(member.id)}
-                    className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {!readOnly && (
+                    <>
+                      <button 
+                        onClick={() => setEditingMember(member)}
+                        className="p-2 bg-sepia-100 text-sepia-600 rounded-full hover:bg-sepia-200 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setMemberToDelete(member.id)}
+                        className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-center text-center">

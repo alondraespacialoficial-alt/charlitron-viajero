@@ -15,6 +15,7 @@ export const FamilyTreeManager = ({ onBack }: FamilyTreeManagerProps) => {
   const [treeId, setTreeId] = useState<string | null>(null);
   const [view, setView] = useState<'access' | 'panel' | 'view'>('access');
   const [loading, setLoading] = useState(true);
+  const [readOnly, setReadOnly] = useState(false);
 
   useEffect(() => {
     // Check if there's a saved access key in session storage
@@ -24,14 +25,17 @@ export const FamilyTreeManager = ({ onBack }: FamilyTreeManagerProps) => {
     if (savedKeyId) {
       setAccessKeyId(savedKeyId);
       setTreeId(savedTreeId);
+      setReadOnly(sessionStorage.getItem('charlitron_ft_readonly') === 'true');
       setView('panel');
     }
     setLoading(false);
   }, []);
 
-  const handleAccess = async (keyId: string, existingTreeId: string | null) => {
+  const handleAccess = async (keyId: string, existingTreeId: string | null, isReadOnly?: boolean) => {
     setAccessKeyId(keyId);
+    setReadOnly(!!isReadOnly);
     sessionStorage.setItem('charlitron_ft_key', keyId);
+    sessionStorage.setItem('charlitron_ft_readonly', isReadOnly ? 'true' : 'false');
     
     if (existingTreeId) {
       setTreeId(existingTreeId);
@@ -59,8 +63,10 @@ export const FamilyTreeManager = ({ onBack }: FamilyTreeManagerProps) => {
   const handleLogout = () => {
     sessionStorage.removeItem('charlitron_ft_key');
     sessionStorage.removeItem('charlitron_ft_tree');
+    sessionStorage.removeItem('charlitron_ft_readonly');
     setAccessKeyId(null);
     setTreeId(null);
+    setReadOnly(false);
     setView('access');
   };
 
@@ -99,7 +105,8 @@ export const FamilyTreeManager = ({ onBack }: FamilyTreeManagerProps) => {
             <FamilyTreePanel 
               treeId={treeId} 
               onBack={handleLogout} 
-              onView={() => setView('view')} 
+              onView={() => setView('view')}
+              readOnly={readOnly}
             />
           </motion.div>
         )}
