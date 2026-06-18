@@ -186,3 +186,34 @@ export interface PendingStory {
   created_at?: string;
   reviewed_at?: string;
 }
+
+// ==========================================
+// TIPOS PARA CONFERENCIAS Y BOLETOS
+// ==========================================
+export interface Conference {
+  id: string;
+  title: string;
+  description?: string;
+  banner_url?: string;
+  event_date?: string;
+  location?: string;
+  price: number;
+  capacity: number;
+  is_active: boolean;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ConferenceTicket {
+  id: string;
+  conference_id: string;
+  folio: string;
+  attendee_name: string;
+  attendee_email: string;
+  attendee_phone?: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  payment_notes?: string;
+  paid_at?: string;
+  created_at?: string;
+}

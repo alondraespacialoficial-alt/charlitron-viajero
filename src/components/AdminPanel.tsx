@@ -33,10 +33,11 @@ import {
   Trophy,
   UserCheck
 } from 'lucide-react';
-import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto } from '../types';
+import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto, Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
+import { ConferencesAdmin } from './ConferencesAdmin';
 import { InstallPromptAdmin } from './InstallPromptAdmin';
 import { CollaboratorsAdmin } from './CollaboratorsAdmin';
 
@@ -69,7 +70,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators'>('stories');
   const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
   const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -976,6 +977,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'contests' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 Concursos
+              </button>
+              <button 
+                onClick={() => setViewMode('conferences')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'conferences' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                🎟️ Conferencias
               </button>
               <button 
                 onClick={() => setViewMode('analytics')}
@@ -3097,6 +3104,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-6xl mx-auto"
               >
                 <ContestsAdmin />
+              </motion.div>
+            ) : viewMode === 'conferences' ? (
+              <motion.div 
+                key="conferences"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <ConferencesAdmin />
               </motion.div>
             ) : viewMode === 'analytics' ? (
               <motion.div 
