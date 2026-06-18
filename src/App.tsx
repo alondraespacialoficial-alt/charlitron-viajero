@@ -1821,34 +1821,34 @@ export default function App() {
         if (data && data.length > 0) {
           setStories(data);
           
-          // Check for story slug or section in URL hash
-          const hash = window.location.hash.replace('#', '').trim();
-          if (hash) {
-            // Check for section URLs first
-            if (hash === 'galeria') {
+          // Check for story slug or section in URL pathname
+          const path = window.location.pathname.replace(/^\//, '').trim();
+          // Also support legacy hash URLs for backward compatibility
+          const legacyHash = window.location.hash.replace('#', '').trim();
+          const segment = path || legacyHash;
+          if (segment) {
+            if (segment === 'galeria') {
               setShowGallery(true);
-            } else if (hash === 'tienda') {
+            } else if (segment === 'tienda') {
               setShowShop(true);
-            } else if (hash === 'investiga') {
+            } else if (segment === 'investiga') {
               setShowInvestigation(true);
-            } else if (hash === 'concursos') {
+            } else if (segment === 'concursos') {
               setShowContests(true);
-            } else if (hash === 'conferencias') {
+            } else if (segment === 'conferencias') {
               setShowConferences(true);
-            } else if (hash === 'mural') {
+            } else if (segment === 'mural') {
               setShowMural(true);
-            } else if (hash === 'colaboradores') {
+            } else if (segment === 'colaboradores') {
               setShowCollaborators(true);
-            } else if (hash === 'arbol') {
+            } else if (segment === 'arbol') {
               setShowFamilyTree(true);
-            } else if (hash !== 'historias') {
-              // Try to find by slug first (supports slugs like "historia-titulo-12345")
-              const foundBySlug = data.find(s => s.slug && s.slug === hash);
+            } else if (segment !== 'historias') {
+              const foundBySlug = data.find(s => s.slug && s.slug === segment);
               if (foundBySlug) {
                 setSelectedStory(foundBySlug);
               } else {
-                // Fallback to ID for backward compatibility
-                const foundById = data.find(s => s.id === hash);
+                const foundById = data.find(s => s.id === segment);
                 if (foundById) setSelectedStory(foundById);
               }
             }
@@ -1869,118 +1869,47 @@ export default function App() {
     fetchRestoredPhotos();
     fetchProducts();
 
-    // Listen for hash changes
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').trim();
-      if (hash) {
-        // Check for section URLs first
-        if (hash === 'galeria') {
-          setShowGallery(true);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowContests(false);
-          setShowFamilyTree(false);
-          setSelectedStory(null);
-        } else if (hash === 'tienda') {
-          setShowShop(true);
-          setShowGallery(false);
-          setShowInvestigation(false);
-          setShowContests(false);
-          setShowFamilyTree(false);
-          setSelectedStory(null);
-        } else if (hash === 'investiga') {
-          setShowInvestigation(true);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowContests(false);
-          setShowFamilyTree(false);
-          setSelectedStory(null);
-        } else if (hash === 'concursos') {
-          setShowContests(true);
-          setShowConferences(false);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowFamilyTree(false);
-          setShowMural(false);
-          setSelectedStory(null);
-        } else if (hash === 'conferencias') {
-          setShowConferences(true);
-          setShowContests(false);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowFamilyTree(false);
-          setShowMural(false);
-          setSelectedStory(null);
-        } else if (hash === 'mural') {
-          setShowMural(true);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowContests(false);
-          setShowFamilyTree(false);
-          setShowCollaborators(false);
-          setSelectedStory(null);
-        } else if (hash === 'colaboradores') {
-          setShowCollaborators(true);
-          setShowMural(false);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowContests(false);
-          setShowFamilyTree(false);
-          setSelectedStory(null);
-        } else if (hash === 'arbol') {
-          setShowFamilyTree(true);
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowContests(false);
-          setShowMural(false);
-          setSelectedStory(null);
-        } else if (hash === 'historias') {
-          setShowGallery(false);
-          setShowShop(false);
-          setShowInvestigation(false);
-          setShowFamilyTree(false);
-          setShowMural(false);
-          setSelectedStory(null);
+    // Listen for popstate (back/forward browser buttons)
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\//, '').trim();
+      // reset all
+      setShowGallery(false);
+      setShowShop(false);
+      setShowInvestigation(false);
+      setShowContests(false);
+      setShowConferences(false);
+      setShowFamilyTree(false);
+      setShowMural(false);
+      setShowCollaborators(false);
+      setSelectedStory(null);
+      if (path === 'galeria') {
+        setShowGallery(true);
+      } else if (path === 'tienda') {
+        setShowShop(true);
+      } else if (path === 'investiga') {
+        setShowInvestigation(true);
+      } else if (path === 'concursos') {
+        setShowContests(true);
+      } else if (path === 'conferencias') {
+        setShowConferences(true);
+      } else if (path === 'mural') {
+        setShowMural(true);
+      } else if (path === 'colaboradores') {
+        setShowCollaborators(true);
+      } else if (path === 'arbol') {
+        setShowFamilyTree(true);
+      } else if (path && path !== 'historias') {
+        const foundBySlug = stories.find(s => s.slug && s.slug === path);
+        if (foundBySlug) {
+          setSelectedStory(foundBySlug);
         } else {
-          // Try to find by slug (story)
-          const foundBySlug = stories.find(s => s.slug && s.slug === hash);
-          if (foundBySlug) {
-            setSelectedStory(foundBySlug);
-            setShowGallery(false);
-            setShowShop(false);
-            setShowInvestigation(false);
-            setShowFamilyTree(false);
-            setShowMural(false);
-          } else {
-            // Fallback to ID for backward compatibility
-            const foundById = stories.find(s => s.id === hash);
-            if (foundById) {
-              setSelectedStory(foundById);
-              setShowGallery(false);
-              setShowShop(false);
-              setShowInvestigation(false);
-              setShowFamilyTree(false);
-              setShowMural(false);
-            }
-          }
+          const foundById = stories.find(s => s.id === path);
+          if (foundById) setSelectedStory(foundById);
         }
-      } else {
-        // Empty hash = home
-        setShowGallery(false);
-        setShowShop(false);
-        setShowInvestigation(false);
-        setShowFamilyTree(false);
-        setShowMural(false);
-        setSelectedStory(null);
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []); // Run once on mount
 
   useEffect(() => {
@@ -2033,30 +1962,34 @@ export default function App() {
     }
   }, [selectedStory, showGallery, showShop, showInvestigation, showFamilyTree, legalView]);
 
-  // Update URL hash when selected story changes
+  // Update URL path when active section changes
   useEffect(() => {
     if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
-      window.location.hash = `#${slug}`;
+      window.history.pushState(null, '', `/${slug}`);
     } else {
       // If no story selected, show section URL instead
       if (showGallery) {
-        window.location.hash = '#galeria';
+        window.history.pushState(null, '', '/galeria');
       } else if (showShop) {
-        window.location.hash = '#tienda';
+        window.history.pushState(null, '', '/tienda');
       } else if (showInvestigation) {
-        window.location.hash = '#investiga';
+        window.history.pushState(null, '', '/investiga');
+      } else if (showContests) {
+        window.history.pushState(null, '', '/concursos');
+      } else if (showConferences) {
+        window.history.pushState(null, '', '/conferencias');
       } else if (showFamilyTree) {
-        window.location.hash = '#arbol';
+        window.history.pushState(null, '', '/arbol');
       } else if (showMural) {
-        window.location.hash = '#mural';
+        window.history.pushState(null, '', '/mural');
       } else if (showCollaborators) {
-        window.location.hash = '#colaboradores';
+        window.history.pushState(null, '', '/colaboradores');
       } else {
-        window.location.hash = '';
+        window.history.pushState(null, '', '/');
       }
     }
-  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showFamilyTree, showMural, showCollaborators]);
+  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showFamilyTree, showMural, showCollaborators]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
