@@ -54,11 +54,6 @@ export const ConferencesSection: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedConference) return;
-    if (!form.attendee_name.trim() || !form.attendee_email.trim()) {
-      setError('Por favor completa nombre y correo electrónico.');
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -68,8 +63,8 @@ export const ConferencesSection: React.FC = () => {
         .insert([{
           conference_id: selectedConference.id,
           folio: '',
-          attendee_name: form.attendee_name.trim(),
-          attendee_email: form.attendee_email.trim().toLowerCase(),
+          attendee_name: form.attendee_name.trim() || 'Anónimo',
+          attendee_email: form.attendee_email.trim().toLowerCase() || 'sin-correo@reserva.local',
           attendee_phone: form.attendee_phone.trim() || null,
           status: 'pending',
         }])
@@ -285,7 +280,7 @@ export const ConferencesSection: React.FC = () => {
 
                     <div className="space-y-1">
                       <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500">
-                        Nombre completo <span className="text-red-400">*</span>
+                        Nombre completo <span className="text-sepia-600 font-normal">(opcional)</span>
                       </label>
                       <input
                         type="text"
@@ -293,13 +288,12 @@ export const ConferencesSection: React.FC = () => {
                         onChange={(e) => setForm({ ...form, attendee_name: e.target.value })}
                         placeholder="Ej: Juan García López"
                         className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-4 py-3 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 transition-all"
-                        required
                       />
                     </div>
 
                     <div className="space-y-1">
                       <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500">
-                        Correo electrónico <span className="text-red-400">*</span>
+                        Correo electrónico <span className="text-sepia-600 font-normal">(opcional)</span>
                       </label>
                       <input
                         type="email"
@@ -307,7 +301,6 @@ export const ConferencesSection: React.FC = () => {
                         onChange={(e) => setForm({ ...form, attendee_email: e.target.value })}
                         placeholder="tucorreo@ejemplo.com"
                         className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-4 py-3 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 transition-all"
-                        required
                       />
                     </div>
 
