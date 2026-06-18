@@ -96,71 +96,72 @@ ALTER TABLE public.conference_tickets  ENABLE ROW LEVEL SECURITY;
 -- 8. POLÍTICAS — conferences
 -- ----------------------------------------------------------------
 
--- Cualquier usuario puede VER conferencias activas
+-- Cualquier usuario puede VER conferencias activas (público)
 CREATE POLICY "conferences_public_select"
   ON public.conferences
   FOR SELECT
   USING (is_active = true);
 
--- Solo service_role (admin) puede insertar / actualizar / eliminar
-CREATE POLICY "conferences_admin_insert"
-  ON public.conferences
-  FOR INSERT
-  TO service_role
-  WITH CHECK (true);
-
-CREATE POLICY "conferences_admin_update"
-  ON public.conferences
-  FOR UPDATE
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
-CREATE POLICY "conferences_admin_delete"
-  ON public.conferences
-  FOR DELETE
-  TO service_role
-  USING (true);
-
--- anon también puede VER (para la app pública sin auth)
-CREATE POLICY "conferences_anon_select"
+-- anon puede VER TODAS (para el admin que usa la clave anon)
+CREATE POLICY "conferences_anon_select_all"
   ON public.conferences
   FOR SELECT
   TO anon
-  USING (is_active = true);
+  USING (true);
+
+-- anon puede INSERTAR (el admin usa la clave anon)
+CREATE POLICY "conferences_anon_insert"
+  ON public.conferences
+  FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+-- anon puede ACTUALIZAR
+CREATE POLICY "conferences_anon_update"
+  ON public.conferences
+  FOR UPDATE
+  TO anon
+  USING (true)
+  WITH CHECK (true);
+
+-- anon puede ELIMINAR
+CREATE POLICY "conferences_anon_delete"
+  ON public.conferences
+  FOR DELETE
+  TO anon
+  USING (true);
 
 -- ----------------------------------------------------------------
 -- 9. POLÍTICAS — conference_tickets
 -- ----------------------------------------------------------------
 
--- Cualquier visitante puede REGISTRAR un boleto (INSERT)
-CREATE POLICY "tickets_public_insert"
+-- anon puede INSERTAR boletos (visitantes registran desde la app)
+CREATE POLICY "tickets_anon_insert"
   ON public.conference_tickets
   FOR INSERT
   TO anon
   WITH CHECK (true);
 
--- El visitante NO puede ver boletos de otros (sin auth no SELECT)
--- Solo service_role (admin) puede leer todos los boletos
-CREATE POLICY "tickets_admin_select"
+-- anon puede LEER todos los boletos (el admin los necesita ver)
+CREATE POLICY "tickets_anon_select"
   ON public.conference_tickets
   FOR SELECT
-  TO service_role
+  TO anon
   USING (true);
 
--- Solo service_role puede actualizar (marcar pagado, cancelar)
-CREATE POLICY "tickets_admin_update"
+-- anon puede ACTUALIZAR (el admin marca pagado/cancelado)
+CREATE POLICY "tickets_anon_update"
   ON public.conference_tickets
   FOR UPDATE
-  TO service_role
+  TO anon
   USING (true)
   WITH CHECK (true);
 
--- Solo service_role puede eliminar
-CREATE POLICY "tickets_admin_delete"
+-- anon puede ELIMINAR
+CREATE POLICY "tickets_anon_delete"
   ON public.conference_tickets
   FOR DELETE
-  TO service_role
+  TO anon
   USING (true);
 
 -- ----------------------------------------------------------------

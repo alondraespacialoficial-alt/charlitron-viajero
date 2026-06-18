@@ -13,6 +13,14 @@ interface ConferencesAdminProps {
   onClose?: () => void;
 }
 
+// Convierte un ISO string (UTC) al formato requerido por datetime-local en hora local
+const toLocalInputValue = (isoStr?: string): string => {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 type StatusFilter = 'all' | 'pending' | 'paid' | 'cancelled';
 
 export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
@@ -357,7 +365,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Fecha y hora</label>
                 <input
                   type="datetime-local"
-                  value={editingConference.event_date ? editingConference.event_date.slice(0, 16) : ''}
+                  value={toLocalInputValue(editingConference.event_date)}
                   onChange={(e) => setEditingConference({ ...editingConference, event_date: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
                 />
