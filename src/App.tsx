@@ -1662,16 +1662,23 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
 
 // --- Main App ---
 
+// Lee la ruta inicial UNA vez al arrancar (antes del primer render)
+const getInitialPath = (): string => {
+  const path = window.location.pathname.replace(/^\//, '').trim();
+  return path || window.location.hash.replace('#', '').trim();
+};
+const INITIAL_PATH = getInitialPath();
+
 export default function App() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
-  const [showGallery, setShowGallery] = useState(false);
-  const [showShop, setShowShop] = useState(false);
-  const [showInvestigation, setShowInvestigation] = useState(false);
-  const [showContests, setShowContests] = useState(false);
-  const [showConferences, setShowConferences] = useState(false);
-  const [showMural, setShowMural] = useState(false);
-  const [showCollaborators, setShowCollaborators] = useState(false);
-  const [showFamilyTree, setShowFamilyTree] = useState(false);
+  const [showGallery,       setShowGallery]       = useState(() => INITIAL_PATH === 'galeria');
+  const [showShop,          setShowShop]          = useState(() => INITIAL_PATH === 'tienda');
+  const [showInvestigation, setShowInvestigation] = useState(() => INITIAL_PATH === 'investiga');
+  const [showContests,      setShowContests]      = useState(() => INITIAL_PATH === 'concursos');
+  const [showConferences,   setShowConferences]   = useState(() => INITIAL_PATH === 'conferencias');
+  const [showMural,         setShowMural]         = useState(() => INITIAL_PATH === 'mural');
+  const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
+  const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stories, setStories] = useState<Story[]>(STORIES);
@@ -1821,36 +1828,17 @@ export default function App() {
         if (data && data.length > 0) {
           setStories(data);
           
-          // Check for story slug or section in URL pathname
-          const path = window.location.pathname.replace(/^\//, '').trim();
-          // Also support legacy hash URLs for backward compatibility
-          const legacyHash = window.location.hash.replace('#', '').trim();
-          const segment = path || legacyHash;
-          if (segment) {
-            if (segment === 'galeria') {
-              setShowGallery(true);
-            } else if (segment === 'tienda') {
-              setShowShop(true);
-            } else if (segment === 'investiga') {
-              setShowInvestigation(true);
-            } else if (segment === 'concursos') {
-              setShowContests(true);
-            } else if (segment === 'conferencias') {
-              setShowConferences(true);
-            } else if (segment === 'mural') {
-              setShowMural(true);
-            } else if (segment === 'colaboradores') {
-              setShowCollaborators(true);
-            } else if (segment === 'arbol') {
-              setShowFamilyTree(true);
-            } else if (segment !== 'historias') {
-              const foundBySlug = data.find(s => s.slug && s.slug === segment);
-              if (foundBySlug) {
-                setSelectedStory(foundBySlug);
-              } else {
-                const foundById = data.find(s => s.id === segment);
-                if (foundById) setSelectedStory(foundById);
-              }
+          // Routing de secciones ya se aplica en useState desde INITIAL_PATH.
+          // Aquí solo manejamos slugs de historias (requieren que los datos estén cargados).
+          const segment = INITIAL_PATH;
+          if (segment && !['galeria','tienda','investiga','concursos','conferencias',
+                            'mural','colaboradores','arbol','historias'].includes(segment)) {
+            const foundBySlug = data.find(s => s.slug && s.slug === segment);
+            if (foundBySlug) {
+              setSelectedStory(foundBySlug);
+            } else {
+              const foundById = data.find(s => s.id === segment);
+              if (foundById) setSelectedStory(foundById);
             }
           }
         }
@@ -1963,32 +1951,39 @@ export default function App() {
   }, [selectedStory, showGallery, showShop, showInvestigation, showFamilyTree, legalView]);
 
   // Update URL path when active section changes
+  // replaceState en el primer render para no duplicar la entrada inicial en el historial
+  const isFirstUrlUpdate = React.useRef(true);
   useEffect(() => {
+    let newPath = '/';
     if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
-      window.history.pushState(null, '', `/${slug}`);
-    } else {
-      // If no story selected, show section URL instead
-      if (showGallery) {
-        window.history.pushState(null, '', '/galeria');
-      } else if (showShop) {
-        window.history.pushState(null, '', '/tienda');
-      } else if (showInvestigation) {
-        window.history.pushState(null, '', '/investiga');
-      } else if (showContests) {
-        window.history.pushState(null, '', '/concursos');
-      } else if (showConferences) {
-        window.history.pushState(null, '', '/conferencias');
-      } else if (showFamilyTree) {
-        window.history.pushState(null, '', '/arbol');
-      } else if (showMural) {
-        window.history.pushState(null, '', '/mural');
-      } else if (showCollaborators) {
-        window.history.pushState(null, '', '/colaboradores');
+      newPath = `/${slug}`;
+    } else if (showGallery) {
+      newPath = '/galeria';
+    } else if (showShop) {
+      newPath = '/tienda';
+    } else if (showInvestigation) {
+      newPath = '/investiga';
+    } else if (showContests) {
+      newPath = '/concursos';
+    } else if (showConferences) {
+      newPath = '/conferencias';
+    } else if (showFamilyTree) {
+      newPath = '/arbol';
+    } else if (showMural) {
+      newPath = '/mural';
+    } else if (showCollaborators) {
+      newPath = '/colaboradores';
+    }
+
+    if (window.location.pathname !== newPath) {
+      if (isFirstUrlUpdate.current) {
+        window.history.replaceState(null, '', newPath);
       } else {
-        window.history.pushState(null, '', '/');
+        window.history.pushState(null, '', newPath);
       }
     }
+    isFirstUrlUpdate.current = false;
   }, [selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showFamilyTree, showMural, showCollaborators]);
 
   const togglePresentationMode = () => {
