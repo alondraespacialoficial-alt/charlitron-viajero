@@ -1679,7 +1679,9 @@ export default function App() {
   const [showMural,         setShowMural]         = useState(() => INITIAL_PATH === 'mural');
   const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
-  const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null);
+  const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(
+    () => INITIAL_PATH === 'terminos' ? 'terms' : INITIAL_PATH === 'privacidad' ? 'privacy' : null
+  );
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stories, setStories] = useState<Story[]>(STORIES);
   const [historians, setHistorians] = useState<Historian[]>([]);
@@ -1832,7 +1834,8 @@ export default function App() {
           // Aquí solo manejamos slugs de historias (requieren que los datos estén cargados).
           const segment = INITIAL_PATH;
           if (segment && !['galeria','tienda','investiga','concursos','conferencias',
-                            'mural','colaboradores','arbol','historias'].includes(segment)) {
+                            'mural','colaboradores','arbol','historias',
+                            'terminos','privacidad'].includes(segment)) {
             const foundBySlug = data.find(s => s.slug && s.slug === segment);
             if (foundBySlug) {
               setSelectedStory(foundBySlug);
@@ -1870,6 +1873,7 @@ export default function App() {
       setShowMural(false);
       setShowCollaborators(false);
       setSelectedStory(null);
+      setLegalView(null);
       if (path === 'galeria') {
         setShowGallery(true);
       } else if (path === 'tienda') {
@@ -1886,6 +1890,10 @@ export default function App() {
         setShowCollaborators(true);
       } else if (path === 'arbol') {
         setShowFamilyTree(true);
+      } else if (path === 'terminos') {
+        setLegalView('terms');
+      } else if (path === 'privacidad') {
+        setLegalView('privacy');
       } else if (path && path !== 'historias') {
         const foundBySlug = stories.find(s => s.slug && s.slug === path);
         if (foundBySlug) {
@@ -1955,7 +1963,11 @@ export default function App() {
   const isFirstUrlUpdate = React.useRef(true);
   useEffect(() => {
     let newPath = '/';
-    if (selectedStory) {
+    if (legalView === 'terms') {
+      newPath = '/terminos';
+    } else if (legalView === 'privacy') {
+      newPath = '/privacidad';
+    } else if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
       newPath = `/${slug}`;
     } else if (showGallery) {
@@ -1984,7 +1996,7 @@ export default function App() {
       }
     }
     isFirstUrlUpdate.current = false;
-  }, [selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showFamilyTree, showMural, showCollaborators]);
+  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showFamilyTree, showMural, showCollaborators]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
