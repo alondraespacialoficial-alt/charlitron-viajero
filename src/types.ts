@@ -215,5 +215,9 @@ export interface ConferenceTicket {
   status: 'pending' | 'paid' | 'cancelled';
   payment_notes?: string;
   paid_at?: string;
+  collaborator_id?: string;
+  collaborator_name?: string;
+  registered_by?: 'client' | 'collaborator';
+  collaborator_paid_at?: string;
   created_at?: string;
 }

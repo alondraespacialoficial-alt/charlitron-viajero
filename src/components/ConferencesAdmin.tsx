@@ -629,6 +629,18 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                           {ticket.attendee_phone && (
                             <p className="text-sepia-600 text-xs">{ticket.attendee_phone}</p>
                           )}
+                          {/* Colaborador */}
+                          {ticket.collaborator_name && (
+                            <p className="text-sepia-500 text-xs flex items-center gap-1">
+                              <span className="text-sepia-600">Registrado por:</span>
+                              <span className="text-amber-500 font-medium">{ticket.collaborator_name}</span>
+                              {ticket.collaborator_paid_at ? (
+                                <span className="text-green-500 ml-1">· cobró ✓ {new Date(ticket.collaborator_paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                              ) : (
+                                <span className="text-sepia-600 ml-1">· sin cobrar</span>
+                              )}
+                            </p>
+                          )}
                           <p className="text-sepia-700 text-xs">
                             Registrado: {formatDate(ticket.created_at)}
                           </p>
