@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Calendar, MapPin, Users, Ticket, X, Send, CheckCircle2,
   AlertCircle, DollarSign, Clock, MessageCircle, Download,
-  Search, UserCheck, Loader2, CheckSquare, ChevronRight,
+  Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award,
 } from 'lucide-react';
 import { Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
@@ -36,6 +36,7 @@ export const ConferencesSection: React.FC = () => {
   const [lookupConference, setLookupConference] = useState<Conference | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
 
   // ── Collaborator portal ───────────────────────────────────────────
   const [collabCode, setCollabCode] = useState('');
@@ -275,6 +276,198 @@ export const ConferencesSection: React.FC = () => {
       console.error('Error generating PDF:', err);
     } finally {
       setIsGeneratingPDF(false);
+    }
+  };
+
+  // ── Certificate PDF ───────────────────────────────────────────────
+  const loadImage = (url: string): Promise<{ base64: string; w: number; h: number } | null> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve({ base64: canvas.toDataURL('image/png'), w: img.naturalWidth, h: img.naturalHeight });
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+
+  const handleDownloadCertificate = async (ticket: ConferenceTicket, conference: Conference) => {
+    setIsGeneratingCertificate(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      // A4 landscape: 297 x 210 mm
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const W = 297, H = 210, cx = W / 2;
+
+      // ── Fondo oscuro sepia
+      doc.setFillColor(20, 16, 12);
+      doc.rect(0, 0, W, H, 'F');
+
+      // ── Barras laterales doradas
+      doc.setFillColor(110, 82, 45);
+      doc.rect(0, 0, 7, H, 'F');
+      doc.rect(W - 7, 0, 7, H, 'F');
+
+      // ── Barras superior e inferior
+      doc.setFillColor(90, 67, 35);
+      doc.rect(0, 0, W, 5, 'F');
+      doc.rect(0, H - 5, W, 5, 'F');
+
+      // ── Borde interior rectangular
+      doc.setDrawColor(100, 75, 40);
+      doc.setLineWidth(0.4);
+      doc.rect(10, 7, W - 20, H - 14);
+
+      // ── Ornamentos en esquinas
+      doc.setFillColor(130, 98, 52);
+      [[10, 7], [W - 13, 7], [10, H - 10], [W - 13, H - 10]].forEach(([x, y]) => {
+        doc.rect(x, y, 3, 3, 'F');
+      });
+
+      let y = 13;
+
+      // ── Logo (si existe)
+      if (conference.logo_url) {
+        const imgData = await loadImage(conference.logo_url);
+        if (imgData) {
+          const maxH = 22, maxW = 80;
+          const aspect = imgData.w / imgData.h;
+          let iH = maxH, iW = iH * aspect;
+          if (iW > maxW) { iW = maxW; iH = iW / aspect; }
+          doc.addImage(imgData.base64, 'PNG', cx - iW / 2, y, iW, iH);
+          y += iH + 3;
+        }
+      }
+
+      // ── Nombre del sitio
+      doc.setFontSize(7.5);
+      doc.setTextColor(120, 92, 52);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CHARLITRON VIAJERO DEL TIEMPO', cx, y + 4.5, { align: 'center', charSpace: 1.5 });
+      y += 9;
+
+      // ── Línea divisoria
+      doc.setDrawColor(75, 56, 30);
+      doc.setLineWidth(0.3);
+      doc.line(30, y, W - 30, y);
+      y += 8;
+
+      // ── Título RECONOCIMIENTO
+      doc.setFontSize(23);
+      doc.setTextColor(225, 210, 180);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RECONOCIMIENTO DE PARTICIPACIÓN', cx, y + 8, { align: 'center' });
+      y += 14;
+
+      // ── Línea dorada gruesa
+      doc.setDrawColor(155, 118, 58);
+      doc.setLineWidth(0.6);
+      doc.line(50, y, W - 50, y);
+      y += 10;
+
+      // ── "Se otorga a:"
+      doc.setFontSize(9.5);
+      doc.setTextColor(145, 125, 95);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Se otorga el presente reconocimiento a:', cx, y, { align: 'center' });
+      y += 11;
+
+      // ── Nombre del asistente (grande, dorado)
+      doc.setFontSize(22);
+      doc.setTextColor(208, 165, 88);
+      doc.setFont('helvetica', 'bold');
+      const nameLines = doc.splitTextToSize(ticket.attendee_name.toUpperCase(), W - 100) as string[];
+      doc.text(nameLines, cx, y, { align: 'center' });
+      y += nameLines.length * 9;
+
+      // ── Línea bajo el nombre
+      const nameLineW = Math.min(doc.getTextWidth(nameLines[0]) + 24, W - 80);
+      doc.setDrawColor(155, 118, 58);
+      doc.setLineWidth(0.5);
+      doc.line(cx - nameLineW / 2, y, cx + nameLineW / 2, y);
+      y += 9;
+
+      // ── "Por su participación..."
+      doc.setFontSize(9);
+      doc.setTextColor(145, 125, 95);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Por su participación en la conferencia:', cx, y, { align: 'center' });
+      y += 10;
+
+      // ── Título de la conferencia
+      doc.setFontSize(14);
+      doc.setTextColor(230, 215, 190);
+      doc.setFont('helvetica', 'bold');
+      const titleLines = doc.splitTextToSize(`"${conference.title}"`, W - 90) as string[];
+      doc.text(titleLines, cx, y, { align: 'center' });
+      y += titleLines.length * 7 + 5;
+
+      // ── Ponentes
+      const s1 = conference.speaker_name;
+      const s2 = conference.speaker_name_2;
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(155, 135, 105);
+      if (s1 && s2) {
+        doc.text(`Ponente Principal: ${s1}   ·   ${s2}`, cx, y, { align: 'center' });
+        y += 7;
+      } else if (s1) {
+        doc.text(`Ponente Principal: ${s1}`, cx, y, { align: 'center' });
+        y += 7;
+      } else {
+        doc.text('Charlitron Viajero del Tiempo', cx, y, { align: 'center' });
+        y += 7;
+      }
+
+      // ── Fecha y lugar
+      doc.setFontSize(8);
+      doc.setTextColor(110, 90, 65);
+      const infoParts: string[] = [];
+      if (conference.event_date) {
+        infoParts.push(new Date(conference.event_date).toLocaleDateString('es-MX', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        }));
+      }
+      if (conference.location) infoParts.push(conference.location);
+      if (infoParts.length > 0) {
+        doc.text(infoParts.join('   ·   '), cx, y, { align: 'center' });
+        y += 7;
+      }
+
+      // ── Pie de página
+      const footerY = H - 20;
+      doc.setDrawColor(65, 50, 28);
+      doc.setLineWidth(0.3);
+      doc.line(12, footerY, W - 12, footerY);
+
+      doc.setFontSize(7);
+      doc.setFont('courier', 'bold');
+      doc.setTextColor(140, 110, 68);
+      doc.text(`Folio: ${ticket.folio}`, 14, footerY + 6);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(85, 66, 42);
+      const fechaGen = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+      doc.text(`Emitido el ${fechaGen}`, 14, footerY + 11);
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(105, 80, 48);
+      doc.text('charlitronviajerodeltiempo.com', cx, footerY + 8.5, { align: 'center' });
+
+      doc.save(`reconocimiento-${ticket.folio}.pdf`);
+    } catch (err) {
+      console.error('Error generating certificate:', err);
+    } finally {
+      setIsGeneratingCertificate(false);
     }
   };
 
@@ -631,6 +824,19 @@ export const ConferencesSection: React.FC = () => {
                         }
                       </button>
                     )}
+
+                    {lookupTicket.status !== 'cancelled' && (
+                      <button
+                        onClick={() => handleDownloadCertificate(lookupTicket, lookupConference)}
+                        disabled={isGeneratingCertificate}
+                        className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                      >
+                        {isGeneratingCertificate
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
+                          : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
+                        }
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -846,6 +1052,17 @@ export const ConferencesSection: React.FC = () => {
                         {' '}→ descarga el PDF cuando el admin confirme tu pago.
                       </p>
                     </div>
+
+                    <button
+                      onClick={() => handleDownloadCertificate(submittedTicket, selectedConference)}
+                      disabled={isGeneratingCertificate}
+                      className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                    >
+                      {isGeneratingCertificate
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
+                        : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
+                      }
+                    </button>
 
                     <button onClick={handleCloseForm} className="w-full bg-sepia-700 hover:bg-sepia-600 text-sepia-100 py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all">
                       Entendido

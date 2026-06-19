@@ -114,6 +114,9 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             capacity: editingConference.capacity ?? 100,
             is_active: editingConference.is_active ?? true,
             notes: editingConference.notes || null,
+            speaker_name: editingConference.speaker_name || null,
+            speaker_name_2: editingConference.speaker_name_2 || null,
+            logo_url: editingConference.logo_url || null,
           })
           .eq('id', editingConference.id);
         if (error) throw error;
@@ -131,6 +134,9 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             capacity: editingConference.capacity ?? 100,
             is_active: editingConference.is_active ?? true,
             notes: editingConference.notes || null,
+            speaker_name: editingConference.speaker_name || null,
+            speaker_name_2: editingConference.speaker_name_2 || null,
+            logo_url: editingConference.logo_url || null,
           }]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Conferencia creada' });
@@ -405,6 +411,42 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                   value={editingConference.capacity ?? 100}
                   onChange={(e) => setEditingConference({ ...editingConference, capacity: parseInt(e.target.value) || 100 })}
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
+                />
+              </div>
+
+              {/* Ponente Principal */}
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Ponente principal</label>
+                <input
+                  type="text"
+                  value={editingConference.speaker_name || ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, speaker_name: e.target.value })}
+                  placeholder="Ej: Dr. Carlos Mendoza"
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                />
+              </div>
+
+              {/* Segundo Ponente */}
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Segundo ponente <span className="normal-case text-sepia-600">(opcional)</span></label>
+                <input
+                  type="text"
+                  value={editingConference.speaker_name_2 || ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, speaker_name_2: e.target.value })}
+                  placeholder="Ej: Mtra. Ana López"
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                />
+              </div>
+
+              {/* Logo reconocimiento */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">URL del logo (para el reconocimiento PDF)</label>
+                <input
+                  type="url"
+                  value={editingConference.logo_url || ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, logo_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
               </div>
 

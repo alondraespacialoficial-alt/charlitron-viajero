@@ -201,6 +201,9 @@ export interface Conference {
   capacity: number;
   is_active: boolean;
   notes?: string;
+  speaker_name?: string;
+  speaker_name_2?: string;
+  logo_url?: string;
   created_at?: string;
   updated_at?: string;
 }
