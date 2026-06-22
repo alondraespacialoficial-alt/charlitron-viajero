@@ -632,11 +632,11 @@ export const ConferencesSection: React.FC = () => {
                     className="bg-sepia-900/50 border border-sepia-800 rounded-2xl overflow-hidden group"
                   >
                     {conf.banner_url ? (
-                      <div className="aspect-video overflow-hidden">
+                      <div className="w-full overflow-hidden bg-sepia-900 rounded-t-2xl">
                         <img
                           src={conf.banner_url}
                           alt={conf.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
+                          className="w-full h-auto max-h-[28rem] object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                           onContextMenu={(e) => e.preventDefault()}
                           onDragStart={(e) => e.preventDefault()}
                         />

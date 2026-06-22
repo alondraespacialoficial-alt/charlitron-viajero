@@ -323,11 +323,11 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Banner del evento</label>
                 {editingConference.banner_url && (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-sepia-700 mb-2">
+                  <div className="relative w-full rounded-xl overflow-hidden border border-sepia-700 mb-2 bg-sepia-900">
                     <img
                       src={editingConference.banner_url}
                       alt="Banner"
-                      className="w-full h-full object-cover"
+                      className="w-full h-auto max-h-[24rem] object-contain"
                     />
                     <button
                       onClick={() => setEditingConference({ ...editingConference, banner_url: '' })}
