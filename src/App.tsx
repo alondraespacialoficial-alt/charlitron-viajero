@@ -23,6 +23,7 @@ import { SearchResults } from './components/SearchResults';
 import { CollaboratorsSection } from './components/CollaboratorsSection';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { InstallPrompt } from './components/InstallPrompt';
+import { AIChatBubble } from './components/AIChatBubble';
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
@@ -2061,6 +2062,7 @@ export default function App() {
   return (
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
       <InstallPrompt />
+      <AIChatBubble />
       <Navbar 
         onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}

@@ -31,7 +31,8 @@ import {
   Tag,
   DollarSign,
   Trophy,
-  UserCheck
+  UserCheck,
+  Bot,
 } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto, Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
@@ -80,6 +81,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
+  const [chatbotUrl, setChatbotUrl] = useState('');
+  const [chatbotEnabled, setChatbotEnabled] = useState(false);
   const [investigationCodes, setInvestigationCodes] = useState<{ id: string, code: string, is_used: boolean, created_at: string }[]>([]);
   const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string, expires_at?: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -648,6 +651,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setRadioNarrativeEnabled(radioData.value === 'true');
       }
 
+      const { data: chatbotUrlData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'chatbot_url')
+        .maybeSingle();
+      if (chatbotUrlData) setChatbotUrl(chatbotUrlData.value);
+
+      const { data: chatbotEnabledData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'chatbot_enabled')
+        .maybeSingle();
+      if (chatbotEnabledData) setChatbotEnabled(chatbotEnabledData.value === 'true');
+
       fetchInvestigationCodes();
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -684,8 +701,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const { error: radioError } = await supabase
         .from('site_settings')
         .upsert({ key: 'radio_narrative_enabled', value: radioNarrativeEnabled.toString() });
-      
       if (radioError) throw radioError;
+
+      const { error: chatbotUrlError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'chatbot_url', value: chatbotUrl });
+      if (chatbotUrlError) throw chatbotUrlError;
+
+      const { error: chatbotEnabledError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'chatbot_enabled', value: chatbotEnabled.toString() });
+      if (chatbotEnabledError) throw chatbotEnabledError;
       
       if (onSettingsUpdate) onSettingsUpdate();
       setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
@@ -1527,6 +1553,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           />
                         </div>
                       </div>
+                    </div>
+
+                    {/* ── Chat IA ─────────────────────────────── */}
+                    <div className="space-y-4 pt-6 border-t border-sepia-800">
+                      <div className="flex items-center gap-3">
+                        <Bot className="w-5 h-5 text-sepia-500" />
+                        <label className="text-sepia-100 font-serif text-xl">Chat de IA</label>
+                      </div>
+                      <p className="text-sepia-400 text-sm">Conecta un asistente externo (Chatbase, Tidio, etc.) mediante su URL de iframe. La burbuja aparecerá sobre el botón de WhatsApp.</p>
+                      <div className="flex items-center justify-between p-4 bg-sepia-950 rounded-xl border border-sepia-800">
+                        <span className="text-sepia-100 text-sm">Activar burbuja de chat</span>
+                        <input
+                          type="checkbox"
+                          checked={chatbotEnabled}
+                          onChange={e => setChatbotEnabled(e.target.checked)}
+                          className="w-6 h-6 accent-sepia-500"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">URL del iframe (ej. Chatbase)</label>
+                        <input
+                          type="url"
+                          value={chatbotUrl}
+                          onChange={e => setChatbotUrl(e.target.value)}
+                          placeholder="https://www.chatbase.co/chatbot-iframe/TU-ID"
+                          className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all font-mono text-sm"
+                        />
+                        <p className="text-sepia-600 text-xs">Copia la URL de embed que te da Chatbase u otro servicio. Solo se aceptan URLs (no código script).</p>
+                      </div>
+                      {chatbotUrl && (
+                        <div className="rounded-2xl overflow-hidden border border-sepia-700 bg-sepia-950" style={{ height: 320 }}>
+                          <iframe src={chatbotUrl} className="w-full h-full border-none" title="Vista previa del chat" loading="lazy" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
