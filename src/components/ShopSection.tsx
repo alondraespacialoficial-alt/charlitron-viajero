@@ -209,11 +209,11 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                   className="group bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-sepia-100 hover:shadow-2xl transition-all duration-500 flex flex-col"
                 >
                   {/* Image Container */}
-                  <div className="relative aspect-square overflow-hidden bg-sepia-100">
+                  <div className="relative w-full overflow-hidden bg-sepia-100 flex items-center justify-center">
                     <img 
                       src={product.image_url} 
                       alt={product.title}
-                      className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${product.is_sold_out ? 'grayscale opacity-60' : ''}`}
+                      className={`w-full h-auto max-h-[22rem] object-contain transition-transform duration-700 group-hover:scale-105 ${product.is_sold_out ? 'grayscale opacity-60' : ''}`}
                       referrerPolicy="no-referrer"
                     />
                     
@@ -342,11 +342,11 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                 ) : (
                   cart.map((item) => (
                     <div key={item.product.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-sepia-100 shadow-sm">
-                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-sepia-100 flex-shrink-0">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-sepia-100 flex-shrink-0 flex items-center justify-center">
                         <img 
                           src={item.product.image_url} 
                           alt={item.product.title} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-auto max-h-20 object-contain"
                           referrerPolicy="no-referrer"
                         />
                       </div>
