@@ -825,7 +825,7 @@ export const ConferencesSection: React.FC = () => {
                       </button>
                     )}
 
-                    {lookupTicket.status !== 'cancelled' && (
+                    {lookupTicket.status === 'paid' && (
                       <button
                         onClick={() => handleDownloadCertificate(lookupTicket, lookupConference)}
                         disabled={isGeneratingCertificate}
@@ -1053,16 +1053,18 @@ export const ConferencesSection: React.FC = () => {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => handleDownloadCertificate(submittedTicket, selectedConference)}
-                      disabled={isGeneratingCertificate}
-                      className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
-                    >
-                      {isGeneratingCertificate
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
-                        : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
-                      }
-                    </button>
+                    {submittedTicket.status === 'paid' && (
+                      <button
+                        onClick={() => handleDownloadCertificate(submittedTicket, selectedConference)}
+                        disabled={isGeneratingCertificate}
+                        className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                      >
+                        {isGeneratingCertificate
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
+                          : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
+                        }
+                      </button>
+                    )}
 
                     <button onClick={handleCloseForm} className="w-full bg-sepia-700 hover:bg-sepia-600 text-sepia-100 py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all">
                       Entendido
