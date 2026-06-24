@@ -311,6 +311,24 @@ export const ConferencesSection: React.FC = () => {
       doc.setFillColor(20, 16, 12);
       doc.rect(0, 0, W, H, 'F');
 
+      // ── Imagen de fondo difuminada (si existe)
+      if (conference.certificate_bg_url) {
+        const bgData = await loadImage(conference.certificate_bg_url);
+        if (bgData) {
+          // Calcular dimensiones para cubrir toda la página manteniendo aspecto
+          const aspect = bgData.w / bgData.h;
+          let bW = W, bH = W / aspect;
+          if (bH < H) { bH = H; bW = H * aspect; }
+          const bX = (W - bW) / 2;
+          const bY = (H - bH) / 2;
+          // Dibujar con opacidad baja para que no tape el texto
+          doc.saveGraphicsState();
+          (doc as any).setGState((doc as any).GState({ opacity: 0.13 }));
+          doc.addImage(bgData.base64, 'PNG', bX, bY, bW, bH);
+          doc.restoreGraphicsState();
+        }
+      }
+
       // ── Barras laterales doradas
       doc.setFillColor(110, 82, 45);
       doc.rect(0, 0, 7, H, 'F');

@@ -31,6 +31,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingCertBg, setIsUploadingCertBg] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -92,6 +93,28 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     }
   };
 
+  // ─── Certificate BG Upload ────────────────────────────────────────────────────
+
+  const handleCertBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingConference) return;
+    setIsUploadingCertBg(true);
+    try {
+      const fileName = `conferences/cert-bg-${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+      setEditingConference({ ...editingConference, certificate_bg_url: urlData.publicUrl });
+    } catch (err) {
+      console.error('Error uploading cert background:', err);
+      setMessage({ type: 'error', text: 'Error al subir la imagen de fondo' });
+    } finally {
+      setIsUploadingCertBg(false);
+    }
+  };
+
   // ─── Save Conference ────────────────────────────────────────────────────────
 
   const handleSaveConference = async () => {
@@ -117,6 +140,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             speaker_name: editingConference.speaker_name || null,
             speaker_name_2: editingConference.speaker_name_2 || null,
             logo_url: editingConference.logo_url || null,
+            certificate_bg_url: editingConference.certificate_bg_url || null,
           })
           .eq('id', editingConference.id);
         if (error) throw error;
@@ -137,6 +161,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             speaker_name: editingConference.speaker_name || null,
             speaker_name_2: editingConference.speaker_name_2 || null,
             logo_url: editingConference.logo_url || null,
+            certificate_bg_url: editingConference.certificate_bg_url || null,
           }]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Conferencia creada' });
@@ -448,6 +473,54 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                   placeholder="https://..."
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
+              </div>
+
+              {/* Imagen de fondo del reconocimiento */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Fondo del reconocimiento PDF <span className="normal-case text-sepia-600">(difuminado, opcional)</span></label>
+                {editingConference.certificate_bg_url && (
+                  <div className="relative w-full rounded-xl overflow-hidden border border-sepia-700 mb-2 bg-sepia-900">
+                    <img
+                      src={editingConference.certificate_bg_url}
+                      alt="Fondo reconocimiento"
+                      className="w-full h-auto max-h-40 object-cover opacity-60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingConference({ ...editingConference, certificate_bg_url: '' })}
+                      className="absolute top-2 right-2 bg-red-900/80 text-red-300 rounded-full p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-3 hover:border-sepia-500 transition-all">
+                  {isUploadingCertBg ? (
+                    <Loader2 className="w-5 h-5 text-sepia-400 animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5 text-sepia-400" />
+                  )}
+                  <span className="text-sepia-400 text-sm">
+                    {isUploadingCertBg ? 'Subiendo...' : 'Subir imagen de fondo'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleCertBgUpload}
+                    disabled={isUploadingCertBg}
+                  />
+                </label>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sepia-600 text-xs">O pegar URL:</span>
+                  <input
+                    type="url"
+                    value={editingConference.certificate_bg_url || ''}
+                    onChange={(e) => setEditingConference({ ...editingConference, certificate_bg_url: e.target.value })}
+                    placeholder="https://..."
+                    className="flex-1 bg-sepia-900 border border-sepia-700 rounded-lg px-3 py-1.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                  />
+                </div>
               </div>
 
               {/* Notas internas */}
