@@ -12,7 +12,7 @@ import { WHATSAPP_NUMBER } from '../constants';
 
 type ActiveTab = 'events' | 'lookup' | 'collab';
 
-export const ConferencesSection: React.FC = () => {
+export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initialFolio }) => {
   // ── Core ──────────────────────────────────────────────────────────
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('events');
@@ -37,6 +37,20 @@ export const ConferencesSection: React.FC = () => {
   const [lookupConference, setLookupConference] = useState<Conference | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // Auto-verificación al llegar desde QR o enlace con ?folio=XXX
+  useEffect(() => {
+    if (!initialFolio) return;
+    setActiveTab('lookup');
+    setLookupFolio(initialFolio);
+    // Lanzar búsqueda automáticamente después de que el componente monte
+    const timer = setTimeout(() => {
+      const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleLookupTicketByFolio(initialFolio, syntheticEvent);
+    }, 400);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFolio]);
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
 
   // ── Collaborator portal ───────────────────────────────────────────
@@ -149,9 +163,8 @@ export const ConferencesSection: React.FC = () => {
   };
 
   // ── Ticket Lookup ─────────────────────────────────────────────────
-  const handleLookupTicket = async (e: React.FormEvent) => {
+  const handleLookupTicketByFolio = async (folio: string, e: React.FormEvent) => {
     e.preventDefault();
-    const folio = lookupFolio.trim().toUpperCase();
     if (!folio) return;
     setLookupLoading(true);
     setLookupTicket(null);
@@ -189,6 +202,9 @@ export const ConferencesSection: React.FC = () => {
       setLookupLoading(false);
     }
   };
+
+  const handleLookupTicket = (e: React.FormEvent) =>
+    handleLookupTicketByFolio(lookupFolio.trim().toUpperCase(), e);
 
   // ── PDF Generation ────────────────────────────────────────────────
   const handleDownloadPDF = async (ticket: ConferenceTicket, conference: Conference) => {
@@ -500,7 +516,7 @@ export const ConferencesSection: React.FC = () => {
       }
 
       // ── Código QR de verificación
-      const qrUrl = `https://charlitronviajerodeltiempo.com/?folio=${ticket.folio}`;
+      const qrUrl = `https://charlitronviajerodeltiempo.com/conferencias?folio=${ticket.folio}`;
       const qrDataUrl = await QRCode.toDataURL(qrUrl, {
         width: 200,
         margin: 1,
@@ -676,9 +692,9 @@ export const ConferencesSection: React.FC = () => {
         <div className="flex justify-center mb-12">
           <div className="flex bg-sepia-900/60 border border-sepia-800 rounded-2xl p-1 gap-1 flex-wrap justify-center">
             {([
-              { key: 'events', label: 'Eventos',     Icon: Ticket },
-              { key: 'lookup', label: 'Mi Boleto',   Icon: Search },
-              { key: 'collab', label: 'Colaborador', Icon: UserCheck },
+              { key: 'events', label: 'Eventos',               Icon: Ticket },
+              { key: 'lookup', label: 'Mi Boleto / Verificar', Icon: Search },
+              { key: 'collab', label: 'Colaborador',           Icon: UserCheck },
             ] as { key: ActiveTab; label: string; Icon: React.ElementType }[]).map(({ key, label, Icon }) => (
               <button
                 key={key}
@@ -774,14 +790,14 @@ export const ConferencesSection: React.FC = () => {
           </>
         )}
 
-        {/* ══ TAB: Mi Boleto ════════════════════════════════════════════ */}
+        {/* ══ TAB: Mi Boleto / Verificar ════════════════════════════════ */}
         {activeTab === 'lookup' && (
           <div className="max-w-lg mx-auto space-y-8">
             <div className="text-center space-y-2">
               <Search className="w-10 h-10 text-sepia-500 mx-auto" />
-              <h3 className="text-2xl font-serif text-sepia-100">Consulta tu boleto</h3>
+              <h3 className="text-2xl font-serif text-sepia-100">Mi Boleto / Verificar Constancia</h3>
               <p className="text-sepia-400 text-sm">
-                Ingresa tu folio para ver el estado. Cuando esté pagado podrás descargar tu boleto en PDF.
+                Ingresa tu folio para consultar el estado de tu boleto o verificar la validez de una constancia de participación.
               </p>
             </div>
 

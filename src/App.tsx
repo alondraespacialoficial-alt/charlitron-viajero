@@ -1670,13 +1670,20 @@ const getInitialPath = (): string => {
 };
 const INITIAL_PATH = getInitialPath();
 
+// Lee folio de ?folio=XXX para verificación de constancias
+const getInitialFolio = (): string => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('folio')?.trim().toUpperCase() || '';
+};
+const INITIAL_FOLIO = getInitialFolio();
+
 export default function App() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [showGallery,       setShowGallery]       = useState(() => INITIAL_PATH === 'galeria');
   const [showShop,          setShowShop]          = useState(() => INITIAL_PATH === 'tienda');
   const [showInvestigation, setShowInvestigation] = useState(() => INITIAL_PATH === 'investiga');
   const [showContests,      setShowContests]      = useState(() => INITIAL_PATH === 'concursos');
-  const [showConferences,   setShowConferences]   = useState(() => INITIAL_PATH === 'conferencias');
+  const [showConferences,   setShowConferences]   = useState(() => INITIAL_PATH === 'conferencias' || !!INITIAL_FOLIO);
   const [showMural,         setShowMural]         = useState(() => INITIAL_PATH === 'mural');
   const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
@@ -2217,7 +2224,7 @@ export default function App() {
                   Regresar
                 </button>
               </div>
-              <ConferencesSection />
+              <ConferencesSection initialFolio={INITIAL_FOLIO} />
             </div>
           </motion.div>
         ) : showMural ? (
