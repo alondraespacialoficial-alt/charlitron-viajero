@@ -228,3 +228,59 @@ export interface ConferenceTicket {
   collaborator_paid_at?: string;
   created_at?: string;
 }
+
+// ==========================================
+// TIPOS PARA CURSOS
+// ==========================================
+export interface Course {
+  id: string;
+  title: string;
+  description?: string;
+  banner_url?: string;
+  price: number;
+  is_active: boolean;
+  order_index?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CourseLesson {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string;
+  video_url?: string;
+  audio_url?: string;
+  pdf_url?: string;
+  images?: string[];
+  text_content?: string;
+  order_index: number;
+  is_free_preview: boolean;
+  created_at?: string;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  course_id: string;
+  student_name: string;
+  student_email: string;
+  student_phone?: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  access_code?: string;
+  payment_notes?: string;
+  paid_at?: string;
+  created_at?: string;
+}
+
+export interface CourseQuestion {
+  id: string;
+  course_id: string;
+  lesson_id?: string;
+  enrollment_id?: string;
+  student_name: string;
+  question_text: string;
+  answer_text?: string;
+  answered_by?: string;
+  answered_at?: string;
+  created_at?: string;
+}

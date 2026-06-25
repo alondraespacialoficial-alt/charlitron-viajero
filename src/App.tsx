@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
 import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
@@ -18,6 +18,7 @@ import { InvestigationSection } from './components/InvestigationSection';
 import { ShopSection } from './components/ShopSection';
 import { ContestsSection } from './components/ContestsSection';
 import { ConferencesSection } from './components/ConferencesSection';
+import { CoursesSection } from './components/CoursesSection';
 import { MuralSection } from './components/MuralSection';
 import { SearchResults } from './components/SearchResults';
 import { CollaboratorsSection } from './components/CollaboratorsSection';
@@ -193,6 +194,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onFavorites: () => void,
   onContests: () => void,
   onConferences: () => void,
+  onCourses: () => void,
   onMural: () => void,
   onCollaborators: () => void,
   investigationEnabled: boolean
@@ -279,6 +281,10 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               <button onClick={onConferences} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <Ticket className="w-4 h-4" />
                 Conferencias
+              </button>
+              <button onClick={onCourses} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Cursos
               </button>
               <button onClick={onMural} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <Frame className="w-4 h-4" />
@@ -376,6 +382,13 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             >
               <Ticket className="w-6 h-6" />
               Conferencias
+            </button>
+            <button 
+              onClick={() => { onCourses(); setIsMenuOpen(false); }}
+              className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
+            >
+              <BookOpen className="w-6 h-6" />
+              Cursos
             </button>
             <button 
               onClick={() => { onMural(); setIsMenuOpen(false); }}
@@ -1684,6 +1697,7 @@ export default function App() {
   const [showInvestigation, setShowInvestigation] = useState(() => INITIAL_PATH === 'investiga');
   const [showContests,      setShowContests]      = useState(() => INITIAL_PATH === 'concursos');
   const [showConferences,   setShowConferences]   = useState(() => INITIAL_PATH === 'conferencias' || !!INITIAL_FOLIO);
+  const [showCourses,       setShowCourses]       = useState(() => INITIAL_PATH === 'cursos');
   const [showMural,         setShowMural]         = useState(() => INITIAL_PATH === 'mural');
   const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
@@ -1892,6 +1906,8 @@ export default function App() {
         setShowContests(true);
       } else if (path === 'conferencias') {
         setShowConferences(true);
+      } else if (path === 'cursos') {
+        setShowCourses(true);
       } else if (path === 'mural') {
         setShowMural(true);
       } else if (path === 'colaboradores') {
@@ -1988,6 +2004,8 @@ export default function App() {
       newPath = '/concursos';
     } else if (showConferences) {
       newPath = '/conferencias';
+    } else if (showCourses) {
+      newPath = '/cursos';
     } else if (showFamilyTree) {
       newPath = '/arbol';
     } else if (showMural) {
@@ -2004,7 +2022,7 @@ export default function App() {
       }
     }
     isFirstUrlUpdate.current = false;
-  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showFamilyTree, showMural, showCollaborators]);
+  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
@@ -2071,7 +2089,7 @@ export default function App() {
       <InstallPrompt />
       <AIChatBubble />
       <Navbar 
-        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setIsPresentationMode(false); }} 
+        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}
         onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
@@ -2079,7 +2097,8 @@ export default function App() {
         onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFavorites={() => setShowFavorites(true)}
         onContests={() => { setShowContests(true); setShowConferences(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onConferences={() => { setShowConferences(true); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onConferences={() => { setShowConferences(true); setShowContests(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         investigationEnabled={investigationEnabled}
@@ -2225,6 +2244,27 @@ export default function App() {
                 </button>
               </div>
               <ConferencesSection initialFolio={INITIAL_FOLIO} />
+            </div>
+          </motion.div>
+        ) : showCourses ? (
+          <motion.div
+            key="courses"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="min-h-screen bg-sepia-950 pt-20">
+              <div className="flex items-center gap-4 px-6 py-4 max-w-7xl mx-auto">
+                <button
+                  onClick={() => setShowCourses(false)}
+                  className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors text-sm uppercase tracking-widest"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Regresar
+                </button>
+              </div>
+              <CoursesSection />
             </div>
           </motion.div>
         ) : showMural ? (
