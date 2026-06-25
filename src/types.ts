@@ -240,6 +240,8 @@ export interface Course {
   price: number;
   is_active: boolean;
   order_index?: number;
+  collaborator_code?: string;
+  instructor_share?: number;
   created_at?: string;
   updated_at?: string;
 }

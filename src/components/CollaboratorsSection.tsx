@@ -16,9 +16,11 @@ import {
   Upload,
   LogOut,
   User,
+  BookOpen,
+  TrendingUp,
 } from 'lucide-react';
 import { supabase } from '../supabase';
-import { Collaborator, PendingStory, Historian } from '../types';
+import { Collaborator, PendingStory, Historian, Course, CourseEnrollment } from '../types';
 
 interface CollaboratorsSectionProps {
   onBack: () => void;
@@ -44,6 +46,9 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'historias' | 'cursos'>('historias');
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [courseEnrollments, setCourseEnrollments] = useState<Record<string, CourseEnrollment[]>>({});
 
   const [form, setForm] = useState<Partial<PendingStory>>({
     title: '',
@@ -89,6 +94,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
       setCollaborator(data);
       fetchMyStories(data.id);
       fetchHistorians();
+      fetchMyCourses(data.code);
     } else {
       localStorage.removeItem('collaborator_session');
     }
@@ -116,6 +122,7 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
       localStorage.setItem('collaborator_session', JSON.stringify(data));
       fetchMyStories(data.id);
       fetchHistorians();
+      fetchMyCourses(data.code);
     } catch {
       setLoginError('Error al verificar el código. Intenta de nuevo.');
     } finally {
@@ -127,8 +134,32 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
     setCollaborator(null);
     localStorage.removeItem('collaborator_session');
     setPendingStories([]);
+    setMyCourses([]);
+    setCourseEnrollments({});
     setShowForm(false);
     setAccessCode('');
+    setActiveTab('historias');
+  };
+
+  const fetchMyCourses = async (code: string) => {
+    const { data: coursesData } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('collaborator_code', code)
+      .order('order_index', { ascending: true });
+    if (!coursesData || coursesData.length === 0) { setMyCourses([]); return; }
+    setMyCourses(coursesData);
+    const ids = coursesData.map((c: Course) => c.id);
+    const { data: enrollData } = await supabase
+      .from('course_enrollments')
+      .select('*')
+      .in('course_id', ids);
+    const grouped: Record<string, CourseEnrollment[]> = {};
+    (enrollData || []).forEach((e: CourseEnrollment) => {
+      if (!grouped[e.course_id]) grouped[e.course_id] = [];
+      grouped[e.course_id].push(e);
+    });
+    setCourseEnrollments(grouped);
   };
 
   const fetchMyStories = async (collaboratorId: string) => {
@@ -374,8 +405,103 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
           )}
         </AnimatePresence>
 
-        {/* Action button */}
-        {!showForm && (
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 border-b border-sepia-800">
+          <button
+            onClick={() => setActiveTab('historias')}
+            className={`flex items-center gap-2 pb-3 px-1 text-sm font-bold uppercase tracking-widest border-b-2 transition-all ${activeTab === 'historias' ? 'border-sepia-400 text-sepia-100' : 'border-transparent text-sepia-500 hover:text-sepia-300'}`}
+          >
+            <User className="w-4 h-4" /> Mis Historias
+          </button>
+          <button
+            onClick={() => setActiveTab('cursos')}
+            className={`flex items-center gap-2 pb-3 px-1 text-sm font-bold uppercase tracking-widest border-b-2 transition-all ${activeTab === 'cursos' ? 'border-sepia-400 text-sepia-100' : 'border-transparent text-sepia-500 hover:text-sepia-300'}`}
+          >
+            <BookOpen className="w-4 h-4" /> Mis Cursos {myCourses.length > 0 && <span className="bg-sepia-700 text-sepia-200 rounded-full text-[10px] px-1.5 py-0.5">{myCourses.length}</span>}
+          </button>
+        </div>
+
+        {/* ── TAB: Mis Cursos ── */}
+        {activeTab === 'cursos' && (
+          <div className="space-y-4">
+            {myCourses.length === 0 ? (
+              <div className="text-center py-16 text-sepia-600">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="font-serif italic">No tienes cursos asignados aún.</p>
+                <p className="text-xs mt-2">Pide al administrador que vincule tu código a un curso.</p>
+              </div>
+            ) : (
+              myCourses.map(course => {
+                const enrolls = courseEnrollments[course.id] || [];
+                const paid = enrolls.filter(e => e.status === 'paid').length;
+                const pending = enrolls.filter(e => e.status === 'pending').length;
+                const total = paid * (course.price || 0);
+                const share = course.instructor_share ?? 0;
+                const myPart = total * share / 100;
+                const adminPart = total - myPart;
+                return (
+                  <motion.div key={course.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    className="bg-sepia-900 rounded-2xl border border-sepia-800 overflow-hidden"
+                  >
+                    {course.banner_url && (
+                      <img src={course.banner_url} alt={course.title} className="w-full h-28 object-cover" />
+                    )}
+                    <div className="p-5 space-y-4">
+                      <div>
+                        <h3 className="text-sepia-100 font-serif text-lg">{course.title}</h3>
+                        {course.description && <p className="text-sepia-400 text-sm mt-1">{course.description}</p>}
+                        <p className="text-sepia-500 text-xs mt-1">Precio: ${(course.price || 0).toLocaleString('es-MX')} MXN · Tu parte: {share}%</p>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-sepia-800/50 rounded-xl p-3 text-center">
+                          <p className="text-2xl font-bold text-sepia-100">{enrolls.length}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Inscritos</p>
+                        </div>
+                        <div className="bg-sepia-800/50 rounded-xl p-3 text-center">
+                          <p className="text-2xl font-bold text-green-400">{paid}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Pagados</p>
+                          {pending > 0 && <p className="text-[10px] text-amber-400">{pending} pendientes</p>}
+                        </div>
+                        <div className="bg-sepia-800/50 rounded-xl p-3 text-center">
+                          <p className="text-xl font-bold text-amber-400">${total.toLocaleString('es-MX')}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Ingresos totales</p>
+                        </div>
+                        <div className="bg-sepia-800/50 rounded-xl p-3 text-center">
+                          <p className="text-xl font-bold text-sepia-100">${myPart.toLocaleString('es-MX')}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Tu parte ({share}%)</p>
+                          <p className="text-[10px] text-sepia-600">Admin: ${adminPart.toLocaleString('es-MX')}</p>
+                        </div>
+                      </div>
+                      {/* Lista de inscritos pagados */}
+                      {paid > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-sepia-500 uppercase tracking-widest font-bold mb-2">Alumnos con acceso activo</p>
+                          {enrolls.filter(e => e.status === 'paid').map(e => (
+                            <div key={e.id} className="flex items-center justify-between bg-sepia-800/30 rounded-lg px-3 py-2">
+                              <div>
+                                <span className="text-sepia-200 text-sm">{e.student_name}</span>
+                                <span className="text-sepia-500 text-xs ml-2">{e.student_email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <TrendingUp className="w-3.5 h-3.5 text-green-400" />
+                                <span className="text-green-400 text-xs font-bold">Activo</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: Mis Historias ── */}
+        {activeTab === 'historias' && (
+          <div>
+          {!showForm && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -745,6 +871,8 @@ export const CollaboratorsSection: React.FC<CollaboratorsSectionProps> = ({ onBa
             </div>
           )}
         </div>
+        </div>
+        )} {/* fin activeTab === 'historias' */}
       </div>
     </div>
   );

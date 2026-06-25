@@ -141,6 +141,8 @@ export const CoursesAdmin: React.FC = () => {
         price: editingCourse.price ?? 0,
         is_active: editingCourse.is_active ?? true,
         order_index: editingCourse.order_index ?? 0,
+        collaborator_code: editingCourse.collaborator_code?.trim().toUpperCase() || null,
+        instructor_share: editingCourse.instructor_share ?? 0,
       };
       if (editingCourse.id) {
         const { error } = await supabase.from('courses').update(payload).eq('id', editingCourse.id);
@@ -306,6 +308,16 @@ export const CoursesAdmin: React.FC = () => {
               <div className="space-y-1">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Orden (menor = primero)</label>
                 <input type="number" min={0} value={editingCourse.order_index ?? 0} onChange={e => setEditingCourse({ ...editingCourse, order_index: parseInt(e.target.value) || 0 })}
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Código colaborador (opcional)</label>
+                <input type="text" value={editingCourse.collaborator_code || ''} onChange={e => setEditingCourse({ ...editingCourse, collaborator_code: e.target.value.toUpperCase() })}
+                  placeholder="Ej: COLB-XXXX" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono text-sm" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">% del instructor (0-100)</label>
+                <input type="number" min={0} max={100} step={1} value={editingCourse.instructor_share ?? 0} onChange={e => setEditingCourse({ ...editingCourse, instructor_share: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500" />
               </div>
               <div className="md:col-span-2 flex items-center gap-3">
@@ -565,6 +577,43 @@ export const CoursesAdmin: React.FC = () => {
               {/* ─ Inscritos ─ */}
               {adminTab === 'enrollments' && (
                 <div className="space-y-3">
+                  {/* Resumen de pagos */}
+                  {selectedCourse && (() => {
+                    const paid = enrollments.filter(e => e.status === 'paid').length;
+                    const pending = enrollments.filter(e => e.status === 'pending').length;
+                    const total = paid * (selectedCourse.price || 0);
+                    const share = selectedCourse.instructor_share ?? 0;
+                    const instrPart = total * share / 100;
+                    const myPart = total - instrPart;
+                    return (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-sepia-800/40 border border-sepia-700 rounded-2xl">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-sepia-100">{enrollments.length}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Total inscritos</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-400">{paid}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">{pending} pendientes</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-amber-400">${total.toLocaleString('es-MX')}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Ingresos totales</p>
+                        </div>
+                        {share > 0 ? (
+                          <div className="text-center">
+                            <p className="text-base font-bold text-sepia-300">${instrPart.toLocaleString('es-MX')} <span className="text-sepia-500 text-xs">inst.</span></p>
+                            <p className="text-base font-bold text-sepia-100">${myPart.toLocaleString('es-MX')} <span className="text-sepia-500 text-xs">tuyo</span></p>
+                            <p className="text-[10px] text-sepia-500 uppercase tracking-widest">{share}% / {100-share}%</p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-sepia-100">${myPart.toLocaleString('es-MX')}</p>
+                            <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Todo tuyo</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-4 flex-wrap">
                     <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Inscritos ({enrollments.length})</p>
                     <div className="flex gap-2 text-xs">
