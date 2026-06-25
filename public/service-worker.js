@@ -3,8 +3,8 @@
  * Permite que la app se descargue y funcione offline
  */
 
-const CACHE_NAME = 'charlitron-v2';
-const IMAGE_CACHE_NAME = 'charlitron-images-v2';
+const CACHE_NAME = 'charlitron-v3';
+const IMAGE_CACHE_NAME = 'charlitron-images-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
