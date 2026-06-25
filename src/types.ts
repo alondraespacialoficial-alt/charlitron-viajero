@@ -205,6 +205,9 @@ export interface Conference {
   speaker_name_2?: string;
   logo_url?: string;
   certificate_bg_url?: string;
+  signature_url?: string;
+  duration_hours?: number;
+  federation_legend?: string;
   created_at?: string;
   updated_at?: string;
 }

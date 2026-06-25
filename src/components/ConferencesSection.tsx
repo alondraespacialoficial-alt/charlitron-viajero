@@ -5,6 +5,7 @@ import {
   AlertCircle, DollarSign, Clock, MessageCircle, Download,
   Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -460,8 +461,73 @@ export const ConferencesSection: React.FC = () => {
         y += 7;
       }
 
+      // ── Duración en horas
+      if (conference.duration_hours && conference.duration_hours > 0) {
+        doc.setFontSize(8);
+        doc.setTextColor(130, 105, 75);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Duración: ${conference.duration_hours} hora${conference.duration_hours !== 1 ? 's' : ''}`, cx, y, { align: 'center' });
+        y += 7;
+      }
+
+      // ── Sección inferior (firma + QR) — posiciones absolutas
+      const footerY = H - 20;   // 190
+      const sigBlockY = 158;    // tope de firma y QR
+
+      // ── Firma digital
+      if (conference.signature_url) {
+        const sigData = await loadImage(conference.signature_url);
+        if (sigData) {
+          const maxSigW = 65, maxSigH = 24;
+          const sigAspect = sigData.w / sigData.h;
+          let sW = maxSigW, sH = sW / sigAspect;
+          if (sH > maxSigH) { sH = maxSigH; sW = sH * sigAspect; }
+          // Dibujar con opacidad natural (firma con fondo transparente)
+          doc.saveGraphicsState();
+          (doc as any).setGState((doc as any).GState({ opacity: 0.72 }));
+          doc.addImage(sigData.base64, 'PNG', 18 + (65 - sW) / 2, sigBlockY, sW, sH);
+          doc.restoreGraphicsState();
+        }
+        // Línea de firma
+        doc.setDrawColor(100, 77, 44);
+        doc.setLineWidth(0.4);
+        doc.line(14, footerY - 6, 84, footerY - 6);
+        // Etiqueta
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(120, 95, 58);
+        doc.text('Firma y Sello Autorizado', 49, footerY - 1, { align: 'center' });
+      }
+
+      // ── Código QR de verificación
+      const qrUrl = `https://charlitronviajerodeltiempo.com/?folio=${ticket.folio}`;
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#dab064', light: '#14100c' },
+      });
+      const qrSize = 22;
+      doc.addImage(qrDataUrl, 'PNG', W - 37, sigBlockY, qrSize, qrSize);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 78, 45);
+      doc.text('Escanear para verificar', W - 26, footerY - 8, { align: 'center' });
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(130, 100, 55);
+      doc.text(ticket.folio, W - 26, footerY - 3, { align: 'center' });
+
+      // ── Leyenda de membresía / federación
+      if (conference.federation_legend?.trim()) {
+        const legendLines = doc.splitTextToSize(conference.federation_legend.trim(), 160) as string[];
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(105, 82, 52);
+        const legendY = footerY - 6 - legendLines.length * 4;
+        doc.text(legendLines, cx, legendY, { align: 'center' });
+      }
+
       // ── Pie de página
-      const footerY = H - 20;
       doc.setDrawColor(65, 50, 28);
       doc.setLineWidth(0.3);
       doc.line(12, footerY, W - 12, footerY);

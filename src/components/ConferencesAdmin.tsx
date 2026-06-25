@@ -32,6 +32,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingCertBg, setIsUploadingCertBg] = useState(false);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -115,6 +116,28 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     }
   };
 
+  // ─── Signature Upload ────────────────────────────────────────────────────
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingConference) return;
+    setIsUploadingSignature(true);
+    try {
+      const fileName = `conferences/firma-${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName);
+      setEditingConference({ ...editingConference, signature_url: urlData.publicUrl });
+    } catch (err) {
+      console.error('Error uploading signature:', err);
+      setMessage({ type: 'error', text: 'Error al subir la firma' });
+    } finally {
+      setIsUploadingSignature(false);
+    }
+  };
+
   // ─── Save Conference ────────────────────────────────────────────────────────
 
   const handleSaveConference = async () => {
@@ -141,6 +164,9 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             speaker_name_2: editingConference.speaker_name_2 || null,
             logo_url: editingConference.logo_url || null,
             certificate_bg_url: editingConference.certificate_bg_url || null,
+            signature_url: editingConference.signature_url || null,
+            duration_hours: editingConference.duration_hours ?? null,
+            federation_legend: editingConference.federation_legend || null,
           })
           .eq('id', editingConference.id);
         if (error) throw error;
@@ -162,6 +188,9 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             speaker_name_2: editingConference.speaker_name_2 || null,
             logo_url: editingConference.logo_url || null,
             certificate_bg_url: editingConference.certificate_bg_url || null,
+            signature_url: editingConference.signature_url || null,
+            duration_hours: editingConference.duration_hours ?? null,
+            federation_legend: editingConference.federation_legend || null,
           }]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Conferencia creada' });
@@ -533,6 +562,80 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                   placeholder="Ej: Confirmar lugar el día anterior"
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
+              </div>
+
+              {/* Duración */}
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Duración <span className="normal-case text-sepia-600">(horas, opcional)</span></label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={editingConference.duration_hours ?? ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, duration_hours: e.target.value ? parseFloat(e.target.value) : undefined })}
+                  placeholder="Ej: 2"
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                />
+              </div>
+
+              {/* Leyenda de membresía */}
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Leyenda del reconocimiento <span className="normal-case text-sepia-600">(opcional)</span></label>
+                <input
+                  type="text"
+                  value={editingConference.federation_legend || ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, federation_legend: e.target.value })}
+                  placeholder="Ej: Miembro de la Federación Nacional..."
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                />
+              </div>
+
+              {/* Firma digital */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Firma digital PNG <span className="normal-case text-sepia-600">(fondo transparente, opcional)</span></label>
+                {editingConference.signature_url && (
+                  <div className="relative inline-flex items-center justify-center rounded-xl border border-sepia-700 bg-sepia-900 p-3 mb-2">
+                    <img
+                      src={editingConference.signature_url}
+                      alt="Firma"
+                      className="max-h-20 max-w-[200px] object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditingConference({ ...editingConference, signature_url: '' })}
+                      className="absolute top-1 right-1 bg-red-900/80 text-red-300 rounded-full p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-3 hover:border-sepia-500 transition-all">
+                  {isUploadingSignature ? (
+                    <Loader2 className="w-5 h-5 text-sepia-400 animate-spin" />
+                  ) : (
+                    <Upload className="w-5 h-5 text-sepia-400" />
+                  )}
+                  <span className="text-sepia-400 text-sm">
+                    {isUploadingSignature ? 'Subiendo...' : 'Subir firma (PNG con fondo transparente)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/*"
+                    className="hidden"
+                    onChange={handleSignatureUpload}
+                    disabled={isUploadingSignature}
+                  />
+                </label>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sepia-600 text-xs">O pegar URL:</span>
+                  <input
+                    type="url"
+                    value={editingConference.signature_url || ''}
+                    onChange={(e) => setEditingConference({ ...editingConference, signature_url: e.target.value })}
+                    placeholder="https://..."
+                    className="flex-1 bg-sepia-900 border border-sepia-700 rounded-lg px-3 py-1.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                  />
+                </div>
               </div>
 
               {/* Activo */}
