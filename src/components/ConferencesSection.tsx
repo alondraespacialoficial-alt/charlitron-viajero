@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Calendar, MapPin, Users, Ticket, X, Send, CheckCircle2,
   AlertCircle, DollarSign, Clock, MessageCircle, Download,
-  Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award,
+  Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award, ShieldCheck,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Conference, ConferenceTicket } from '../types';
@@ -37,6 +37,8 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
   const [lookupConference, setLookupConference] = useState<Conference | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  // 'ticket' = dueño del boleto | 'verify' = tercero verificando constancia
+  const [lookupMode, setLookupMode] = useState<'ticket' | 'verify'>(() => !!initialFolio ? 'verify' : 'ticket');
 
   // Auto-verificación al llegar desde QR o enlace con ?folio=XXX
   useEffect(() => {
@@ -792,13 +794,43 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
 
         {/* ══ TAB: Mi Boleto / Verificar ════════════════════════════════ */}
         {activeTab === 'lookup' && (
-          <div className="max-w-lg mx-auto space-y-8">
-            <div className="text-center space-y-2">
-              <Search className="w-10 h-10 text-sepia-500 mx-auto" />
-              <h3 className="text-2xl font-serif text-sepia-100">Mi Boleto / Verificar Constancia</h3>
-              <p className="text-sepia-400 text-sm">
-                Ingresa tu folio para consultar el estado de tu boleto o verificar la validez de una constancia de participación.
-              </p>
+          <div className="max-w-lg mx-auto space-y-6">
+
+            {/* Toggle modo */}
+            <div className="flex bg-sepia-900/60 border border-sepia-800 rounded-2xl p-1 gap-1">
+              <button
+                onClick={() => { setLookupMode('ticket'); setLookupTicket(null); setLookupConference(null); setLookupError(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                  lookupMode === 'ticket' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-500 hover:text-sepia-200'
+                }`}
+              >
+                <Ticket className="w-3.5 h-3.5" />
+                Consultar mi boleto
+              </button>
+              <button
+                onClick={() => { setLookupMode('verify'); setLookupTicket(null); setLookupConference(null); setLookupError(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                  lookupMode === 'verify' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-500 hover:text-sepia-200'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Verificar constancia
+              </button>
+            </div>
+
+            {/* Descripción según modo */}
+            <div className="text-center space-y-1">
+              {lookupMode === 'ticket' ? (
+                <>
+                  <p className="text-sepia-300 font-serif text-lg">Consulta tu boleto</p>
+                  <p className="text-sepia-500 text-sm">Ingresa tu folio para ver el estado de pago y descargar tus documentos.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sepia-300 font-serif text-lg">Verificar autenticidad</p>
+                  <p className="text-sepia-500 text-sm">Ingresa el folio que aparece en la constancia para confirmar su validez en nuestros registros.</p>
+                </>
+              )}
             </div>
 
             <form onSubmit={handleLookupTicket} className="flex gap-3">
@@ -852,91 +884,120 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
                   </div>
 
                   <div className="p-6 space-y-4">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div>
-                        <p className="text-sepia-500 text-xs uppercase tracking-widest">Folio</p>
-                        <p className="font-mono font-bold text-sepia-100 text-xl tracking-wider mt-1">
-                          {lookupTicket.folio}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sepia-500 text-xs uppercase tracking-widest">Asistente</p>
-                        <p className="text-sepia-200 font-medium mt-1">{lookupTicket.attendee_name}</p>
-                      </div>
-                    </div>
 
-                    {lookupTicket.status === 'paid' ? (
-                      <div className="flex items-center gap-3 bg-green-900/30 border border-green-700 rounded-xl p-4">
-                        <CheckCircle2 className="w-6 h-6 text-green-400 flex-shrink-0" />
-                        <div>
-                          <p className="text-green-300 font-bold">¡Pago confirmado!</p>
-                          {lookupTicket.paid_at && (
-                            <p className="text-green-600 text-xs mt-0.5">
-                              Confirmado el {formatDateShort(lookupTicket.paid_at)}
+                    {/* ──── MODO: VERIFICAR CONSTANCIA ──── */}
+                    {lookupMode === 'verify' && (
+                      <>
+                        {lookupTicket.status === 'paid' ? (
+                          <div className="relative flex flex-col items-center gap-2 bg-green-950/60 border-2 border-green-600 rounded-2xl px-5 py-6 text-center overflow-hidden">
+                            <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #22c55e 0, #22c55e 1px, transparent 0, transparent 50%)', backgroundSize: '8px 8px' }} />
+                            <ShieldCheck className="w-12 h-12 text-green-400" />
+                            <p className="text-green-300 font-bold uppercase tracking-widest text-sm">
+                              Constancia válida en nuestros registros
                             </p>
-                          )}
-                        </div>
-                      </div>
-                    ) : lookupTicket.status === 'cancelled' ? (
-                      <div className="flex items-center gap-3 bg-red-900/30 border border-red-700 rounded-xl p-4">
-                        <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
-                        <div>
-                          <p className="text-red-300 font-bold">Boleto cancelado</p>
-                          <p className="text-red-600 text-xs mt-0.5">
-                            Contacta al administrador para más información.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 bg-amber-900/30 border border-amber-700 rounded-xl p-4">
-                          <Clock className="w-6 h-6 text-amber-400 flex-shrink-0" />
-                          <div>
-                            <p className="text-amber-300 font-bold">Pago pendiente</p>
-                            <p className="text-amber-600 text-xs mt-0.5">
-                              Tu registro está guardado. Realiza tu pago para confirmar el boleto.
+                            <p className="text-sepia-300 text-sm mt-1">{lookupTicket.attendee_name}</p>
+                            <p className="text-green-700 text-xs font-mono">{lookupTicket.folio}</p>
+                            {lookupTicket.paid_at && (
+                              <p className="text-green-800 text-xs">Verificado el {formatDateShort(lookupTicket.paid_at)}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="relative flex flex-col items-center gap-2 bg-red-950/60 border-2 border-red-700 rounded-2xl px-5 py-6 text-center">
+                            <AlertCircle className="w-12 h-12 text-red-400" />
+                            <p className="text-red-300 font-bold uppercase tracking-widest text-sm">
+                              Constancia no válida
+                            </p>
+                            <p className="text-red-600 text-xs">
+                              {lookupTicket.status === 'cancelled' ? 'Este boleto fue cancelado.' : 'El pago de este boleto no ha sido confirmado.'}
                             </p>
                           </div>
-                        </div>
-                        {lookupConference.price > 0 && (
-                          <a
-                            href={buildWhatsAppLink(lookupTicket, lookupConference)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 w-full bg-green-700/40 hover:bg-green-700/60 border border-green-600 text-green-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            Enviar comprobante por WhatsApp
-                          </a>
                         )}
-                      </div>
+                      </>
                     )}
 
-                    {lookupTicket.status === 'paid' && (
-                      <button
-                        onClick={() => handleDownloadPDF(lookupTicket, lookupConference)}
-                        disabled={isGeneratingPDF}
-                        className="flex items-center justify-center gap-2 w-full bg-sepia-600 hover:bg-sepia-500 disabled:opacity-50 text-sepia-100 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
-                      >
-                        {isGeneratingPDF
-                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando PDF...</>
-                          : <><Download className="w-4 h-4" /> Descargar Boleto PDF</>
-                        }
-                      </button>
+                    {/* ──── MODO: CONSULTAR MI BOLETO ──── */}
+                    {lookupMode === 'ticket' && (
+                      <>
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div>
+                            <p className="text-sepia-500 text-xs uppercase tracking-widest">Folio</p>
+                            <p className="font-mono font-bold text-sepia-100 text-xl tracking-wider mt-1">{lookupTicket.folio}</p>
+                          </div>
+                          <div>
+                            <p className="text-sepia-500 text-xs uppercase tracking-widest">Asistente</p>
+                            <p className="text-sepia-200 font-medium mt-1">{lookupTicket.attendee_name}</p>
+                          </div>
+                        </div>
+
+                        {lookupTicket.status === 'paid' ? (
+                          <div className="flex items-center gap-3 bg-green-900/30 border border-green-700 rounded-xl p-4">
+                            <CheckCircle2 className="w-6 h-6 text-green-400 flex-shrink-0" />
+                            <div>
+                              <p className="text-green-300 font-bold">¡Pago confirmado!</p>
+                              {lookupTicket.paid_at && (
+                                <p className="text-green-600 text-xs mt-0.5">Confirmado el {formatDateShort(lookupTicket.paid_at)}</p>
+                              )}
+                            </div>
+                          </div>
+                        ) : lookupTicket.status === 'cancelled' ? (
+                          <div className="flex items-center gap-3 bg-red-900/30 border border-red-700 rounded-xl p-4">
+                            <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
+                            <div>
+                              <p className="text-red-300 font-bold">Boleto cancelado</p>
+                              <p className="text-red-600 text-xs mt-0.5">Contacta al administrador para más información.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3 bg-amber-900/30 border border-amber-700 rounded-xl p-4">
+                              <Clock className="w-6 h-6 text-amber-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-amber-300 font-bold">Pago pendiente</p>
+                                <p className="text-amber-600 text-xs mt-0.5">Tu registro está guardado. Realiza tu pago para confirmar el boleto.</p>
+                              </div>
+                            </div>
+                            {lookupConference.price > 0 && (
+                              <a
+                                href={buildWhatsAppLink(lookupTicket, lookupConference)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 w-full bg-green-700/40 hover:bg-green-700/60 border border-green-600 text-green-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                Enviar comprobante por WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {lookupTicket.status === 'paid' && (
+                          <button
+                            onClick={() => handleDownloadPDF(lookupTicket, lookupConference)}
+                            disabled={isGeneratingPDF}
+                            className="flex items-center justify-center gap-2 w-full bg-sepia-600 hover:bg-sepia-500 disabled:opacity-50 text-sepia-100 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                          >
+                            {isGeneratingPDF
+                              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando PDF...</>
+                              : <><Download className="w-4 h-4" /> Descargar Boleto PDF</>
+                            }
+                          </button>
+                        )}
+
+                        {lookupTicket.status === 'paid' && (
+                          <button
+                            onClick={() => handleDownloadCertificate(lookupTicket, lookupConference)}
+                            disabled={isGeneratingCertificate}
+                            className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                          >
+                            {isGeneratingCertificate
+                              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
+                              : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
+                            }
+                          </button>
+                        )}
+                      </>
                     )}
 
-                    {lookupTicket.status === 'paid' && (
-                      <button
-                        onClick={() => handleDownloadCertificate(lookupTicket, lookupConference)}
-                        disabled={isGeneratingCertificate}
-                        className="flex items-center justify-center gap-2 w-full bg-amber-900/40 hover:bg-amber-800/50 disabled:opacity-50 border border-amber-700/60 text-amber-300 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
-                      >
-                        {isGeneratingCertificate
-                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando reconocimiento...</>
-                          : <><Award className="w-4 h-4" /> Descargar Reconocimiento PDF</>
-                        }
-                      </button>
-                    )}
                   </div>
                 </motion.div>
               )}
