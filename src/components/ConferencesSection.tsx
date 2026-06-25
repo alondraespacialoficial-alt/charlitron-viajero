@@ -217,6 +217,22 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
 
       doc.setFillColor(20, 16, 12);
       doc.rect(0, 0, 148, 105, 'F');
+
+      // ── Imagen de fondo difuminada (si existe)
+      if (conference.certificate_bg_url) {
+        const bgData = await loadImage(conference.certificate_bg_url);
+        if (bgData) {
+          const W2 = 148, H2 = 105;
+          const aspect = bgData.w / bgData.h;
+          let bW = W2, bH = W2 / aspect;
+          if (bH < H2) { bH = H2; bW = H2 * aspect; }
+          doc.saveGraphicsState();
+          (doc as any).setGState((doc as any).GState({ opacity: 0.13 }));
+          doc.addImage(bgData.base64, 'PNG', (W2 - bW) / 2, (H2 - bH) / 2, bW, bH);
+          doc.restoreGraphicsState();
+        }
+      }
+
       doc.setFillColor(120, 90, 50);
       doc.rect(0, 0, 7, 105, 'F');
       doc.rect(141, 0, 7, 105, 'F');
