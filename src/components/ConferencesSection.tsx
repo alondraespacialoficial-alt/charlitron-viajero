@@ -1317,6 +1317,10 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
                       </div>
                     )}
 
+                    <p className="text-sepia-600 text-[10px] leading-relaxed text-center px-1">
+                      No se realizarán reembolsos una vez confirmada la reserva. En cancelación con menos de 72 hrs se ofrecerá reprogramación. Si la cancelación es atribuible a la sede, el organizador recupera el 100% del costo operativo pagado.
+                    </p>
+
                     <button
                       type="submit"
                       disabled={isSubmitting}
