@@ -208,6 +208,7 @@ export interface Conference {
   signature_url?: string;
   duration_hours?: number;
   federation_legend?: string;
+  promo_badge?: string;
   created_at?: string;
   updated_at?: string;
 }

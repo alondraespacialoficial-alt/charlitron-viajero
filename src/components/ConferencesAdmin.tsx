@@ -167,6 +167,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             signature_url: editingConference.signature_url || null,
             duration_hours: editingConference.duration_hours ?? null,
             federation_legend: editingConference.federation_legend || null,
+            promo_badge: editingConference.promo_badge || null,
           })
           .eq('id', editingConference.id);
         if (error) throw error;
@@ -191,6 +192,7 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             signature_url: editingConference.signature_url || null,
             duration_hours: editingConference.duration_hours ?? null,
             federation_legend: editingConference.federation_legend || null,
+            promo_badge: editingConference.promo_badge || null,
           }]);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Conferencia creada' });
@@ -588,6 +590,21 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                   placeholder="Ej: Miembro de la Federación Nacional..."
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
+              </div>
+
+              {/* Leyenda promocional pública */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                  🏷️ Leyenda promocional <span className="normal-case text-sepia-600">(visible en la tarjeta pública)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editingConference.promo_badge || ''}
+                  onChange={(e) => setEditingConference({ ...editingConference, promo_badge: e.target.value })}
+                  placeholder="Ej: ¡Quedan pocos lugares! · Precio especial hasta el viernes"
+                  className="w-full bg-sepia-900 border border-amber-700/60 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-amber-500"
+                />
+                <p className="text-sepia-600 text-xs">Déjalo vacío para no mostrar ninguna leyenda.</p>
               </div>
 
               {/* Firma digital */}

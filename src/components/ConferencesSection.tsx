@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Calendar, MapPin, Users, Ticket, X, Send, CheckCircle2,
   AlertCircle, DollarSign, Clock, MessageCircle, Download,
-  Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award, ShieldCheck,
+  Search, UserCheck, Loader2, CheckSquare, ChevronRight, Award, ShieldCheck, Zap,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Conference, ConferenceTicket } from '../types';
@@ -763,6 +763,20 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
                       <div className="aspect-video bg-sepia-800/50 flex items-center justify-center">
                         <Ticket className="w-12 h-12 text-sepia-700" />
                       </div>
+                    )}
+                    {/* ── Leyenda promocional ────────────────────── */}
+                    {conf.promo_badge && (
+                      <motion.div
+                        initial={{ opacity: 0, scaleY: 0.8 }}
+                        animate={{ opacity: 1, scaleY: 1 }}
+                        className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 px-4 py-2 flex items-center justify-center gap-2"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-white flex-shrink-0" />
+                        <span className="text-white text-xs font-bold uppercase tracking-wide text-center leading-tight">
+                          {conf.promo_badge}
+                        </span>
+                        <Zap className="w-3.5 h-3.5 text-white flex-shrink-0" />
+                      </motion.div>
                     )}
                     <div className="p-6 space-y-4">
                       <h3 className="text-xl font-serif text-sepia-100 line-clamp-2">{conf.title}</h3>
