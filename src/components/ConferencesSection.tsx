@@ -282,6 +282,25 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
       doc.line(13, y + 6, 135, y + 6);
       y += 10;
 
+      // ── QR de verificación del boleto
+      const qrVerifUrl = `https://charlitronviajerodeltiempo.com/conferencias?folio=${ticket.folio}`;
+      const qrDataUrl = await QRCode.toDataURL(qrVerifUrl, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#dab064', light: '#14100c' },
+      });
+      const qrSize = 16;
+      const qrX = 120;
+      const qrY = y + 1;
+      doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 78, 45);
+      if (qrY + qrSize + 7 < 97) {
+        doc.text('Escanear para', qrX + qrSize / 2, qrY + qrSize + 2.5, { align: 'center' });
+        doc.text('verificar pago', qrX + qrSize / 2, qrY + qrSize + 5.5, { align: 'center' });
+      }
+
       doc.setFontSize(8);
       doc.setTextColor(180, 165, 140);
       doc.setFont('helvetica', 'normal');
@@ -289,22 +308,23 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(240, 228, 210);
-      doc.text(ticket.attendee_name, 18, y + 11);
+      const nameForPDF = (doc.splitTextToSize(ticket.attendee_name, 42) as string[])[0];
+      doc.text(nameForPDF, 18, y + 11);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(180, 165, 140);
-      doc.text('FOLIO', 92, y + 4);
+      doc.text('FOLIO', 65, y + 4);
       doc.setFont('courier', 'bold');
-      doc.setFontSize(13);
+      doc.setFontSize(11);
       doc.setTextColor(220, 178, 100);
-      doc.text(ticket.folio, 92, y + 12);
+      doc.text(ticket.folio, 65, y + 12);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(90, 72, 50);
       const fechaGen = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
-      doc.text(`Boleto generado el ${fechaGen}  -  charlitronviajero.com`, 74, 94, { align: 'center' });
+      doc.text(`Boleto generado el ${fechaGen}  -  charlitronviajero.com`, 58, 94, { align: 'center' });
 
       doc.save(`boleto-${ticket.folio}.pdf`);
     } catch (err) {
