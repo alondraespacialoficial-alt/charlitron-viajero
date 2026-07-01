@@ -45,9 +45,8 @@ const WIDGET_STYLE_ID    = 'runway-widget-scale';
 // Cambia este valor para ajustar el tamaño del botón flotante (1 = normal, 2 = doble, etc.)
 const WIDGET_SCALE       = 1.8;
 
-/** Observa el DOM hasta encontrar el contenedor del widget de Runway y lo escala. */
+/** Observa el DOM hasta encontrar el contenedor del widget de Runway, lo escala y lo abre. */
 function watchAndScaleWidget() {
-  // Primero intentamos con el atributo que usa Runway internamente
   const tryNow = () => {
     const fixed = Array.from(document.body.children).find((el) => {
       if (el.id === WIDGET_SCRIPT_ID) return false;
@@ -59,6 +58,13 @@ function watchAndScaleWidget() {
       fixed.dataset.rwScaled = '1';
       fixed.style.transform       = `scale(${WIDGET_SCALE})`;
       fixed.style.transformOrigin = 'bottom right';
+
+      // Auto-abrir el widget: buscar el botón del chat y hacer click
+      setTimeout(() => {
+        const btn = fixed.querySelector<HTMLElement>('button, [role="button"]');
+        if (btn) btn.click();
+      }, 800);
+
       return true;
     }
     return false;
@@ -84,9 +90,11 @@ function injectWidget(pubKey: string) {
   script.id  = WIDGET_SCRIPT_ID;
   script.src = RUNWAY_WIDGET_URL;
   script.setAttribute('data-pub-key', pubKey);
+  // Pedir a Runway que inicie el widget ya expandido/abierto
+  script.setAttribute('data-start-expanded', 'true');
   document.body.appendChild(script);
 
-  // Empezar a observar justo después de que el script se añade al DOM
+  // Observar y escalar + abrir automáticamente
   watchAndScaleWidget();
 }
 
@@ -275,9 +283,9 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 <h3 className="text-sepia-100 font-serif text-2xl mb-2">{selectedAvatar.label}</h3>
                 <p className="text-sepia-400 text-sm mb-6">{selectedAvatar.description}</p>
                 <div className="bg-sepia-800/50 rounded-xl p-4 text-sepia-300 text-sm leading-relaxed">
-                  El widget del avatar está activo.<br />
-                  <strong className="text-sepia-100">Busca el botón de chat</strong> que apareció
-                  en la esquina inferior derecha de la pantalla para iniciar la conversación.
+                  El chat con <strong className="text-sepia-100">{selectedAvatar.label}</strong> se
+                  está abriendo automáticamente.<br />
+                  Si no aparece, busca el botón en la esquina inferior derecha.
                 </div>
               </div>
               <button
