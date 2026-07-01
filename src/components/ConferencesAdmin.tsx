@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import QRCode from 'qrcode';
 import {
   Plus, Trash2, Edit2, Save, X, Upload, Loader2,
   Check, AlertCircle, Ticket, CheckCircle2, Clock,
   XCircle, Search, Calendar, MapPin, DollarSign, Users,
   Image as ImageIcon, ChevronDown, ChevronUp,
+  Download,
 } from 'lucide-react';
 import { Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
@@ -258,6 +260,25 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     }
   };
 
+  const handleSavePaymentNote = async (ticketId: string) => {
+    setUpdatingStatus(ticketId);
+    try {
+      const { error } = await supabase
+        .from('conference_tickets')
+        .update({ payment_notes: paymentNotes[ticketId] || null })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Nota guardada' });
+      if (selectedConference) fetchTickets(selectedConference.id);
+    } catch (err) {
+      console.error('Error saving payment note:', err);
+      setMessage({ type: 'error', text: 'Error al guardar la nota' });
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
   // ─── Delete Ticket ──────────────────────────────────────────────────────────
 
   const handleDeleteTicket = async (ticketId: string) => {
@@ -266,6 +287,213 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     if (!error && selectedConference) {
       fetchTickets(selectedConference.id);
       setMessage({ type: 'success', text: 'Boleto eliminado' });
+    }
+  };
+
+  const handleDownloadAllTicketsPDF = async () => {
+    if (!selectedConference || tickets.length === 0) return;
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const W = 210;
+      const pageH = 297;
+      const marginX = 14;
+      const marginTop = 20;
+      const rowH = 8;
+      const colWidths = [20, 42, 52, 26, 22, 22];
+      // col positions
+      const colX = colWidths.reduce<number[]>((acc, w, i) => {
+        acc.push(i === 0 ? marginX : acc[i - 1] + colWidths[i - 1]);
+        return acc;
+      }, []);
+
+      const drawHeader = (pageNum: number) => {
+        doc.setFillColor(20, 16, 12);
+        doc.rect(0, 0, W, pageH, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(240, 228, 210);
+        doc.text('LISTA DE BOLETOS', W / 2, 13, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setTextColor(220, 178, 100);
+        const title = selectedConference.title.length > 80
+          ? selectedConference.title.slice(0, 77) + '...'
+          : selectedConference.title;
+        doc.text(title, W / 2, 19, { align: 'center' });
+        // header row
+        doc.setFillColor(50, 38, 22);
+        doc.rect(marginX, marginTop + 2, W - marginX * 2, rowH, 'F');
+        doc.setFontSize(7.5);
+        doc.setTextColor(180, 150, 90);
+        const headers = ['Folio', 'Asistente', 'Correo', 'Tel.', 'Estado', 'Pago'];
+        headers.forEach((h, i) => doc.text(h, colX[i] + 1, marginTop + 8));
+        doc.setDrawColor(90, 72, 50);
+        doc.setLineWidth(0.3);
+        doc.line(marginX, marginTop + 10, W - marginX, marginTop + 10);
+        if (pageNum > 1) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(100, 80, 55);
+          doc.text(`Pág. ${pageNum}`, W - marginX, 13, { align: 'right' });
+        }
+      };
+
+      let page = 1;
+      drawHeader(page);
+      let y = marginTop + 14;
+
+      tickets.forEach((t, idx) => {
+        if (y + rowH > pageH - 14) {
+          doc.addPage();
+          page++;
+          doc.setFillColor(20, 16, 12);
+          doc.rect(0, 0, W, pageH, 'F');
+          drawHeader(page);
+          y = marginTop + 14;
+        }
+        const isOdd = idx % 2 === 0;
+        if (isOdd) {
+          doc.setFillColor(28, 22, 15);
+          doc.rect(marginX, y - 5.5, W - marginX * 2, rowH, 'F');
+        }
+        const statusColor = t.status === 'paid' ? [60, 170, 100] : t.status === 'cancelled' ? [180, 70, 70] : [200, 155, 50];
+        doc.setFontSize(7.5);
+        doc.setFont('courier', 'bold');
+        doc.setTextColor(220, 178, 100);
+        doc.text(t.folio, colX[0] + 1, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(230, 218, 200);
+        const name = t.attendee_name.length > 22 ? t.attendee_name.slice(0, 20) + '..' : t.attendee_name;
+        doc.text(name, colX[1] + 1, y);
+        const email = t.attendee_email.length > 28 ? t.attendee_email.slice(0, 26) + '..' : t.attendee_email;
+        doc.text(email, colX[2] + 1, y);
+        doc.text(t.attendee_phone || '—', colX[3] + 1, y);
+        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(statusLabel(t.status), colX[4] + 1, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(160, 145, 125);
+        doc.text(t.paid_at ? new Date(t.paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '—', colX[5] + 1, y);
+        if (t.payment_notes?.trim()) {
+          doc.setFontSize(6.5);
+          doc.setTextColor(130, 120, 100);
+          const note = t.payment_notes.length > 80 ? t.payment_notes.slice(0, 78) + '..' : t.payment_notes;
+          doc.text(`  ↳ ${note}`, colX[1] + 1, y + 5);
+          y += 5;
+        }
+        y += rowH;
+      });
+
+      // Footer summary
+      if (y + 20 > pageH) { doc.addPage(); doc.setFillColor(20, 16, 12); doc.rect(0, 0, W, pageH, 'F'); y = 20; }
+      doc.setDrawColor(90, 72, 50);
+      doc.setLineWidth(0.4);
+      doc.line(marginX, y, W - marginX, y);
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(180, 165, 140);
+      doc.text(`Total: ${tickets.length}`, marginX, y);
+      doc.setTextColor(60, 170, 100);
+      doc.text(`Pagados: ${ticketCounts.paid}`, marginX + 28, y);
+      doc.setTextColor(200, 155, 50);
+      doc.text(`Pendientes: ${ticketCounts.pending}`, marginX + 56, y);
+      doc.setTextColor(180, 70, 70);
+      doc.text(`Cancelados: ${ticketCounts.cancelled}`, marginX + 92, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 80, 55);
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}  —  charlitronviajero.com`, W / 2, y, { align: 'center' });
+
+      const safeName = selectedConference.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      doc.save(`boletos-${safeName}.pdf`);
+    } catch (err) {
+      console.error('Error generating all-tickets PDF:', err);
+      setMessage({ type: 'error', text: 'Error al generar el PDF' });
+    }
+  };
+
+  const handleDownloadTicketPDF = async (ticket: ConferenceTicket, conference: Conference) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+      doc.setFillColor(20, 16, 12);
+      doc.rect(0, 0, 210, 297, 'F');
+
+      doc.setDrawColor(180, 150, 100);
+      doc.setLineWidth(0.7);
+      doc.rect(12, 12, 186, 273);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(240, 228, 210);
+      doc.setFontSize(20);
+      doc.text('BOLETO DE CONFERENCIA', 105, 26, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setTextColor(220, 178, 100);
+      doc.text(conference.title.toUpperCase(), 105, 36, { align: 'center' });
+
+      doc.setDrawColor(90, 72, 50);
+      doc.line(20, 42, 190, 42);
+
+      const statusLabelText = statusLabel(ticket.status);
+      const statusFill = ticket.status === 'paid'
+        ? [25, 100, 55]
+        : ticket.status === 'cancelled'
+          ? [120, 35, 35]
+          : [130, 95, 20];
+
+      doc.setFillColor(statusFill[0], statusFill[1], statusFill[2]);
+      doc.roundedRect(150, 48, 38, 12, 3, 3, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(statusLabelText.toUpperCase(), 169, 55.5, { align: 'center' });
+
+      const lines: Array<{ label: string; value: string }> = [
+        { label: 'Folio', value: ticket.folio },
+        { label: 'Asistente', value: ticket.attendee_name },
+        { label: 'Correo', value: ticket.attendee_email },
+        { label: 'Teléfono', value: ticket.attendee_phone || '—' },
+        { label: 'Registrado', value: formatDate(ticket.created_at) },
+        { label: 'Estado', value: statusLabelText },
+        { label: 'Pagado el', value: ticket.paid_at ? formatDate(ticket.paid_at) : '—' },
+        { label: 'Registrado por', value: ticket.collaborator_name || 'Cliente' },
+        { label: 'Notas', value: paymentNotes[ticket.id]?.trim() || ticket.payment_notes || '—' },
+      ];
+
+      let y = 58;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(240, 228, 210);
+      lines.forEach((item) => {
+        doc.setTextColor(180, 165, 140);
+        doc.text(`${item.label}:`, 20, y);
+        doc.setTextColor(240, 228, 210);
+        const wrapped = doc.splitTextToSize(item.value, 120) as string[];
+        doc.text(wrapped, 58, y);
+        y += Math.max(7, wrapped.length * 5.5);
+      });
+
+      const qrUrl = `https://charlitronviajerodeltiempo.com/conferencias?folio=${ticket.folio}`;
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 180,
+        margin: 1,
+        color: { dark: '#dab064', light: '#14100c' },
+      });
+      doc.addImage(qrDataUrl, 'PNG', 20, 212, 38, 38);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 165, 140);
+      doc.text('Escanear para validar el boleto', 39, 255, { align: 'center' });
+
+      doc.setFontSize(7);
+      doc.setTextColor(120, 100, 80);
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-MX')}`, 105, 270, { align: 'center' });
+
+      doc.save(`boleto-${ticket.folio}.pdf`);
+    } catch (err) {
+      console.error('Error generating ticket PDF:', err);
+      setMessage({ type: 'error', text: 'Error al generar el PDF del boleto' });
     }
   };
 
@@ -779,9 +1007,20 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
             <>
               {/* Header de boletos */}
               <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h3 className="text-sepia-100 font-serif text-lg">{selectedConference.title}</h3>
-                  <p className="text-sepia-500 text-xs mt-0.5">Gestión de boletos</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div>
+                    <h3 className="text-sepia-100 font-serif text-lg">{selectedConference.title}</h3>
+                    <p className="text-sepia-500 text-xs mt-0.5">Gestión de boletos</p>
+                  </div>
+                  <button
+                    onClick={handleDownloadAllTicketsPDF}
+                    disabled={tickets.length === 0}
+                    className="flex items-center gap-1.5 bg-sepia-800 hover:bg-sepia-700 border border-sepia-600 text-sepia-200 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all disabled:opacity-40"
+                    title="Exportar todos los boletos a PDF"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Exportar PDF
+                  </button>
                 </div>
                 {/* Estadísticas rápidas */}
                 <div className="flex gap-3 text-xs">
@@ -919,19 +1158,42 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
                             <div className="p-4 space-y-3 bg-sepia-900/40">
                               <div className="space-y-1">
                                 <label className="text-xs text-sepia-500 uppercase tracking-widest">
-                                  Notas de pago (opcional)
+                                  Notas del boleto (aparto, pago, observaciones)
                                 </label>
-                                <input
-                                  type="text"
+                                <textarea
+                                  rows={3}
                                   value={paymentNotes[ticket.id] || ''}
                                   onChange={(e) =>
                                     setPaymentNotes({ ...paymentNotes, [ticket.id]: e.target.value })
                                   }
-                                  placeholder="Ej: Pagó por transferencia BBVA"
-                                  className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                                  placeholder="Ej: Apartado con anticipo de $200. Pendiente de liquidar el viernes."
+                                  className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm resize-none"
+                                  onBlur={() => {
+                                    const current = paymentNotes[ticket.id] || '';
+                                    const saved = ticket.payment_notes || '';
+                                    if (current !== saved) handleSavePaymentNote(ticket.id);
+                                  }}
                                 />
                               </div>
                               <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => handleSavePaymentNote(ticket.id)}
+                                  disabled={updatingStatus === ticket.id}
+                                  className="flex items-center gap-2 bg-sepia-700/60 hover:bg-sepia-600 border border-sepia-600 text-sepia-100 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+                                >
+                                  {updatingStatus === ticket.id
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : <Save className="w-3.5 h-3.5" />
+                                  }
+                                  Guardar nota
+                                </button>
+                                <button
+                                  onClick={() => handleDownloadTicketPDF(ticket, selectedConference)}
+                                  className="flex items-center gap-2 bg-sepia-900/70 hover:bg-sepia-800 border border-sepia-700 text-sepia-200 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-xl transition-all"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  PDF
+                                </button>
                                 {ticket.status !== 'paid' && (
                                   <button
                                     onClick={() => handleUpdateTicketStatus(ticket.id, 'paid')}
