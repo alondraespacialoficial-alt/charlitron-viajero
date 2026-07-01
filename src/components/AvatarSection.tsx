@@ -188,22 +188,83 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+              className="space-y-10"
             >
-              {AVATARS.map((avatar) => (
-                <motion.button
-                  key={avatar.slug}
-                  whileHover={{ scale: 1.03, y: -4 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => handleSelectAvatar(avatar)}
-                  className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
-                >
-                  <span className="text-5xl">{avatar.emoji}</span>
-                  <span className="text-sepia-100 font-serif text-lg">{avatar.label}</span>
-                  <span className="text-sepia-500 text-xs">{avatar.description}</span>
-                  <MessageCircle className="w-4 h-4 text-sepia-600 group-hover:text-sepia-400 transition-colors mt-1" />
-                </motion.button>
-              ))}
+              {/* ── Introducción ─────────────────────────────────────── */}
+              <div className="space-y-5 text-center">
+                <p className="text-sepia-100 font-serif text-xl md:text-2xl leading-relaxed">
+                  Aquí no solo vas a leer historia… vas a conversar con ella.
+                </p>
+                <p className="text-sepia-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+                  En este espacio encontrarás avatares interactivos que representan personajes
+                  reales y simbólicos de nuestra memoria colectiva. Podrás hablar con ellos en
+                  tiempo real, preguntar, explorar y descubrir historias desde su propia voz.
+                </p>
+                <p className="text-sepia-500 text-sm leading-relaxed max-w-lg mx-auto italic">
+                  Cada respuesta está construida a partir de información histórica, memoria
+                  documentada y reconstrucción narrativa, para acercarte lo más posible a lo que
+                  fueron… y a lo que significaron.
+                </p>
+                <p className="text-sepia-300 font-serif text-sm md:text-base leading-relaxed">
+                  No estás frente a una simple inteligencia artificial…
+                  <br className="hidden sm:block" />
+                  estás frente a una interpretación viva del pasado.
+                </p>
+              </div>
+
+              {/* ── ¿Qué puedes hacer? ───────────────────────────────── */}
+              <div className="bg-sepia-900/40 border border-sepia-800 rounded-2xl p-6 max-w-lg mx-auto w-full">
+                <p className="text-sepia-200 font-serif text-base mb-4 text-center">
+                  ¿Qué puedes hacer aquí?
+                </p>
+                <ul className="space-y-2.5 text-sepia-400 text-sm">
+                  {[
+                    'Conversar con personajes históricos',
+                    'Explorar épocas a través de su mirada',
+                    'Descubrir detalles que no vienen en los libros',
+                    'Sentir cómo pensaban… cómo hablaban… cómo veían el mundo',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="text-sepia-600 mt-0.5 select-none">—</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* ── Cards de avatares ─────────────────────────────────── */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {AVATARS.map((avatar) => (
+                  <motion.button
+                    key={avatar.slug}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleSelectAvatar(avatar)}
+                    className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
+                  >
+                    <span className="text-5xl">{avatar.emoji}</span>
+                    <span className="text-sepia-100 font-serif text-lg">{avatar.label}</span>
+                    <span className="text-sepia-500 text-xs">{avatar.description}</span>
+                    <MessageCircle className="w-4 h-4 text-sepia-600 group-hover:text-sepia-400 transition-colors mt-1" />
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* ── Nota importante + cierre ─────────────────────────── */}
+              <div className="border-t border-sepia-800/60 pt-8 max-w-xl mx-auto text-center space-y-4">
+                <p className="text-sepia-600 text-[11px] uppercase tracking-widest">Importante</p>
+                <p className="text-sepia-500 text-xs leading-relaxed">
+                  Las respuestas que recibirás están basadas en historia, contexto real y memoria
+                  colectiva, interpretadas mediante inteligencia artificial. Cada personaje es una
+                  reconstrucción, no una simulación exacta. Pero en cada conversación hay una
+                  intención real: acercarte al pasado de una forma que nunca antes habías vivido.
+                </p>
+                <p className="text-sepia-400 font-serif text-sm leading-relaxed pt-2">
+                  Tal vez entres por curiosidad… pero te quedarás cuando sientas
+                  <br className="hidden sm:block" />
+                  que alguien… desde otro tiempo… te está respondiendo.
+                </p>
+              </div>
             </motion.div>
           )}
 
