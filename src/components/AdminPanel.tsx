@@ -42,6 +42,7 @@ import { ConferencesAdmin } from './ConferencesAdmin';
 import { CoursesAdmin } from './CoursesAdmin';
 import { InstallPromptAdmin } from './InstallPromptAdmin';
 import { CollaboratorsAdmin } from './CollaboratorsAdmin';
+import { AvatarsAdmin } from './AvatarsAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -72,7 +73,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators' | 'avatars'>('stories');
   const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
   const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1010,6 +1011,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'conferences' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 🎟️ Conferencias
+              </button>
+              <button 
+                onClick={() => setViewMode('avatars')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'avatars' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                Avatares
               </button>
               <button 
                 onClick={() => setViewMode('courses')}
@@ -3181,6 +3188,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-6xl mx-auto"
               >
                 <ConferencesAdmin />
+              </motion.div>
+            ) : viewMode === 'avatars' ? (
+              <motion.div
+                key="avatars"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-3xl mx-auto"
+              >
+                <AvatarsAdmin />
               </motion.div>
             ) : viewMode === 'courses' ? (
               <motion.div 

@@ -188,6 +188,23 @@ export interface PendingStory {
 }
 
 // ==========================================
+// TIPOS PARA AVATARES INTERACTIVOS
+// ==========================================
+export interface Avatar {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  emoji: string;
+  image_url?: string;
+  pub_key: string;
+  is_active: boolean;
+  order_index: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// ==========================================
 // TIPOS PARA CONFERENCIAS Y BOLETOS
 // ==========================================
 export interface Conference {

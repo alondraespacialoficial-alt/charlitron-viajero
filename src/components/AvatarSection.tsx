@@ -1,43 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle } from 'lucide-react';
+import { Avatar } from '../types';
+import { supabase } from '../supabase';
 
-// ─── Configuración de avatares ────────────────────────────────────────────────
-// Para cada avatar:
-//   pubKey → cópialo del tab "Embed" en dev.runwayml.com → Embed Snippet → data-pub-key
 // IMPORTANTE: en "Allowed Origins" de Runway agrega https://charlitronviajerodeltiempo.com
-
-interface AvatarConfig {
-  slug: string;
-  label: string;
-  description: string;
-  emoji: string;
-  pubKey: string;
-}
-
-const AVATARS: AvatarConfig[] = [
-  {
-    slug: 'jose',
-    label: 'José',
-    description: 'Narrador histórico',
-    emoji: '🎩',
-    pubKey: 'pub_779bcf5b400af4ed97fa96ba92d89369ff9d1c3d1e82194fe84919d160f6ab21',
-  },
-  {
-    slug: 'charlitron',
-    label: 'Charlitron',
-    description: 'Guía viajero',
-    emoji: '🤖',
-    pubKey: 'REEMPLAZA_CON_PUB_KEY_DE_CHARLITRON',
-  },
-  {
-    slug: 'guia',
-    label: 'Guía',
-    description: 'Asistente cultural',
-    emoji: '🗺️',
-    pubKey: 'REEMPLAZA_CON_PUB_KEY_DE_GUIA',
-  },
-];
 
 const RUNWAY_WIDGET_URL  = 'https://cdn.dev.runwayml.com/prod/widget.js';
 const WIDGET_SCRIPT_ID   = 'runway-character-widget';
@@ -118,14 +85,28 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   accessPassword = '',
 }) => {
   const [step, setStep]                     = useState<Step>('select');
-  const [selectedAvatar, setSelectedAvatar] = useState<AvatarConfig | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
+  const [avatars, setAvatars]               = useState<Avatar[]>([]);
+  const [loadingAvatars, setLoadingAvatars] = useState(true);
   const [password, setPassword]             = useState('');
   const [errorMsg, setErrorMsg]             = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => () => removeWidget(), []);
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const { data } = await supabase
+        .from('avatars')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+      if (data) setAvatars(data);
+      setLoadingAvatars(false);
+    };
+    fetchAvatars();
+    return () => removeWidget();
+  }, []);
 
-  const handleSelectAvatar = (avatar: AvatarConfig) => {
+  const handleSelectAvatar = (avatar: Avatar) => {
     setSelectedAvatar(avatar);
     setPassword('');
     setErrorMsg('');
@@ -142,8 +123,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
       return;
     }
 
-    if (selectedAvatar.pubKey.startsWith('REEMPLAZA_')) {
-      setErrorMsg('Pub key no configurada. Ve a Runway → Characters → Embed y pega el data-pub-key en el código.');
+    if (!selectedAvatar.pub_key || selectedAvatar.pub_key.startsWith('REEMPLAZA_')) {
+      setErrorMsg('Pub key no configurada. Ve al panel admin → Avatares y pega el pub_key.');
       setStep('error');
       return;
     }
@@ -151,7 +132,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     setStep('loading');
     setTimeout(() => {
       try {
-        injectWidget(selectedAvatar.pubKey);
+        injectWidget(selectedAvatar.pub_key);
         setStep('active');
       } catch {
         setErrorMsg('No se pudo cargar el widget de Runway');
@@ -233,73 +214,33 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               </div>
 
               {/* ── Cards de avatares ─────────────────────────────────── */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {AVATARS.map((avatar) => (
-                  <motion.button
-                    key={avatar.slug}
-                    whileHover={{ scale: 1.03, y: -4 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleSelectAvatar(avatar)}
-                    className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
-                  >
-                    <span className="text-5xl">{avatar.emoji}</span>
-                    <span className="text-sepia-100 font-serif text-lg">{avatar.label}</span>
-                    <span className="text-sepia-500 text-xs">{avatar.description}</span>
-                    <MessageCircle className="w-4 h-4 text-sepia-600 group-hover:text-sepia-400 transition-colors mt-1" />
-                  </motion.button>
-                ))}
-              </div>
-
-              {/* ── Nota importante + cierre ─────────────────────────── */}
-              <div className="border-t border-sepia-800/60 pt-8 max-w-xl mx-auto text-center space-y-4">
-                <p className="text-sepia-600 text-[11px] uppercase tracking-widest">Importante</p>
-                <p className="text-sepia-500 text-xs leading-relaxed">
-                  Las respuestas que recibirás están basadas en historia, contexto real y memoria
-                  colectiva, interpretadas mediante inteligencia artificial. Cada personaje es una
-                  reconstrucción, no una simulación exacta. Pero en cada conversación hay una
-                  intención real: acercarte al pasado de una forma que nunca antes habías vivido.
-                </p>
-                <p className="text-sepia-400 font-serif text-sm leading-relaxed pt-2">
-                  Tal vez entres por curiosidad… pero te quedarás cuando sientas
-                  <br className="hidden sm:block" />
-                  que alguien… desde otro tiempo… te está respondiendo.
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 'auth' && selectedAvatar && (
-            <motion.div
-              key="auth"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-sepia-900/60 border border-sepia-700 rounded-2xl p-8 max-w-sm mx-auto"
-            >
-              <button
-                onClick={handleReset}
-                className="flex items-center gap-1 text-sepia-500 hover:text-sepia-300 text-sm mb-6 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" /> Volver
-              </button>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">{selectedAvatar.emoji}</span>
-                <div>
-                  <p className="text-sepia-100 font-serif">{selectedAvatar.label}</p>
-                  <p className="text-sepia-500 text-xs">{selectedAvatar.description}</p>
+              {loadingAvatars ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 text-sepia-600 animate-spin" />
                 </div>
-              </div>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <label className="text-sepia-300 text-sm flex items-center gap-2">
-                  <Lock className="w-4 h-4" /> Contraseña de acceso
-                </label>
-                <input
-                  ref={passwordInputRef}
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+              ) : avatars.length === 0 ? (
+                <p className="text-sepia-600 text-sm text-center py-8">No hay avatares activos por el momento.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {avatars.map((avatar) => (
+                    <motion.button
+                      key={avatar.slug}
+                      whileHover={{ scale: 1.03, y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => handleSelectAvatar(avatar)}
+                      className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
+                    >
+                      {avatar.image_url
+                        ? <img src={avatar.image_url} alt={avatar.label} className="w-20 h-20 rounded-full object-cover border-2 border-sepia-700 group-hover:border-sepia-500 transition-colors" />
+                        : <span className="text-5xl">{avatar.emoji}</span>
+                      }
+                      <span className="text-sepia-100 font-serif text-lg">{avatar.label}</span>
+                      <span className="text-sepia-500 text-xs">{avatar.description}</span>
+                      <MessageCircle className="w-4 h-4 text-sepia-600 group-hover:text-sepia-400 transition-colors mt-1" />
+                    </motion.button>
+                  ))}
+                </div>
+              )}
                   className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700"
                   required
                 />
@@ -340,7 +281,10 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               className="flex flex-col items-center gap-6"
             >
               <div className="bg-sepia-900/60 border border-sepia-700 rounded-2xl p-8 text-center max-w-md w-full">
-                <span className="text-6xl block mb-4">{selectedAvatar.emoji}</span>
+                {selectedAvatar.image_url
+                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-24 h-24 rounded-full object-cover border-2 border-sepia-600 mx-auto mb-4" />
+                  : <span className="text-6xl block mb-4">{selectedAvatar.emoji}</span>
+                }
                 <h3 className="text-sepia-100 font-serif text-2xl mb-2">{selectedAvatar.label}</h3>
                 <p className="text-sepia-400 text-sm mb-6">{selectedAvatar.description}</p>
                 <div className="bg-sepia-800/50 rounded-xl p-4 text-sepia-300 text-sm leading-relaxed">
