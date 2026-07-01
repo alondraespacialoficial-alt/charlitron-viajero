@@ -39,21 +39,65 @@ const AVATARS: AvatarConfig[] = [
   },
 ];
 
-const RUNWAY_WIDGET_URL = 'https://cdn.dev.runwayml.com/prod/widget.js';
-const WIDGET_SCRIPT_ID  = 'runway-character-widget';
+const RUNWAY_WIDGET_URL  = 'https://cdn.dev.runwayml.com/prod/widget.js';
+const WIDGET_SCRIPT_ID   = 'runway-character-widget';
+const WIDGET_STYLE_ID    = 'runway-widget-scale';
+// Cambia este valor para ajustar el tamaño del botón flotante (1 = normal, 2 = doble, etc.)
+const WIDGET_SCALE       = 1.8;
+
+/** Observa el DOM hasta encontrar el contenedor del widget de Runway y lo escala. */
+function watchAndScaleWidget() {
+  // Primero intentamos con el atributo que usa Runway internamente
+  const tryNow = () => {
+    const fixed = Array.from(document.body.children).find((el) => {
+      if (el.id === WIDGET_SCRIPT_ID) return false;
+      const s = window.getComputedStyle(el as HTMLElement);
+      return s.position === 'fixed';
+    }) as HTMLElement | undefined;
+
+    if (fixed && !fixed.dataset.rwScaled) {
+      fixed.dataset.rwScaled = '1';
+      fixed.style.transform       = `scale(${WIDGET_SCALE})`;
+      fixed.style.transformOrigin = 'bottom right';
+      return true;
+    }
+    return false;
+  };
+
+  if (tryNow()) return;
+
+  let attempts = 0;
+  const observer = new MutationObserver(() => {
+    attempts++;
+    if (tryNow() || attempts > 40) observer.disconnect();
+  });
+  observer.observe(document.body, { childList: true });
+  // Seguridad: desconectar tras 10 s
+  setTimeout(() => observer.disconnect(), 10_000);
+}
 
 function injectWidget(pubKey: string) {
   document.getElementById(WIDGET_SCRIPT_ID)?.remove();
+  document.getElementById(WIDGET_STYLE_ID)?.remove();
+
   const script = document.createElement('script');
-  script.id   = WIDGET_SCRIPT_ID;
-  script.src  = RUNWAY_WIDGET_URL;
+  script.id  = WIDGET_SCRIPT_ID;
+  script.src = RUNWAY_WIDGET_URL;
   script.setAttribute('data-pub-key', pubKey);
   document.body.appendChild(script);
+
+  // Empezar a observar justo después de que el script se añade al DOM
+  watchAndScaleWidget();
 }
 
 function removeWidget() {
   document.getElementById(WIDGET_SCRIPT_ID)?.remove();
+  document.getElementById(WIDGET_STYLE_ID)?.remove();
   document.querySelectorAll('[data-runway-widget]').forEach(el => el.remove());
+  // Limpiar escala de cualquier elemento que hayamos modificado
+  document.querySelectorAll('[data-rw-scaled]').forEach((el) => {
+    (el as HTMLElement).style.transform = '';
+  });
 }
 
 type Step = 'select' | 'auth' | 'loading' | 'active' | 'error';
