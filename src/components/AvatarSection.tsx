@@ -79,10 +79,13 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         body: JSON.stringify({ slug: selectedAvatar.slug }),
       });
 
-      const data: RunwaySessionResponse | { error: string } = await res.json();
+      const data: RunwaySessionResponse | { error: string; runwayStatus?: number } = await res.json();
 
       if (!res.ok || 'error' in data) {
-        const msg = 'error' in data ? data.error : `Error ${res.status}`;
+        const errData = data as { error: string; runwayStatus?: number };
+        const msg = errData.runwayStatus
+          ? `Error Runway ${errData.runwayStatus}: ${errData.error}`
+          : errData.error ?? `Error ${res.status}`;
         setErrorMsg(msg);
         setStep('error');
         return;

@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Crear sesión de Character en Runway
-    // Documentación: https://docs.runwayml.com (ajustar endpoint si cambia)
+    // Documentación: https://docs.runwayml.com
     const runwayRes = await fetch(`${RUNWAY_API_BASE}/characters/sessions`, {
       method: 'POST',
       headers: {
@@ -57,16 +57,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({ characterId }),
     });
 
-    const data: unknown = await runwayRes.json();
+    // Intentar parsear como JSON aunque sea error
+    let data: unknown;
+    const contentType = runwayRes.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      data = await runwayRes.json();
+    } else {
+      const text = await runwayRes.text();
+      data = { raw: text };
+    }
 
     if (!runwayRes.ok) {
       const errData = data as Record<string, unknown>;
       const message =
         (errData?.message as string) ??
         (errData?.error as string) ??
-        `Runway API responded with ${runwayRes.status}`;
+        (errData?.raw as string) ??
+        `Runway respondió con HTTP ${runwayRes.status}`;
       console.error('Runway API error:', runwayRes.status, message);
-      return res.status(runwayRes.status).json({ error: message });
+      // Devolvemos el status real de Runway para diagnóstico
+      return res.status(runwayRes.status).json({ error: message, runwayStatus: runwayRes.status });
     }
 
     // Devolver la respuesta de Runway al cliente (sessionUrl, token, etc.)

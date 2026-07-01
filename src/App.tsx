@@ -2324,9 +2324,8 @@ export default function App() {
                   Regresar
                 </button>
               </div>
-              {/* accessPassword vacío = sin contraseña en esta build.
-                  Pásalo desde Supabase site_settings cuando esté listo. */}
-              <AvatarSection accessPassword="" />
+              {/* Contraseña de acceso público a los avatares */}
+              <AvatarSection accessPassword="2003" />
             </div>
           </motion.div>
         ) : showFamilyTree ? (
