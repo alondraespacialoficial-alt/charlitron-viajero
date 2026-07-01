@@ -241,6 +241,45 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   ))}
                 </div>
               )}
+
+            </motion.div>
+          )}
+
+          {step === 'auth' && selectedAvatar && (
+            <motion.div
+              key="auth"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-sepia-900/60 border border-sepia-700 rounded-2xl p-8 max-w-sm mx-auto"
+            >
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1 text-sepia-500 hover:text-sepia-300 text-sm mb-6 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" /> Volver
+              </button>
+              <div className="flex items-center gap-3 mb-6">
+                {selectedAvatar.image_url
+                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-12 h-12 rounded-full object-cover border border-sepia-700" />
+                  : <span className="text-3xl">{selectedAvatar.emoji}</span>
+                }
+                <div>
+                  <p className="text-sepia-100 font-serif">{selectedAvatar.label}</p>
+                  <p className="text-sepia-500 text-xs">{selectedAvatar.description}</p>
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <label className="text-sepia-300 text-sm flex items-center gap-2">
+                  <Lock className="w-4 h-4" /> Contraseña de acceso
+                </label>
+                <input
+                  ref={passwordInputRef}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
                   className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700"
                   required
                 />

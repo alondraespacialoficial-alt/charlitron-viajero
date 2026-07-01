@@ -282,7 +282,7 @@ export const AvatarsAdmin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pub Key */}}
+              {/* Pub Key */}
               <div className="md:col-span-2 space-y-1">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">
                   Pub Key de Runway
