@@ -294,46 +294,49 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     if (!selectedConference || tickets.length === 0) return;
     try {
       const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-      const W = 210;
-      const pageH = 297;
+      // A4 landscape, fondo BLANCO — apto para imprimir sin gastar tinta
+      const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+      const W = 297;
+      const pageH = 210;
       const marginX = 14;
       const marginTop = 20;
       const rowH = 8;
-      const colWidths = [20, 42, 52, 26, 22, 22];
-      // col positions
+      // Folio=48, Asistente=58, Correo=76, Tel=32, Estado=30, Pago=25 → 269 = W-28 ✓
+      const colWidths = [48, 58, 76, 32, 30, 25];
       const colX = colWidths.reduce<number[]>((acc, w, i) => {
         acc.push(i === 0 ? marginX : acc[i - 1] + colWidths[i - 1]);
         return acc;
       }, []);
 
       const drawHeader = (pageNum: number) => {
-        doc.setFillColor(20, 16, 12);
+        // fondo blanco
+        doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, W, pageH, 'F');
+        // título
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
-        doc.setTextColor(240, 228, 210);
+        doc.setTextColor(30, 20, 10);
         doc.text('LISTA DE BOLETOS', W / 2, 13, { align: 'center' });
         doc.setFontSize(9);
-        doc.setTextColor(220, 178, 100);
-        const title = selectedConference.title.length > 80
-          ? selectedConference.title.slice(0, 77) + '...'
+        doc.setTextColor(130, 85, 15);
+        const title = selectedConference.title.length > 100
+          ? selectedConference.title.slice(0, 97) + '...'
           : selectedConference.title;
         doc.text(title, W / 2, 19, { align: 'center' });
-        // header row
-        doc.setFillColor(50, 38, 22);
+        // fila de encabezados de columna — fondo gris claro
+        doc.setFillColor(230, 220, 200);
         doc.rect(marginX, marginTop + 2, W - marginX * 2, rowH, 'F');
         doc.setFontSize(7.5);
-        doc.setTextColor(180, 150, 90);
+        doc.setTextColor(80, 55, 20);
         const headers = ['Folio', 'Asistente', 'Correo', 'Tel.', 'Estado', 'Pago'];
         headers.forEach((h, i) => doc.text(h, colX[i] + 1, marginTop + 8));
-        doc.setDrawColor(90, 72, 50);
+        doc.setDrawColor(180, 155, 110);
         doc.setLineWidth(0.3);
         doc.line(marginX, marginTop + 10, W - marginX, marginTop + 10);
         if (pageNum > 1) {
           doc.setFontSize(6.5);
-          doc.setTextColor(100, 80, 55);
-          doc.text(`Pág. ${pageNum}`, W - marginX, 13, { align: 'right' });
+          doc.setTextColor(140, 120, 90);
+          doc.text(`Pag. ${pageNum}`, W - marginX, 13, { align: 'right' });
         }
       };
 
@@ -345,65 +348,75 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
         if (y + rowH > pageH - 14) {
           doc.addPage();
           page++;
-          doc.setFillColor(20, 16, 12);
+          doc.setFillColor(255, 255, 255);
           doc.rect(0, 0, W, pageH, 'F');
           drawHeader(page);
           y = marginTop + 14;
         }
-        const isOdd = idx % 2 === 0;
-        if (isOdd) {
-          doc.setFillColor(28, 22, 15);
+        // filas alternas — crema muy suave sobre blanco
+        if (idx % 2 === 0) {
+          doc.setFillColor(250, 246, 238);
           doc.rect(marginX, y - 5.5, W - marginX * 2, rowH, 'F');
         }
-        const statusColor = t.status === 'paid' ? [60, 170, 100] : t.status === 'cancelled' ? [180, 70, 70] : [200, 155, 50];
+        const sColor = t.status === 'paid'
+          ? [15, 120, 55]
+          : t.status === 'cancelled'
+            ? [160, 40, 40]
+            : [145, 95, 0];
         doc.setFontSize(7.5);
         doc.setFont('courier', 'bold');
-        doc.setTextColor(220, 178, 100);
+        doc.setTextColor(100, 65, 10);
         doc.text(t.folio, colX[0] + 1, y);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(230, 218, 200);
-        const name = t.attendee_name.length > 22 ? t.attendee_name.slice(0, 20) + '..' : t.attendee_name;
+        doc.setTextColor(30, 20, 10);
+        const name = t.attendee_name.length > 28 ? t.attendee_name.slice(0, 26) + '..' : t.attendee_name;
         doc.text(name, colX[1] + 1, y);
-        const email = t.attendee_email.length > 28 ? t.attendee_email.slice(0, 26) + '..' : t.attendee_email;
+        const email = t.attendee_email.length > 38 ? t.attendee_email.slice(0, 36) + '..' : t.attendee_email;
         doc.text(email, colX[2] + 1, y);
-        doc.text(t.attendee_phone || '—', colX[3] + 1, y);
-        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.text(t.attendee_phone || '--', colX[3] + 1, y);
+        doc.setTextColor(sColor[0], sColor[1], sColor[2]);
         doc.setFont('helvetica', 'bold');
         doc.text(statusLabel(t.status), colX[4] + 1, y);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(160, 145, 125);
-        doc.text(t.paid_at ? new Date(t.paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '—', colX[5] + 1, y);
+        doc.setTextColor(100, 85, 65);
+        doc.text(
+          t.paid_at ? new Date(t.paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '--',
+          colX[5] + 1, y
+        );
         if (t.payment_notes?.trim()) {
           doc.setFontSize(6.5);
-          doc.setTextColor(130, 120, 100);
-          const note = t.payment_notes.length > 80 ? t.payment_notes.slice(0, 78) + '..' : t.payment_notes;
-          doc.text(`  ↳ ${note}`, colX[1] + 1, y + 5);
+          doc.setTextColor(110, 95, 70);
+          const note = t.payment_notes.length > 110 ? t.payment_notes.slice(0, 108) + '..' : t.payment_notes;
+          doc.text('>> ' + note, colX[1] + 1, y + 5);
           y += 5;
         }
         y += rowH;
       });
 
-      // Footer summary
-      if (y + 20 > pageH) { doc.addPage(); doc.setFillColor(20, 16, 12); doc.rect(0, 0, W, pageH, 'F'); y = 20; }
-      doc.setDrawColor(90, 72, 50);
+      // Footer
+      if (y + 20 > pageH) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, pageH, 'F'); y = 20; }
+      doc.setDrawColor(180, 155, 110);
       doc.setLineWidth(0.4);
       doc.line(marginX, y, W - marginX, y);
       y += 6;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.setTextColor(180, 165, 140);
+      doc.setTextColor(80, 65, 45);
       doc.text(`Total: ${tickets.length}`, marginX, y);
-      doc.setTextColor(60, 170, 100);
-      doc.text(`Pagados: ${ticketCounts.paid}`, marginX + 28, y);
-      doc.setTextColor(200, 155, 50);
-      doc.text(`Pendientes: ${ticketCounts.pending}`, marginX + 56, y);
-      doc.setTextColor(180, 70, 70);
-      doc.text(`Cancelados: ${ticketCounts.cancelled}`, marginX + 92, y);
+      doc.setTextColor(15, 120, 55);
+      doc.text(`Pagados: ${ticketCounts.paid}`, marginX + 36, y);
+      doc.setTextColor(145, 95, 0);
+      doc.text(`Pendientes: ${ticketCounts.pending}`, marginX + 76, y);
+      doc.setTextColor(160, 40, 40);
+      doc.text(`Cancelados: ${ticketCounts.cancelled}`, marginX + 124, y);
       y += 6;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.setTextColor(100, 80, 55);
-      doc.text(`Generado el ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}  —  charlitronviajero.com`, W / 2, y, { align: 'center' });
+      doc.setTextColor(150, 130, 100);
+      doc.text(
+        'Generado el ' + new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }) + '  -  charlitronviajero.com',
+        W / 2, y, { align: 'center' }
+      );
 
       const safeName = selectedConference.title.replace(/[^a-z0-9]/gi, '-').toLowerCase();
       doc.save(`boletos-${safeName}.pdf`);
