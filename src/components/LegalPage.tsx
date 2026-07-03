@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, ShieldCheck, FileText, Scale } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, FileText, Scale, Bot } from 'lucide-react';
 
 interface LegalPageProps {
-  type: 'privacy' | 'terms';
+  type: 'privacy' | 'terms' | 'avatars';
   onBack: () => void;
 }
 
@@ -13,6 +13,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ type, onBack }) => {
   }, []);
 
   const isPrivacy = type === 'privacy';
+  const isAvatars  = type === 'avatars';
 
   return (
     <div className="min-h-screen bg-sepia-50 pt-32 pb-24 px-6">
@@ -27,18 +28,90 @@ export const LegalPage: React.FC<LegalPageProps> = ({ type, onBack }) => {
 
         <header className="mb-16">
           <div className="w-16 h-16 bg-sepia-200 rounded-2xl flex items-center justify-center mb-6">
-            {isPrivacy ? <ShieldCheck className="text-sepia-600 w-8 h-8" /> : <Scale className="text-sepia-600 w-8 h-8" />}
+            {isAvatars ? <Bot className="text-sepia-600 w-8 h-8" />
+              : isPrivacy ? <ShieldCheck className="text-sepia-600 w-8 h-8" />
+              : <Scale className="text-sepia-600 w-8 h-8" />}
           </div>
           <h1 className="text-4xl md:text-6xl font-serif mb-6 leading-tight">
-            {isPrivacy ? 'Aviso de Privacidad' : 'Términos y Condiciones'}
+            {isAvatars ? 'Avatares Interactivos Asistidos por IA'
+              : isPrivacy ? 'Aviso de Privacidad'
+              : 'Términos y Condiciones'}
           </h1>
           <p className="text-sepia-600 uppercase tracking-[0.3em] text-sm font-bold">
-            Charlitron® – “Baúl de los Recuerdos”
+            {isAvatars
+              ? 'Museo de Avatares Interactivos – Charlitron® Viajero del Tiempo'
+              : 'Charlitron® – "Baúl de los Recuerdos"'}
           </p>
         </header>
 
         <div className="prose prose-sepia max-w-none bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-sepia-100">
-          {isPrivacy ? (
+          {isAvatars ? (
+            <div className="space-y-8 text-sepia-900 font-light leading-relaxed">
+              <p className="font-medium italic">AVISO SOBRE AVATARES INTERACTIVOS Y USO RESPONSABLE DE INTELIGENCIA ARTIFICIAL – CHARLITRON® VIAJERO DEL TIEMPO</p>
+
+              <p>
+                Los contenidos y experiencias disponibles en esta sección utilizan sistemas de
+                inteligencia artificial para generar interacciones conversacionales, respuestas
+                narrativas y representaciones interpretativas de personajes históricos, figuras
+                simbólicas, contextos culturales o memorias documentadas.
+              </p>
+
+              <section>
+                <h3 className="text-xl font-serif font-bold text-sepia-950 mb-4">Naturaleza de los Avatares</h3>
+                <p>
+                  Estos avatares <strong>no constituyen reproducciones literales, auténticas ni verificadas
+                  palabra por palabra</strong> de personas reales, fallecidas o históricas. Se trata de
+                  recreaciones digitales elaboradas con fines educativos, culturales, de divulgación y
+                  experimentación museográfica, a partir de investigación, fuentes disponibles, criterios
+                  curatoriales y supervisión humana.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-serif font-bold text-sepia-950 mb-4">Limitaciones y Uso Responsable</h3>
+                <p>
+                  El uso de estos avatares <strong>no debe interpretarse como sustituto</strong> de investigación
+                  académica, asesoría profesional, prueba documental, testimonio legal ni fuente histórica
+                  única. Las respuestas generadas pueden contener simplificaciones, interpretaciones o
+                  limitaciones propias de los sistemas de inteligencia artificial, por lo que se recomienda
+                  contrastar la información con fuentes adicionales cuando sea necesario.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-serif font-bold text-sepia-950 mb-4">Compromiso Ético</h3>
+                <p>
+                  Charlitron® Viajero del Tiempo promueve un uso responsable, transparente y ético de la
+                  inteligencia artificial. Cualquier referencia a personas históricas, personajes inspirados
+                  en contextos reales o memorias familiares se presenta como parte de una{' '}
+                  <strong>experiencia cultural y narrativa</strong>, no como afirmación de autenticidad absoluta,
+                  resurrección digital o representación exacta de conciencia, pensamiento o voluntad de
+                  persona alguna.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-serif font-bold text-sepia-950 mb-4">Contenidos Familiares y Sensibles</h3>
+                <p>
+                  En los casos de contenidos familiares, memoriales o sensibles, el proyecto procurará
+                  actuar con respeto, prudencia y responsabilidad, evitando usos engañosos, invasivos o
+                  lesivos para la dignidad, la memoria o la privacidad de terceros.
+                </p>
+              </section>
+
+              <section className="pt-8 border-t border-sepia-100">
+                <h3 className="text-xl font-serif font-bold text-sepia-950 mb-4">Identificación de la Sección</h3>
+                <ul className="list-disc pl-6 space-y-2 text-sm">
+                  <li><strong>Nombre público:</strong> Museo de Avatares Interactivos.</li>
+                  <li><strong>Nombre legal de la sección:</strong> Avatares Interactivos Asistidos por Inteligencia Artificial.</li>
+                </ul>
+                <p className="mt-6 text-sm text-sepia-500">
+                  Este aviso puede actualizarse conforme evolucionen las tecnologías utilizadas o el marco
+                  legal aplicable. La versión vigente estará siempre disponible en este sitio web.
+                </p>
+              </section>
+            </div>
+          ) : isPrivacy ? (
             <div className="space-y-8 text-sepia-900 font-light leading-relaxed">
               <p className="font-medium italic">AVISO DE PRIVACIDAD – CHARLITRON “BAÚL DE LOS RECUERDOS”</p>
               

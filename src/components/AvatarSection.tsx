@@ -153,11 +153,12 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     <section className="min-h-screen bg-sepia-950 flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
-          <h2 className="text-sepia-100 font-serif text-3xl md:text-4xl uppercase tracking-widest mb-3">
-            Avatares Interactivos
+          <p className="text-sepia-500 text-xs uppercase tracking-[0.25em] mb-3">Charlitron® Viajero del Tiempo</p>
+          <h2 className="text-sepia-100 font-serif text-3xl md:text-4xl uppercase tracking-widest mb-4">
+            Museo de Avatares Interactivos
           </h2>
-          <p className="text-sepia-400 text-sm tracking-wide">
-            Sesiones en tiempo real con personajes históricos
+          <p className="text-sepia-400 text-sm md:text-base tracking-wide max-w-xl mx-auto leading-relaxed">
+            Conversaciones con la historia, la memoria y la inteligencia artificial responsable.
           </p>
         </div>
 
@@ -172,25 +173,48 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               className="space-y-10"
             >
               {/* ── Introducción ─────────────────────────────────────── */}
-              <div className="space-y-5 text-center">
-                <p className="text-sepia-100 font-serif text-xl md:text-2xl leading-relaxed">
-                  Aquí no solo vas a leer historia… vas a conversar con ella.
+              <div className="space-y-6 text-center">
+                <p className="text-sepia-200 font-serif text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
+                  Explora conversaciones inmersivas con personajes históricos, figuras simbólicas
+                  y memorias interpretadas mediante inteligencia artificial de forma responsable.
                 </p>
-                <p className="text-sepia-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
-                  En este espacio encontrarás avatares interactivos que representan personajes
-                  reales y simbólicos de nuestra memoria colectiva. Podrás hablar con ellos en
-                  tiempo real, preguntar, explorar y descubrir historias desde su propia voz.
-                </p>
-                <p className="text-sepia-500 text-sm leading-relaxed max-w-lg mx-auto italic">
-                  Cada respuesta está construida a partir de información histórica, memoria
-                  documentada y reconstrucción narrativa, para acercarte lo más posible a lo que
-                  fueron… y a lo que significaron.
-                </p>
-                <p className="text-sepia-300 font-serif text-sm md:text-base leading-relaxed">
-                  No estás frente a una simple inteligencia artificial…
-                  <br className="hidden sm:block" />
-                  estás frente a una interpretación viva del pasado.
-                </p>
+
+                <div className="space-y-4 text-left max-w-2xl mx-auto bg-sepia-900/30 border border-sepia-800/60 rounded-2xl p-6 md:p-8">
+                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
+                    En este espacio, la historia no solo se observa: también se conversa. El{' '}
+                    <strong className="text-sepia-200">Museo de Avatares Interactivos</strong> de
+                    Charlitron® Viajero del Tiempo reúne experiencias digitales creadas a partir
+                    de investigación, memoria documentada y reconstrucción narrativa para acercarte
+                    al pasado de una forma viva, accesible y educativa.
+                  </p>
+                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
+                    Cada avatar ha sido diseñado con fines culturales, educativos y de divulgación.
+                    Sus respuestas forman parte de una{' '}
+                    <strong className="text-sepia-200">representación interpretativa</strong> basada
+                    en fuentes, contexto histórico y criterios curatoriales del proyecto, por lo
+                    que no deben entenderse como declaraciones literales o auténticas de las
+                    personas representadas.
+                  </p>
+                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
+                    Nuestro objetivo es preservar la memoria, despertar curiosidad por la historia
+                    y promover un uso ético y responsable de la inteligencia artificial en la
+                    difusión del patrimonio cultural.
+                  </p>
+                </div>
+
+                {/* ── Aviso legal visible ──────────────────────────────── */}
+                <div
+                  role="note"
+                  aria-label="Aviso importante sobre los avatares"
+                  className="flex items-start gap-3 bg-amber-950/40 border border-amber-800/60 rounded-xl px-5 py-4 max-w-2xl mx-auto text-left"
+                >
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" aria-hidden="true" />
+                  <p className="text-amber-200/80 text-xs md:text-sm leading-relaxed">
+                    <strong className="text-amber-300">Aviso importante:</strong> Los avatares de
+                    esta sección son recreaciones interpretativas asistidas por inteligencia
+                    artificial para fines educativos, culturales y de divulgación.
+                  </p>
+                </div>
               </div>
 
               {/* ── ¿Qué puedes hacer? ───────────────────────────────── */}

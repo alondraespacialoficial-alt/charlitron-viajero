@@ -1634,7 +1634,7 @@ const ContactCTA = () => (
   </section>
 );
 
-const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') => void }) => (
+const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms' | 'avatars') => void }) => (
   <footer className="py-16 bg-sepia-950 border-t border-sepia-900">
     <div className="max-w-7xl mx-auto px-6 text-center">
       <div className="flex flex-col items-center mb-8">
@@ -1667,7 +1667,7 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
         Arte cinematográfico para recuerdos que no merecen el olvido.
       </p>
       <div className="mt-12 pt-12 border-t border-sepia-900/50 flex flex-col gap-6 items-center">
-        <div className="flex gap-8">
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
           <button 
             onClick={() => onLegalClick('privacy')}
             className="text-sepia-400 hover:text-sepia-200 hover:bg-sepia-900/50 px-4 py-2 rounded transition-all text-xs uppercase tracking-widest font-medium"
@@ -1679,6 +1679,12 @@ const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms') =>
             className="text-sepia-400 hover:text-sepia-200 hover:bg-sepia-900/50 px-4 py-2 rounded transition-all text-xs uppercase tracking-widest font-medium"
           >
             ⚖️ Términos
+          </button>
+          <button 
+            onClick={() => onLegalClick('avatars')}
+            className="text-sepia-400 hover:text-sepia-200 hover:bg-sepia-900/50 px-4 py-2 rounded transition-all text-xs uppercase tracking-widest font-medium"
+          >
+            🤖 Avatares IA
           </button>
         </div>
         <p className="text-sepia-700 text-xs">© {new Date().getFullYear()} Charlitron®. Todos los derechos reservados.</p>
@@ -1715,8 +1721,8 @@ export default function App() {
   const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
   const [showAvatars,       setShowAvatars]       = useState(() => INITIAL_PATH === 'avatares');
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
-  const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(
-    () => INITIAL_PATH === 'terminos' ? 'terms' : INITIAL_PATH === 'privacidad' ? 'privacy' : null
+  const [legalView, setLegalView] = useState<'privacy' | 'terms' | 'avatars' | null>(
+    () => INITIAL_PATH === 'terminos' ? 'terms' : INITIAL_PATH === 'privacidad' ? 'privacy' : INITIAL_PATH === 'avatares-legal' ? 'avatars' : null
   );
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stories, setStories] = useState<Story[]>(STORIES);
@@ -1934,6 +1940,8 @@ export default function App() {
         setLegalView('terms');
       } else if (path === 'privacidad') {
         setLegalView('privacy');
+      } else if (path === 'avatares-legal') {
+        setLegalView('avatars');
       } else if (path && path !== 'historias') {
         const foundBySlug = stories.find(s => s.slug && s.slug === path);
         if (foundBySlug) {
@@ -2007,6 +2015,8 @@ export default function App() {
       newPath = '/terminos';
     } else if (legalView === 'privacy') {
       newPath = '/privacidad';
+    } else if (legalView === 'avatars') {
+      newPath = '/avatares-legal';
     } else if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
       newPath = `/${slug}`;
