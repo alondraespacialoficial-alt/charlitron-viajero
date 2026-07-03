@@ -20,6 +20,7 @@ export const AvatarsAdmin: React.FC = () => {
   const [editing, setEditing] = useState<Partial<Avatar> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [isSavingCode, setIsSavingCode] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -58,6 +59,30 @@ export const AvatarsAdmin: React.FC = () => {
       showMsg('error', 'Error al subir la imagen');
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  // ─── Generar código y guardarlo inmediatamente en la BD ─────────
+  const handleGenerateAndSaveCode = async () => {
+    if (!editing) return;
+    const newCode = generateCode();
+    const updated = { ...editing, access_code: newCode };
+    setEditing(updated);
+
+    // Si el avatar ya existe en BD, guardar el código de inmediato
+    if (editing.id) {
+      setIsSavingCode(true);
+      const { error } = await supabase
+        .from('avatars')
+        .update({ access_code: newCode })
+        .eq('id', editing.id);
+      setIsSavingCode(false);
+      if (error) {
+        showMsg('error', 'Error al guardar el código en la base de datos');
+      } else {
+        showMsg('success', `Código ${newCode} guardado en la BD ✓`);
+        fetchAvatars();
+      }
     }
   };
 
@@ -307,11 +332,14 @@ export const AvatarsAdmin: React.FC = () => {
                   />
                   <button
                     type="button"
-                    title="Generar código aleatorio"
-                    onClick={() => setEditing({ ...editing, access_code: generateCode() })}
-                    className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                    title="Generar código aleatorio y guardarlo"
+                    onClick={handleGenerateAndSaveCode}
+                    disabled={isSavingCode}
+                    className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 disabled:opacity-50 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    {isSavingCode
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <RefreshCw className="w-3.5 h-3.5" />}
                     Generar
                   </button>
                   <button
@@ -333,7 +361,7 @@ export const AvatarsAdmin: React.FC = () => {
                 </div>
                 {editing.access_code ? (
                   <p className="text-green-500/70 text-xs mt-1">
-                    ✓ El cliente podrá acceder con este código. La contraseña maestra (admin) siempre funciona.
+                    ✓ Código activo. Al hacer clic en "Generar" se guarda automáticamente en la BD.
                   </p>
                 ) : (
                   <p className="text-sepia-600 text-xs mt-1">
