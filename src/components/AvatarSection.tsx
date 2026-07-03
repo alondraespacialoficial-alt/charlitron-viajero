@@ -82,6 +82,9 @@ interface AvatarSectionProps {
   accessPassword?: string;
 }
 
+// Contraseña maestra del administrador
+const MASTER_PASSWORD = '2003';
+
 export const AvatarSection: React.FC<AvatarSectionProps> = ({
   accessPassword = '',
 }) => {
@@ -119,11 +122,11 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     e.preventDefault();
     if (!selectedAvatar) return;
 
-    // ── Contraseña maestra (admin) ──────────────────────────────
-    const isMaster = accessPassword && password === accessPassword;
-
-    if (!isMaster) {
-      // Fetch en tiempo real para evitar datos cacheados
+    // ── 1. Contraseña maestra (admin siempre entra) ─────────────
+    if (password === MASTER_PASSWORD) {
+      // acceso directo, no necesita DB
+    } else {
+      // ── 2. Código de cliente: verificar en DB en tiempo real ───
       const { data, error } = await supabase
         .from('avatars')
         .select('access_code')
@@ -135,9 +138,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         return;
       }
 
-      const isClientCode = data?.access_code && password === data.access_code;
-
-      if (!isClientCode) {
+      if (!data?.access_code || password !== data.access_code) {
         setErrorMsg('Código de acceso incorrecto');
         return;
       }
