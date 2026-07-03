@@ -198,6 +198,7 @@ export interface Avatar {
   emoji: string;
   image_url?: string;
   pub_key: string;
+  access_code?: string | null;
   is_active: boolean;
   order_index: number;
   created_at?: string;

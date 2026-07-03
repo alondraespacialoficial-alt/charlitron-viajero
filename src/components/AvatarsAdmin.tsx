@@ -2,17 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, Edit2, Save, X, Loader2,
-  Check, AlertCircle, ChevronUp, ChevronDown, Upload,
+  Check, AlertCircle, ChevronUp, ChevronDown, Upload, RefreshCw, Copy,
 } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 
 const EMOJI_OPTIONS = ['🎩','🤖','🗺️','👑','⚔️','📜','🏛️','🎭','🧙','👨‍🏫','👩‍🏫','🪖','🔭','📿','🕯️','🌿'];
 
+/** Genera un código alfanumérico corto (6 chars) para compartir con clientes */
+function generateCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 export const AvatarsAdmin: React.FC = () => {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [editing, setEditing] = useState<Partial<Avatar> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -73,6 +80,7 @@ export const AvatarsAdmin: React.FC = () => {
         emoji:       editing.emoji || '🎭',
         image_url:   editing.image_url?.trim() || null,
         pub_key:     editing.pub_key?.trim() || '',
+        access_code: editing.access_code?.trim() || null,
         is_active:   editing.pub_key?.trim() ? (editing.is_active ?? true) : false,
         order_index: editing.order_index ?? avatars.length,
       };
@@ -280,6 +288,58 @@ export const AvatarsAdmin: React.FC = () => {
                     className="flex-1 bg-sepia-900 border border-sepia-700 rounded-lg px-3 py-1.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
                   />
                 </div>
+              </div>
+
+              {/* Código de acceso para clientes */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                  Código de acceso para clientes
+                  <span className="normal-case text-sepia-600 ml-2">(opcional — genéralo y envíalo por WhatsApp)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editing.access_code || ''}
+                    onChange={(e) => setEditing({ ...editing, access_code: e.target.value.toUpperCase() })}
+                    placeholder="Ej: ABC123"
+                    maxLength={20}
+                    className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono tracking-widest text-sm uppercase"
+                  />
+                  <button
+                    type="button"
+                    title="Generar código aleatorio"
+                    onClick={() => setEditing({ ...editing, access_code: generateCode() })}
+                    className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Generar
+                  </button>
+                  <button
+                    type="button"
+                    title="Copiar código"
+                    disabled={!editing.access_code}
+                    onClick={() => {
+                      if (editing.access_code) {
+                        navigator.clipboard.writeText(editing.access_code);
+                        setCodeCopied(true);
+                        setTimeout(() => setCodeCopied(false), 2000);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 bg-sepia-800 hover:bg-sepia-700 disabled:opacity-30 text-sepia-300 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                  >
+                    {codeCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {codeCopied ? 'Copiado' : 'Copiar'}
+                  </button>
+                </div>
+                {editing.access_code ? (
+                  <p className="text-green-500/70 text-xs mt-1">
+                    ✓ El cliente podrá acceder con este código. La contraseña maestra (admin) siempre funciona.
+                  </p>
+                ) : (
+                  <p className="text-sepia-600 text-xs mt-1">
+                    Sin código: solo podrás entrar tú con la contraseña de admin.
+                  </p>
+                )}
               </div>
 
               {/* Pub Key */}

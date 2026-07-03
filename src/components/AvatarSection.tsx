@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
+import { WHATSAPP_NUMBER } from '../constants';
 
-// IMPORTANTE: en "Allowed Origins" de Runway agrega https://charlitronviajerodeltiempo.com
+const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder al Museo de Avatares Interactivos. ¿Cómo obtengo mi código de acceso?')}`;
 
 const RUNWAY_WIDGET_URL  = 'https://cdn.dev.runwayml.com/prod/widget.js';
 const WIDGET_SCRIPT_ID   = 'runway-character-widget';
@@ -118,8 +119,13 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     e.preventDefault();
     if (!selectedAvatar) return;
 
-    if (accessPassword && password !== accessPassword) {
-      setErrorMsg('Contraseña incorrecta');
+    // Acceso permitido si: coincide con la contraseña maestra (admin)
+    // O si coincide con el código de acceso específico del avatar (cliente)
+    const isMaster    = accessPassword && password === accessPassword;
+    const isClientCode = selectedAvatar.access_code && password === selectedAvatar.access_code;
+
+    if (!isMaster && !isClientCode) {
+      setErrorMsg('Código de acceso incorrecto');
       return;
     }
 
@@ -265,6 +271,34 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* ── CTA — ¿Quieres acceder? ─────────────────────────── */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gradient-to-br from-sepia-900/60 to-sepia-950/80 border border-sepia-700/60 rounded-2xl p-6 max-w-lg mx-auto w-full text-center space-y-4"
+              >
+                <p className="text-sepia-200 font-serif text-base md:text-lg leading-snug">
+                  ¿Te interesa conversar con un avatar?
+                </p>
+                <p className="text-sepia-400 text-sm leading-relaxed">
+                  Cada avatar requiere un <strong className="text-sepia-300">código de acceso personalizado</strong>.
+                  Contáctanos por WhatsApp, realiza tu pago y te enviamos tu código en minutos.
+                </p>
+                <a
+                  href={AVATAR_WA_LINK}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2.5 bg-[#25D366] hover:bg-[#1ebe5d] active:scale-95 text-white font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full shadow-lg transition-all"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Quiero mi código de acceso
+                </a>
+                <p className="text-sepia-600 text-xs">
+                  Ya tienes tu código? Elige tu avatar y úzalo al ingresar.
+                </p>
+              </motion.div>
 
             </motion.div>
           )}
