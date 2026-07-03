@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.avatars (
   emoji       TEXT    NOT NULL DEFAULT '🎭',
   image_url   TEXT,                              -- foto/ilustración del personaje (bucket: images)
   pub_key     TEXT    NOT NULL DEFAULT '',
+  access_code TEXT,                              -- código de acceso para clientes (opcional)
   is_active   BOOLEAN NOT NULL DEFAULT true,
   order_index INTEGER NOT NULL DEFAULT 0,
   created_at  TIMESTAMPTZ DEFAULT NOW(),
