@@ -138,7 +138,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         return;
       }
 
-      if (!data?.access_code || password !== data.access_code) {
+      if (!data?.access_code || password.toUpperCase().trim() !== data.access_code.toUpperCase().trim()) {
         setErrorMsg('Código de acceso incorrecto');
         return;
       }
@@ -348,12 +348,12 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 </label>
                 <input
                   ref={passwordInputRef}
-                  type="password"
+                  type="text"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700"
+                  onChange={(e) => setPassword(e.target.value.toUpperCase())}
+                  placeholder="Ej: ABC123"
+                  autoComplete="off"
+                  className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700 font-mono tracking-widest uppercase"
                   required
                 />
                 {errorMsg && (
