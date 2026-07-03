@@ -115,18 +115,32 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     setTimeout(() => passwordInputRef.current?.focus(), 100);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAvatar) return;
 
-    // Acceso permitido si: coincide con la contraseña maestra (admin)
-    // O si coincide con el código de acceso específico del avatar (cliente)
-    const isMaster    = accessPassword && password === accessPassword;
-    const isClientCode = selectedAvatar.access_code && password === selectedAvatar.access_code;
+    // ── Contraseña maestra (admin) ──────────────────────────────
+    const isMaster = accessPassword && password === accessPassword;
 
-    if (!isMaster && !isClientCode) {
-      setErrorMsg('Código de acceso incorrecto');
-      return;
+    if (!isMaster) {
+      // Fetch en tiempo real para evitar datos cacheados
+      const { data, error } = await supabase
+        .from('avatars')
+        .select('access_code')
+        .eq('id', selectedAvatar.id)
+        .maybeSingle();
+
+      if (error) {
+        setErrorMsg('Error al verificar el código. Intenta de nuevo.');
+        return;
+      }
+
+      const isClientCode = data?.access_code && password === data.access_code;
+
+      if (!isClientCode) {
+        setErrorMsg('Código de acceso incorrecto');
+        return;
+      }
     }
 
     if (!selectedAvatar.pub_key || selectedAvatar.pub_key.startsWith('REEMPLAZA_')) {
