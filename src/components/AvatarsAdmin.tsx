@@ -319,7 +319,7 @@ export const AvatarsAdmin: React.FC = () => {
               <div className="md:col-span-2 space-y-1">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">
                   Código de acceso para clientes
-                  <span className="normal-case text-sepia-600 ml-2">(opcional — genéralo y envíalo por WhatsApp)</span>
+                  <span className="normal-case text-sepia-600 ml-2">(opcional — de un solo uso)</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -361,7 +361,7 @@ export const AvatarsAdmin: React.FC = () => {
                 </div>
                 {editing.access_code ? (
                   <p className="text-green-500/70 text-xs mt-1">
-                    ✓ Código activo. Al hacer clic en "Generar" se guarda automáticamente en la BD.
+                    ✓ Código activo (1 uso). Al validarse en la sección pública se desactiva automáticamente.
                   </p>
                 ) : (
                   <p className="text-sepia-600 text-xs mt-1">

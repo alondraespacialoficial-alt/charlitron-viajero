@@ -122,15 +122,33 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     e.preventDefault();
     if (!selectedAvatar) return;
 
+    if (!selectedAvatar.pub_key || selectedAvatar.pub_key.startsWith('REEMPLAZA_')) {
+      setErrorMsg('Pub key no configurada. Ve al panel admin → Avatares y pega el pub_key.');
+      setStep('error');
+      return;
+    }
+
+    const rawPassword = password.trim();
+    const normalizedPassword = rawPassword.toUpperCase();
+
     // ── 1. Contraseña maestra (admin siempre entra) ─────────────
-    if (password === MASTER_PASSWORD) {
+    if (normalizedPassword === MASTER_PASSWORD) {
       // acceso directo, no necesita DB
     } else {
-      // ── 2. Código de cliente: verificar en DB en tiempo real ───
-      const { data, error } = await supabase
+      // ── 2. Código de cliente: validar y consumir (1 solo uso) ──
+      let consumeQuery = supabase
         .from('avatars')
-        .select('access_code')
-        .eq('id', selectedAvatar.id)
+        .update({ access_code: null })
+        .eq('id', selectedAvatar.id);
+
+      if (rawPassword === normalizedPassword) {
+        consumeQuery = consumeQuery.eq('access_code', normalizedPassword);
+      } else {
+        consumeQuery = consumeQuery.or(`access_code.eq.${rawPassword},access_code.eq.${normalizedPassword}`);
+      }
+
+      const { data, error } = await consumeQuery
+        .select('id')
         .maybeSingle();
 
       if (error) {
@@ -138,16 +156,10 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         return;
       }
 
-      if (!data?.access_code || password.toUpperCase().trim() !== data.access_code.toUpperCase().trim()) {
-        setErrorMsg('Código de acceso incorrecto');
+      if (!data) {
+        setErrorMsg('Código inválido o ya utilizado');
         return;
       }
-    }
-
-    if (!selectedAvatar.pub_key || selectedAvatar.pub_key.startsWith('REEMPLAZA_')) {
-      setErrorMsg('Pub key no configurada. Ve al panel admin → Avatares y pega el pub_key.');
-      setStep('error');
-      return;
     }
 
     setStep('loading');
@@ -311,7 +323,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   Quiero mi código de acceso
                 </a>
                 <p className="text-sepia-600 text-xs">
-                  Ya tienes tu código? Elige tu avatar y úzalo al ingresar.
+                  Ya tienes tu código? Elige tu avatar y úsalo al ingresar. Es de un solo uso.
                 </p>
               </motion.div>
 
@@ -344,7 +356,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               </div>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <label className="text-sepia-300 text-sm flex items-center gap-2">
-                  <Lock className="w-4 h-4" /> Contraseña de acceso
+                  <Lock className="w-4 h-4" /> Código de acceso
                 </label>
                 <input
                   ref={passwordInputRef}
