@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound } from 'lucide-react';
+import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, ShieldCheck } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -76,7 +76,13 @@ function removeWidget() {
   });
 }
 
-type Step = 'select' | 'auth' | 'loading' | 'active' | 'error';
+type Step = 'select' | 'auth' | 'loading' | 'active' | 'error'
+          | 'private_intake' | 'private_intake_short' | 'private_code';
+
+// Clave en localStorage para recordar que ya completó el formulario completo
+const LS_INTAKE_KEY = 'charlitron_private_intake_v1';
+// Versión del aviso mostrado — actualizar si cambia el texto del consentimiento
+const NOTICE_VERSION = '1.0';
 
 interface AvatarSectionProps {
   accessPassword?: string;
@@ -96,7 +102,15 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [errorMsg, setErrorMsg]             = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Acceso privado ──────────────────────────────────────────
+  // ── Acceso privado — intake ─────────────────────────────────
+  const [intakeName, setIntakeName]         = useState('');
+  const [intakeCheck1, setIntakeCheck1]     = useState(false); // código recibido por WA
+  const [intakeCheck2, setIntakeCheck2]     = useState(false); // corresponde al acuerdo
+  const [intakeShortCheck, setIntakeShortCheck] = useState(false); // reingreso
+  const [intakeSaving, setIntakeSaving]     = useState(false);
+  const [intakeError, setIntakeError]       = useState('');
+
+  // ── Acceso privado — código ─────────────────────────────────
   const [privateCode, setPrivateCode]       = useState('');
   const [privateLoading, setPrivateLoading] = useState(false);
   const [privateError, setPrivateError]     = useState('');
@@ -186,6 +200,67 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     setSelectedAvatar(null);
     setPassword('');
     setErrorMsg('');
+    setPrivateCode('');
+    setPrivateError('');
+    setIntakeName('');
+    setIntakeCheck1(false);
+    setIntakeCheck2(false);
+    setIntakeShortCheck(false);
+    setIntakeError('');
+  };
+
+  // ── Iniciar flujo privado — decide primera vez o reingreso ──
+  const handleStartPrivate = () => {
+    const done = localStorage.getItem(LS_INTAKE_KEY);
+    setIntakeError('');
+    setPrivateError('');
+    setPrivateCode('');
+    if (done) {
+      setIntakeShortCheck(false);
+      setStep('private_intake_short');
+    } else {
+      setIntakeName('');
+      setIntakeCheck1(false);
+      setIntakeCheck2(false);
+      setStep('private_intake');
+    }
+  };
+
+  // ── Guardar consentimiento en BD y avanzar al código ────────
+  const saveConsent = async (name: string, isReturn: boolean) => {
+    await supabase.from('avatar_consent_logs').insert([{
+      client_name:    name.trim(),
+      consent_code:   true,
+      consent_terms:  true,
+      notice_version: NOTICE_VERSION,
+      is_return_visit: isReturn,
+      user_agent:     navigator.userAgent.slice(0, 300),
+    }]);
+    // Aunque falle el INSERT no bloqueamos: el consentimiento ya fue mostrado
+  };
+
+  // ── Enviar formulario completo (primera vez) ─────────────────
+  const handleIntakeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intakeName.trim()) { setIntakeError('Por favor escribe tu nombre.'); return; }
+    if (!intakeCheck1 || !intakeCheck2) { setIntakeError('Debes marcar ambas casillas para continuar.'); return; }
+    setIntakeSaving(true);
+    await saveConsent(intakeName, false);
+    localStorage.setItem(LS_INTAKE_KEY, new Date().toISOString());
+    setIntakeSaving(false);
+    setStep('private_code');
+    setTimeout(() => privateInputRef.current?.focus(), 100);
+  };
+
+  // ── Enviar formulario corto (reingreso) ──────────────────────
+  const handleIntakeShortSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intakeShortCheck) { setIntakeError('Debes confirmar antes de continuar.'); return; }
+    setIntakeSaving(true);
+    await saveConsent('(reingreso)', true);
+    setIntakeSaving(false);
+    setStep('private_code');
+    setTimeout(() => privateInputRef.current?.focus(), 100);
   };
 
   // ── Canjear código privado ───────────────────────────────────
@@ -353,51 +428,28 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 </div>
               )}
 
-              {/* ── Acceso privado de cliente ────────────────────────── */}
+              {/* ── Acceso privado de cliente — botón disparador ─────── */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="bg-sepia-950/60 border border-sepia-700/80 rounded-2xl p-6 max-w-lg mx-auto w-full space-y-4"
+                className="bg-sepia-950/60 border border-amber-900/60 rounded-2xl p-6 max-w-lg mx-auto w-full space-y-3"
               >
                 <div className="flex items-center gap-2">
                   <KeyRound className="w-4 h-4 text-amber-400" />
-                  <p className="text-amber-300 font-serif text-base">
-                    Acceso privado de cliente
-                  </p>
+                  <p className="text-amber-300 font-serif text-base">Acceso privado de cliente</p>
                 </div>
                 <p className="text-sepia-400 text-xs leading-relaxed">
-                  Si adquiriste un avatar personalizado, ingresa tu código para acceder directamente.
+                  Si adquiriste un avatar personalizado, accede aquí con tu código.
                   Nadie más puede verlo ni usarlo.
                 </p>
-                <form onSubmit={handlePrivateAccess} className="flex gap-2">
-                  <input
-                    ref={privateInputRef}
-                    type="text"
-                    value={privateCode}
-                    onChange={(e) => { setPrivateCode(e.target.value.toUpperCase()); setPrivateError(''); }}
-                    placeholder="Tu código privado"
-                    autoComplete="off"
-                    maxLength={64}
-                    className="flex-1 bg-sepia-900 border border-sepia-700 focus:border-amber-600 rounded-xl px-4 py-2.5 text-sepia-100 outline-none transition-colors placeholder:text-sepia-600 font-mono tracking-widest uppercase text-sm"
-                  />
-                  <button
-                    type="submit"
-                    disabled={privateLoading || !privateCode.trim()}
-                    className="flex items-center gap-1.5 bg-amber-800 hover:bg-amber-700 disabled:opacity-40 text-amber-100 font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-xl transition-all shrink-0"
-                  >
-                    {privateLoading
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <KeyRound className="w-4 h-4" />
-                    }
-                    Entrar
-                  </button>
-                </form>
-                {privateError && (
-                  <p className="text-red-400 text-xs flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {privateError}
-                  </p>
-                )}
+                <button
+                  onClick={handleStartPrivate}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-800/80 hover:bg-amber-700 text-amber-100 font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-xl transition-all"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  Iniciar acceso privado
+                </button>
               </motion.div>
 
               {/* ── CTA — ¿Quieres acceder? ─────────────────────────── */}
@@ -425,6 +477,218 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 </a>
               </motion.div>
 
+            </motion.div>
+          )}
+
+          {/* ══ INTAKE PRIMERA VEZ ══════════════════════════════════ */}
+          {step === 'private_intake' && (
+            <motion.div
+              key="private_intake"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-sepia-900/70 border border-amber-800/60 rounded-2xl p-8 max-w-lg mx-auto space-y-6"
+            >
+              <button onClick={handleReset} className="flex items-center gap-1 text-sepia-500 hover:text-sepia-300 text-sm transition-colors">
+                <ChevronLeft className="w-4 h-4" /> Volver
+              </button>
+
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="text-amber-300 font-serif text-lg">Acceso privado al avatar</h3>
+                  <p className="text-sepia-500 text-xs mt-0.5">Paso 1 de 2 — Confirmación de identidad y consentimiento</p>
+                </div>
+              </div>
+
+              <div className="bg-sepia-950/60 border border-sepia-800 rounded-xl p-4 space-y-2 text-sepia-300 text-xs leading-relaxed">
+                <p>
+                  Esta experiencia es <strong className="text-sepia-100">privada y personalizada</strong>. El código de acceso
+                  fue enviado de forma directa por <strong className="text-sepia-200">Charlitron® Viajero del Tiempo</strong> mediante
+                  WhatsApp, después de un acuerdo previo con el cliente y del consentimiento correspondiente para el uso
+                  de la información compartida.
+                </p>
+                <p>
+                  Antes de ingresar, te pedimos confirmar algunos datos básicos para proteger la privacidad de esta
+                  experiencia y el uso responsable del contenido.
+                </p>
+              </div>
+
+              <form onSubmit={handleIntakeSubmit} className="space-y-5">
+                {/* Nombre */}
+                <div className="space-y-1.5">
+                  <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                    Nombre de la persona a quien fue enviado este acceso *
+                  </label>
+                  <input
+                    type="text"
+                    value={intakeName}
+                    onChange={(e) => { setIntakeName(e.target.value); setIntakeError(''); }}
+                    placeholder="Tu nombre completo"
+                    maxLength={200}
+                    className="w-full bg-sepia-950 border border-sepia-700 focus:border-amber-600 rounded-xl px-4 py-2.5 text-sepia-100 outline-none transition-colors placeholder:text-sepia-600 text-sm"
+                  />
+                </div>
+
+                {/* Casilla 1 */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={intakeCheck1}
+                    onChange={(e) => { setIntakeCheck1(e.target.checked); setIntakeError(''); }}
+                    className="mt-0.5 w-4 h-4 accent-amber-500 shrink-0"
+                  />
+                  <span className="text-sepia-300 text-xs leading-relaxed group-hover:text-sepia-200 transition-colors">
+                    Confirmo que recibí este código <strong className="text-sepia-200">directamente por WhatsApp</strong> y
+                    que <strong className="text-sepia-200">no lo compartiré con terceros</strong>.
+                  </span>
+                </label>
+
+                {/* Casilla 2 */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={intakeCheck2}
+                    onChange={(e) => { setIntakeCheck2(e.target.checked); setIntakeError(''); }}
+                    className="mt-0.5 w-4 h-4 accent-amber-500 shrink-0"
+                  />
+                  <span className="text-sepia-300 text-xs leading-relaxed group-hover:text-sepia-200 transition-colors">
+                    Confirmo que esta experiencia corresponde al
+                    <strong className="text-sepia-200"> acuerdo y consentimiento otorgado previamente</strong> con
+                    Charlitron® Viajero del Tiempo.
+                  </span>
+                </label>
+
+                {intakeError && (
+                  <p className="text-red-400 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {intakeError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={intakeSaving}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-amber-100 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                >
+                  {intakeSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  Continuar
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {/* ══ INTAKE REINGRESO (formulario corto) ════════════════════ */}
+          {step === 'private_intake_short' && (
+            <motion.div
+              key="private_intake_short"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-sepia-900/70 border border-amber-800/60 rounded-2xl p-8 max-w-lg mx-auto space-y-6"
+            >
+              <button onClick={handleReset} className="flex items-center gap-1 text-sepia-500 hover:text-sepia-300 text-sm transition-colors">
+                <ChevronLeft className="w-4 h-4" /> Volver
+              </button>
+
+              <div className="flex items-center gap-3">
+                <KeyRound className="w-6 h-6 text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="text-amber-300 font-serif text-lg">Bienvenido de nuevo</h3>
+                  <p className="text-sepia-500 text-xs mt-0.5">Confirmación rápida antes de ingresar</p>
+                </div>
+              </div>
+
+              <p className="text-sepia-300 text-sm leading-relaxed bg-sepia-950/60 border border-sepia-800 rounded-xl p-4">
+                Este acceso es <strong className="text-sepia-100">personal y privado</strong>. Antes de ingresar,
+                confirma nuevamente que el código fue enviado directamente a ti.
+              </p>
+
+              <form onSubmit={handleIntakeShortSubmit} className="space-y-5">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={intakeShortCheck}
+                    onChange={(e) => { setIntakeShortCheck(e.target.checked); setIntakeError(''); }}
+                    className="mt-0.5 w-4 h-4 accent-amber-500 shrink-0"
+                  />
+                  <span className="text-sepia-300 text-xs leading-relaxed group-hover:text-sepia-200 transition-colors">
+                    Confirmo que este código me fue enviado <strong className="text-sepia-200">directamente a mí</strong> y
+                    que no lo compartiré con terceros.
+                  </span>
+                </label>
+
+                {intakeError && (
+                  <p className="text-red-400 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {intakeError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={intakeSaving}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-800 hover:bg-amber-700 disabled:opacity-50 text-amber-100 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                >
+                  {intakeSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                  Continuar
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {/* ══ CODIGO PRIVADO ══════════════════════════════════════════ */}
+          {step === 'private_code' && (
+            <motion.div
+              key="private_code"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-sepia-900/70 border border-amber-800/60 rounded-2xl p-8 max-w-sm mx-auto space-y-6"
+            >
+              <button
+                onClick={() => setStep(localStorage.getItem(LS_INTAKE_KEY) ? 'private_intake_short' : 'private_intake')}
+                className="flex items-center gap-1 text-sepia-500 hover:text-sepia-300 text-sm transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" /> Volver
+              </button>
+
+              <div className="flex items-center gap-3">
+                <KeyRound className="w-6 h-6 text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="text-amber-300 font-serif text-lg">Ingresa tu código personal</h3>
+                  <p className="text-sepia-500 text-xs mt-0.5">Paso 2 de 2</p>
+                </div>
+              </div>
+
+              <p className="text-sepia-400 text-xs leading-relaxed">
+                Introduce la clave de acceso que te fue enviada para abrir tu experiencia
+                privada en el Museo de Avatares.
+              </p>
+
+              <form onSubmit={handlePrivateAccess} className="space-y-4">
+                <input
+                  ref={privateInputRef}
+                  type="text"
+                  value={privateCode}
+                  onChange={(e) => { setPrivateCode(e.target.value.toUpperCase()); setPrivateError(''); }}
+                  placeholder="Tu código privado"
+                  autoComplete="off"
+                  maxLength={64}
+                  className="w-full bg-sepia-950 border border-sepia-700 focus:border-amber-600 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-600 font-mono tracking-widest uppercase text-sm"
+                />
+                {privateError && (
+                  <p className="text-red-400 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {privateError}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={privateLoading || !privateCode.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-amber-800 hover:bg-amber-700 disabled:opacity-40 text-amber-100 font-bold uppercase tracking-widest text-sm py-3 rounded-xl transition-all"
+                >
+                  {privateLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                  Entrar
+                </button>
+              </form>
             </motion.div>
           )}
 
