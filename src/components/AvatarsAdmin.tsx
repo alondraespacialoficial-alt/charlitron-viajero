@@ -106,6 +106,8 @@ export const AvatarsAdmin: React.FC = () => {
         image_url:   editing.image_url?.trim() || null,
         pub_key:     editing.pub_key?.trim() || '',
         access_code: editing.access_code?.trim() || null,
+        is_private:  editing.is_private ?? false,
+        private_client_label: editing.private_client_label?.trim() || null,
         is_active:   editing.pub_key?.trim() ? (editing.is_active ?? true) : false,
         order_index: editing.order_index ?? avatars.length,
       };
@@ -279,6 +281,53 @@ export const AvatarsAdmin: React.FC = () => {
                 />
               </div>
 
+              {/* Tipo de avatar */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Tipo de avatar</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, is_private: false })}
+                    className={`text-left rounded-xl border px-4 py-3 transition-all ${
+                      editing.is_private
+                        ? 'bg-sepia-900 border-sepia-700 text-sepia-400'
+                        : 'bg-green-900/20 border-green-700 text-green-300'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold uppercase tracking-wider">Público</p>
+                    <p className="text-xs opacity-80 mt-1">Se muestra en el catálogo general.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, is_private: true })}
+                    className={`text-left rounded-xl border px-4 py-3 transition-all ${
+                      editing.is_private
+                        ? 'bg-amber-900/20 border-amber-700 text-amber-300'
+                        : 'bg-sepia-900 border-sepia-700 text-sepia-400'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold uppercase tracking-wider">Privado</p>
+                    <p className="text-xs opacity-80 mt-1">No aparece en catálogo; acceso solo por código.</p>
+                  </button>
+                </div>
+              </div>
+
+              {editing.is_private && (
+                <div className="md:col-span-2 space-y-1">
+                  <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                    Etiqueta del cliente privado
+                    <span className="normal-case text-sepia-600 ml-2">(opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editing.private_client_label || ''}
+                    onChange={(e) => setEditing({ ...editing, private_client_label: e.target.value })}
+                    placeholder="Ej: Familia Pérez"
+                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                  />
+                </div>
+              )}
+
               {/* Imagen del avatar */}
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Imagen del personaje <span className="normal-case text-sepia-600">(opcional)</span></label>
@@ -416,7 +465,9 @@ export const AvatarsAdmin: React.FC = () => {
                   />
                   <div className="w-10 h-6 bg-sepia-700 rounded-full peer-checked:bg-sepia-500 transition-all after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4 peer-disabled:opacity-40" />
                 </label>
-                <span className="text-sepia-400 text-sm">Visible en la sección pública</span>
+                <span className="text-sepia-400 text-sm">
+                  {editing.is_private ? 'Habilitado para acceso privado' : 'Visible en la sección pública'}
+                </span>
               </div>
             </div>
 
@@ -447,7 +498,7 @@ export const AvatarsAdmin: React.FC = () => {
           Avatares ({avatars.length})
         </h3>
         <button
-          onClick={() => setEditing({ is_active: false, order_index: avatars.length, emoji: '🎭' })}
+          onClick={() => setEditing({ is_active: false, is_private: false, order_index: avatars.length, emoji: '🎭' })}
           className="flex items-center gap-1.5 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -494,6 +545,13 @@ export const AvatarsAdmin: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sepia-100 font-serif text-sm">{avatar.label}</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    avatar.is_private
+                      ? 'text-amber-300 border-amber-700 bg-amber-900/20'
+                      : 'text-cyan-300 border-cyan-700 bg-cyan-900/20'
+                  }`}>
+                    {avatar.is_private ? 'Privado' : 'Público'}
+                  </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                     avatar.is_active
                       ? 'text-green-400 border-green-700 bg-green-900/30'

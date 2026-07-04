@@ -199,6 +199,8 @@ export interface Avatar {
   image_url?: string;
   pub_key: string;
   access_code?: string | null;
+  is_private?: boolean;
+  private_client_label?: string | null;
   is_active: boolean;
   order_index: number;
   created_at?: string;
