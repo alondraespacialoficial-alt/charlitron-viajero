@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle } from 'lucide-react';
+import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -96,6 +96,12 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [errorMsg, setErrorMsg]             = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Acceso privado ──────────────────────────────────────────
+  const [privateCode, setPrivateCode]       = useState('');
+  const [privateLoading, setPrivateLoading] = useState(false);
+  const [privateError, setPrivateError]     = useState('');
+  const privateInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const fetchAvatars = async () => {
       const { data } = await supabase
@@ -180,6 +186,54 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     setSelectedAvatar(null);
     setPassword('');
     setErrorMsg('');
+  };
+
+  // ── Canjear código privado ───────────────────────────────────
+  const handlePrivateAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = privateCode.trim().toUpperCase();
+    if (!code) return;
+    setPrivateLoading(true);
+    setPrivateError('');
+    try {
+      const { data, error } = await supabase
+        .rpc('redeem_private_avatar_code', { p_code: code });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setPrivateError('Código inválido, ya utilizado o vencido.');
+        setPrivateLoading(false);
+        return;
+      }
+      const av = data[0] as { avatar_id: string; slug: string; label: string; description: string; emoji: string; image_url: string; pub_key: string };
+      const privateAvatar: Avatar = {
+        id: av.avatar_id,
+        slug: av.slug,
+        label: av.label,
+        description: av.description,
+        emoji: av.emoji || '🎭',
+        image_url: av.image_url,
+        pub_key: av.pub_key,
+        is_active: true,
+        order_index: 0,
+        is_private: true,
+      };
+      setSelectedAvatar(privateAvatar);
+      setPrivateCode('');
+      setStep('loading');
+      setTimeout(() => {
+        try {
+          injectWidget(privateAvatar.pub_key);
+          setStep('active');
+        } catch {
+          setErrorMsg('No se pudo cargar el widget de Runway');
+          setStep('error');
+        }
+      }, 300);
+    } catch {
+      setPrivateError('Error al verificar el código. Intenta de nuevo.');
+    } finally {
+      setPrivateLoading(false);
+    }
   };
 
   return (
@@ -299,6 +353,53 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 </div>
               )}
 
+              {/* ── Acceso privado de cliente ────────────────────────── */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="bg-sepia-950/60 border border-sepia-700/80 rounded-2xl p-6 max-w-lg mx-auto w-full space-y-4"
+              >
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-amber-400" />
+                  <p className="text-amber-300 font-serif text-base">
+                    Acceso privado de cliente
+                  </p>
+                </div>
+                <p className="text-sepia-400 text-xs leading-relaxed">
+                  Si adquiriste un avatar personalizado, ingresa tu código para acceder directamente.
+                  Nadie más puede verlo ni usarlo.
+                </p>
+                <form onSubmit={handlePrivateAccess} className="flex gap-2">
+                  <input
+                    ref={privateInputRef}
+                    type="text"
+                    value={privateCode}
+                    onChange={(e) => { setPrivateCode(e.target.value.toUpperCase()); setPrivateError(''); }}
+                    placeholder="Tu código privado"
+                    autoComplete="off"
+                    maxLength={64}
+                    className="flex-1 bg-sepia-900 border border-sepia-700 focus:border-amber-600 rounded-xl px-4 py-2.5 text-sepia-100 outline-none transition-colors placeholder:text-sepia-600 font-mono tracking-widest uppercase text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={privateLoading || !privateCode.trim()}
+                    className="flex items-center gap-1.5 bg-amber-800 hover:bg-amber-700 disabled:opacity-40 text-amber-100 font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-xl transition-all shrink-0"
+                  >
+                    {privateLoading
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <KeyRound className="w-4 h-4" />
+                    }
+                    Entrar
+                  </button>
+                </form>
+                {privateError && (
+                  <p className="text-red-400 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {privateError}
+                  </p>
+                )}
+              </motion.div>
+
               {/* ── CTA — ¿Quieres acceder? ─────────────────────────── */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -322,9 +423,6 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   <MessageCircle className="w-4 h-4" />
                   Quiero mi código de acceso
                 </a>
-                <p className="text-sepia-600 text-xs">
-                  Ya tienes tu código? Elige tu avatar y úsalo al ingresar. Es de un solo uso.
-                </p>
               </motion.div>
 
             </motion.div>
