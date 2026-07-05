@@ -280,15 +280,18 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     setPrivateLoading(true);
     setPrivateError('');
     try {
-      const { data, error } = await supabase
-        .rpc('redeem_private_avatar_code', { p_code: code });
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        setPrivateError('Código inválido, ya utilizado o vencido.');
+      const res = await fetch('/api/redeem-avatar-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setPrivateError(payload?.error ?? 'Código inválido, ya utilizado o vencido.');
         setPrivateLoading(false);
         return;
       }
-      const av = data[0] as { avatar_id: string; slug: string; label: string; description: string; emoji: string; image_url: string; pub_key: string };
+      const av = payload as { avatar_id: string; slug: string; label: string; description: string; emoji: string; image_url: string; pub_key: string };
       const privateAvatar: Avatar = {
         id: av.avatar_id,
         slug: av.slug,
@@ -314,7 +317,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         }
       }, 300);
     } catch {
-      setPrivateError('Error al verificar el código. Intenta de nuevo.');
+      setPrivateError('Error de conexión. Intenta de nuevo.');
     } finally {
       setPrivateLoading(false);
     }
