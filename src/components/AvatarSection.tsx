@@ -7,14 +7,11 @@ import { WHATSAPP_NUMBER } from '../constants';
 
 const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder al Museo de Avatares Interactivos. ¿Cómo obtengo mi código de acceso?')}`;
 
-const RUNWAY_WIDGET_URL  = 'https://cdn.dev.runwayml.com/prod/widget.js';
-const WIDGET_SCRIPT_ID   = 'runway-character-widget';
-const WIDGET_STYLE_ID    = 'runway-widget-scale';
-// Cambia este valor para ajustar el tamaño del botón flotante (1 = normal, 2 = doble, etc.)
-const WIDGET_SCALE       = 1.8;
+const RUNWAY_WIDGET_URL = 'https://cdn.runwayml.com/prod/widget.js';
+const WIDGET_SCRIPT_ID  = 'runway-character-widget';
 
-/** Observa el DOM hasta encontrar el contenedor del widget de Runway, lo escala y lo abre. */
-function watchAndScaleWidget() {
+/** Observa el DOM hasta encontrar el contenedor del widget de Runway y lo abre automáticamente. */
+function watchAndOpenWidget() {
   const tryNow = () => {
     const fixed = Array.from(document.body.children).find((el) => {
       if (el.id === WIDGET_SCRIPT_ID) return false;
@@ -22,10 +19,8 @@ function watchAndScaleWidget() {
       return s.position === 'fixed';
     }) as HTMLElement | undefined;
 
-    if (fixed && !fixed.dataset.rwScaled) {
-      fixed.dataset.rwScaled = '1';
-      fixed.style.transform       = `scale(${WIDGET_SCALE})`;
-      fixed.style.transformOrigin = 'bottom right';
+    if (fixed && !fixed.dataset.rwOpened) {
+      fixed.dataset.rwOpened = '1';
 
       // Auto-abrir el widget: buscar el botón del chat y hacer click
       setTimeout(() => {
@@ -52,28 +47,21 @@ function watchAndScaleWidget() {
 
 function injectWidget(pubKey: string) {
   document.getElementById(WIDGET_SCRIPT_ID)?.remove();
-  document.getElementById(WIDGET_STYLE_ID)?.remove();
 
   const script = document.createElement('script');
   script.id  = WIDGET_SCRIPT_ID;
   script.src = RUNWAY_WIDGET_URL;
   script.setAttribute('data-pub-key', pubKey);
-  // Pedir a Runway que inicie el widget ya expandido/abierto
   script.setAttribute('data-start-expanded', 'true');
   document.body.appendChild(script);
 
-  // Observar y escalar + abrir automáticamente
-  watchAndScaleWidget();
+  // Observar y abrir automáticamente
+  watchAndOpenWidget();
 }
 
 function removeWidget() {
   document.getElementById(WIDGET_SCRIPT_ID)?.remove();
-  document.getElementById(WIDGET_STYLE_ID)?.remove();
   document.querySelectorAll('[data-runway-widget]').forEach(el => el.remove());
-  // Limpiar escala de cualquier elemento que hayamos modificado
-  document.querySelectorAll('[data-rw-scaled]').forEach((el) => {
-    (el as HTMLElement).style.transform = '';
-  });
 }
 
 type Step = 'select' | 'auth' | 'loading' | 'active' | 'error'
