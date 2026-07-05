@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, Edit2, Save, X, Loader2,
-  Check, AlertCircle, ChevronUp, ChevronDown, Upload, RefreshCw, Copy, Users,
+  Check, AlertCircle, ChevronUp, ChevronDown, Upload, RefreshCw, Copy, Users, KeyRound,
 } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
@@ -36,6 +36,74 @@ export const AvatarsAdmin: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+
+  // ─── Códigos privados (avatar_private_codes) ───────────────────────────────
+  type PrivateCode = {
+    id: string;
+    code: string;
+    max_uses: number;
+    uses_count: number;
+    is_active: boolean;
+    assigned_to: string | null;
+    expires_at: string | null;
+    created_at: string;
+    last_used_at: string | null;
+  };
+  const [privateCodes, setPrivateCodes]           = useState<PrivateCode[]>([]);
+  const [privateCodesLoading, setPrivateCodesLoading] = useState(false);
+  const [newCodeAssignedTo, setNewCodeAssignedTo] = useState('');
+  const [isCreatingCode, setIsCreatingCode]       = useState(false);
+  const [deletingCodeId, setDeletingCodeId]       = useState<string | null>(null);
+  const [copiedCodeId, setCopiedCodeId]           = useState<string | null>(null);
+
+  const loadPrivateCodes = async (avatarId: string) => {
+    setPrivateCodesLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke('manage-avatar-codes', {
+        body: { action: 'list', avatar_id: avatarId },
+      });
+      setPrivateCodes(data?.data ?? []);
+    } catch { /* silencioso */ }
+    setPrivateCodesLoading(false);
+  };
+
+  const createPrivateCode = async () => {
+    if (!editing?.id) return;
+    setIsCreatingCode(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-avatar-codes', {
+        body: { action: 'create', avatar_id: editing.id, assigned_to: newCodeAssignedTo, max_uses: 1 },
+      });
+      if (error) throw error;
+      if (data?.data) {
+        setPrivateCodes(prev => [data.data, ...prev]);
+        setNewCodeAssignedTo('');
+        showMsg('success', `Código ${data.data.code} creado`);
+      }
+    } catch { showMsg('error', 'Error al crear el código'); }
+    setIsCreatingCode(false);
+  };
+
+  const deletePrivateCode = async (codeId: string) => {
+    if (!confirm('¿Eliminar este código? No podrá usarse más.')) return;
+    setDeletingCodeId(codeId);
+    try {
+      await supabase.functions.invoke('manage-avatar-codes', {
+        body: { action: 'delete', code_id: codeId },
+      });
+      setPrivateCodes(prev => prev.filter(c => c.id !== codeId));
+    } catch { showMsg('error', 'Error al eliminar el código'); }
+    setDeletingCodeId(null);
+  };
+
+  // Carga códigos al abrir un avatar privado existente
+  useEffect(() => {
+    if (editing?.id && editing?.is_private) {
+      loadPrivateCodes(editing.id);
+    } else {
+      setPrivateCodes([]);
+    }
+  }, [editing?.id]); // eslint-disable-line
 
   // ─── Consentimientos ─────────────────────────────────────────
   type ConsentLog = {
@@ -416,60 +484,165 @@ export const AvatarsAdmin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Código de acceso para clientes */}
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs text-sepia-400 uppercase tracking-widest">
-                  Código de acceso para clientes
-                  <span className="normal-case text-sepia-600 ml-2">(opcional — de un solo uso)</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={editing.access_code || ''}
-                    onChange={(e) => setEditing({ ...editing, access_code: e.target.value.toUpperCase() })}
-                    placeholder="Ej: ABC123"
-                    maxLength={20}
-                    className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono tracking-widest text-sm uppercase"
-                  />
-                  <button
-                    type="button"
-                    title="Generar código aleatorio y guardarlo"
-                    onClick={handleGenerateAndSaveCode}
-                    disabled={isSavingCode}
-                    className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 disabled:opacity-50 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
-                  >
-                    {isSavingCode
-                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      : <RefreshCw className="w-3.5 h-3.5" />}
-                    Generar
-                  </button>
-                  <button
-                    type="button"
-                    title="Copiar código"
-                    disabled={!editing.access_code}
-                    onClick={() => {
-                      if (editing.access_code) {
-                        navigator.clipboard.writeText(editing.access_code);
-                        setCodeCopied(true);
-                        setTimeout(() => setCodeCopied(false), 2000);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 bg-sepia-800 hover:bg-sepia-700 disabled:opacity-30 text-sepia-300 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
-                  >
-                    {codeCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    {codeCopied ? 'Copiado' : 'Copiar'}
-                  </button>
+              {/* Código de acceso — público: access_code simple / privado: tabla avatar_private_codes */}
+              {!editing.is_private ? (
+                <div className="md:col-span-2 space-y-1">
+                  <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                    Código de acceso para clientes
+                    <span className="normal-case text-sepia-600 ml-2">(opcional — de un solo uso)</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editing.access_code || ''}
+                      onChange={(e) => setEditing({ ...editing, access_code: e.target.value.toUpperCase() })}
+                      placeholder="Ej: ABC123"
+                      maxLength={20}
+                      className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono tracking-widest text-sm uppercase"
+                    />
+                    <button
+                      type="button"
+                      title="Generar código aleatorio y guardarlo"
+                      onClick={handleGenerateAndSaveCode}
+                      disabled={isSavingCode}
+                      className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 disabled:opacity-50 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                    >
+                      {isSavingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                      Generar
+                    </button>
+                    <button
+                      type="button"
+                      title="Copiar código"
+                      disabled={!editing.access_code}
+                      onClick={() => {
+                        if (editing.access_code) {
+                          navigator.clipboard.writeText(editing.access_code);
+                          setCodeCopied(true);
+                          setTimeout(() => setCodeCopied(false), 2000);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 bg-sepia-800 hover:bg-sepia-700 disabled:opacity-30 text-sepia-300 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                    >
+                      {codeCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {codeCopied ? 'Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                  {editing.access_code ? (
+                    <p className="text-green-500/70 text-xs mt-1">
+                      ✓ Código activo (1 uso). Al validarse en la sección pública se desactiva automáticamente.
+                    </p>
+                  ) : (
+                    <p className="text-sepia-600 text-xs mt-1">
+                      Sin código: solo podrás entrar tú con la contraseña de admin.
+                    </p>
+                  )}
                 </div>
-                {editing.access_code ? (
-                  <p className="text-green-500/70 text-xs mt-1">
-                    ✓ Código activo (1 uso). Al validarse en la sección pública se desactiva automáticamente.
-                  </p>
-                ) : (
-                  <p className="text-sepia-600 text-xs mt-1">
-                    Sin código: solo podrás entrar tú con la contraseña de admin.
-                  </p>
-                )}
-              </div>
+              ) : (
+                /* ── Privado: gestión de múltiples códigos ── */
+                <div className="md:col-span-2 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-sepia-400 uppercase tracking-widest flex items-center gap-2">
+                      <KeyRound className="w-3.5 h-3.5" /> Códigos de acceso privados
+                      {privateCodes.length > 0 && (
+                        <span className="normal-case text-sepia-600">({privateCodes.length})</span>
+                      )}
+                    </label>
+                    {editing.id && (
+                      <button
+                        type="button"
+                        onClick={() => loadPrivateCodes(editing.id!)}
+                        disabled={privateCodesLoading}
+                        className="text-sepia-500 hover:text-sepia-300 disabled:opacity-40"
+                        title="Actualizar lista"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${privateCodesLoading ? 'animate-spin' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+
+                  {!editing.id ? (
+                    <p className="text-sepia-600 text-xs bg-sepia-800/30 rounded-xl px-4 py-3">
+                      Guarda el avatar primero para poder crear códigos de acceso.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Lista de códigos existentes */}
+                      {privateCodes.length === 0 && !privateCodesLoading && (
+                        <p className="text-sepia-600 text-xs bg-sepia-800/30 rounded-xl px-4 py-3">
+                          Sin códigos todavía. Crea el primero abajo.
+                        </p>
+                      )}
+                      {privateCodes.map(pc => (
+                        <div key={pc.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border ${
+                          pc.is_active
+                            ? 'bg-sepia-800/30 border-sepia-700'
+                            : 'bg-sepia-900/20 border-sepia-800 opacity-60'
+                        }`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                            pc.is_active
+                              ? 'text-green-300 border-green-700 bg-green-900/20'
+                              : 'text-orange-400 border-orange-800 bg-orange-900/10'
+                          }`}>
+                            {pc.is_active ? 'Activo' : 'Consumido'}
+                          </span>
+                          <span className="font-mono text-sepia-100 text-sm tracking-widest flex-1">{pc.code}</span>
+                          {pc.assigned_to && (
+                            <span className="text-sepia-500 text-xs truncate max-w-[100px]">{pc.assigned_to}</span>
+                          )}
+                          <span className="text-sepia-600 text-[10px] shrink-0">
+                            {pc.uses_count}/{pc.max_uses} uso{pc.max_uses !== 1 ? 's' : ''}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(pc.code);
+                              setCopiedCodeId(pc.id);
+                              setTimeout(() => setCopiedCodeId(null), 2000);
+                            }}
+                            className="text-sepia-500 hover:text-sepia-200 shrink-0"
+                            title="Copiar código"
+                          >
+                            {copiedCodeId === pc.id
+                              ? <Check className="w-3.5 h-3.5 text-green-400" />
+                              : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deletePrivateCode(pc.id)}
+                            disabled={deletingCodeId === pc.id}
+                            className="text-red-500 hover:text-red-300 disabled:opacity-40 shrink-0"
+                            title="Eliminar código"
+                          >
+                            {deletingCodeId === pc.id
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <Trash2 className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Crear nuevo código */}
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={newCodeAssignedTo}
+                          onChange={(e) => setNewCodeAssignedTo(e.target.value)}
+                          placeholder="Para quién (ej: Familia Pérez)"
+                          className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={createPrivateCode}
+                          disabled={isCreatingCode}
+                          className="flex items-center gap-1.5 bg-sepia-600 hover:bg-sepia-500 disabled:opacity-50 text-sepia-100 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                        >
+                          {isCreatingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                          Nuevo código
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Pub Key */}
               <div className="md:col-span-2 space-y-1">
