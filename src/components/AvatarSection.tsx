@@ -727,10 +727,10 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   ref={passwordInputRef}
                   type="text"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value.toUpperCase())}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Ej: ABC123"
                   autoComplete="off"
-                  className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700 font-mono tracking-widest uppercase"
+                  className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700 font-mono tracking-widest"
                   required
                 />
                 {errorMsg && (
