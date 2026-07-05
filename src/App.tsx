@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
 import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
@@ -1754,6 +1754,7 @@ export default function App() {
   const [logoClicks, setLogoClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
   const fetchIntroVideo = async () => {
@@ -2077,14 +2078,24 @@ export default function App() {
     setTimeout(() => setLogoClicks(0), 3000);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPassword === '2003') {
-      setIsAdminAuthenticated(true);
-      setShowAdminLogin(false);
-      setAdminPassword('');
-    } else {
-      alert('Contraseña incorrecta');
+    setAdminLoginLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-admin', {
+        body: { password: adminPassword },
+      });
+      if (!error && data?.valid === true) {
+        setIsAdminAuthenticated(true);
+        setShowAdminLogin(false);
+        setAdminPassword('');
+      } else {
+        alert('Contraseña incorrecta');
+      }
+    } catch {
+      alert('Error al verificar. Intenta de nuevo.');
+    } finally {
+      setAdminLoginLoading(false);
     }
   };
 
@@ -2166,9 +2177,11 @@ export default function App() {
                   </button>
                   <button 
                     type="submit"
-                    className="flex-grow py-4 rounded-xl bg-sepia-500 text-sepia-950 font-bold uppercase tracking-widest text-xs hover:bg-sepia-400 transition-all"
+                    disabled={adminLoginLoading}
+                    className="flex-grow py-4 rounded-xl bg-sepia-500 text-sepia-950 font-bold uppercase tracking-widest text-xs hover:bg-sepia-400 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                   >
-                    Entrar
+                    {adminLoginLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {adminLoginLoading ? 'Verificando…' : 'Entrar'}
                   </button>
                 </div>
               </form>

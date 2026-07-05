@@ -88,8 +88,7 @@ interface AvatarSectionProps {
   accessPassword?: string;
 }
 
-// Contraseña maestra del administrador
-const MASTER_PASSWORD = '2003';
+
 
 export const AvatarSection: React.FC<AvatarSectionProps> = ({
   accessPassword = '',
@@ -152,10 +151,13 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
     const rawPassword = password.trim();
     const normalizedPassword = rawPassword.toUpperCase();
 
-    // ── 1. Contraseña maestra (admin siempre entra) ─────────────
-    if (normalizedPassword === MASTER_PASSWORD) {
-      // acceso directo, no necesita DB
-    } else {
+    // ── 1. Contraseña maestra (admin siempre entra — validada en servidor) ──
+    const { data: authData } = await supabase.functions.invoke('verify-admin', {
+      body: { password: rawPassword },
+    });
+    const isAdmin = authData?.valid === true;
+
+    if (!isAdmin) {
       // ── 2. Código de cliente: validar y consumir (1 solo uso) ──
       let consumeQuery = supabase
         .from('avatars')
