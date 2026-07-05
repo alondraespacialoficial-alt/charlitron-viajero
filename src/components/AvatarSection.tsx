@@ -7,7 +7,7 @@ import { WHATSAPP_NUMBER } from '../constants';
 
 const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder al Museo de Avatares Interactivos. ¿Cómo obtengo mi código de acceso?')}`;
 
-const RUNWAY_WIDGET_URL = 'https://cdn.runwayml.com/prod/widget.js';
+const RUNWAY_WIDGET_URL = 'https://cdn.dev.runwayml.com/prod/widget.js';
 const WIDGET_SCRIPT_ID  = 'runway-character-widget';
 
 /** Observa el DOM hasta encontrar el contenedor del widget de Runway y lo abre automáticamente. */
