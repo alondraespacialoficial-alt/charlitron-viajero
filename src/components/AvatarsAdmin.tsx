@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, Edit2, Save, X, Loader2,
-  Check, AlertCircle, ChevronUp, ChevronDown, Upload, RefreshCw, Copy,
+  Check, AlertCircle, ChevronUp, ChevronDown, Upload, RefreshCw, Copy, Users,
 } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
@@ -36,6 +36,34 @@ export const AvatarsAdmin: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+
+  // ─── Consentimientos ─────────────────────────────────────────
+  type ConsentLog = {
+    id: string;
+    client_name: string;
+    consented_at: string;
+    is_return_visit: boolean;
+    notice_version: string;
+  };
+  const [consentLogs, setConsentLogs]     = useState<ConsentLog[]>([]);
+  const [consentLoading, setConsentLoading] = useState(false);
+  const [consentLoaded, setConsentLoaded]   = useState(false);
+  const [consentError, setConsentError]     = useState('');
+
+  const fetchConsentLogs = async () => {
+    setConsentLoading(true);
+    setConsentError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-consent-logs');
+      if (error) throw error;
+      setConsentLogs(data?.data ?? []);
+      setConsentLoaded(true);
+    } catch {
+      setConsentError('No se pudieron cargar los registros.');
+    } finally {
+      setConsentLoading(false);
+    }
+  };
 
   useEffect(() => { fetchAvatars(); }, []);
 
@@ -648,6 +676,84 @@ export const AvatarsAdmin: React.FC = () => {
           ))}
         </div>
       )}
+      {/* ── Consentimientos ───────────────────────────────────── */}
+      <div className="mt-8 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sepia-300 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
+            <Users className="w-3.5 h-3.5" />
+            Consentimientos{consentLoaded ? ` (${consentLogs.length})` : ''}
+          </h3>
+          <button
+            onClick={fetchConsentLogs}
+            disabled={consentLoading}
+            className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 disabled:opacity-50 text-sepia-200 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all"
+          >
+            {consentLoading
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <RefreshCw className="w-3.5 h-3.5" />}
+            {consentLoaded ? 'Actualizar' : 'Cargar registros'}
+          </button>
+        </div>
+
+        {consentError && (
+          <p className="text-red-400 text-xs flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5" /> {consentError}
+          </p>
+        )}
+
+        {!consentLoaded && !consentLoading && !consentError && (
+          <div className="bg-sepia-800/20 border border-dashed border-sepia-700 rounded-xl p-6 text-center text-sepia-600 text-sm">
+            Haz clic en "Cargar registros" para ver quién ha dado su consentimiento.
+          </div>
+        )}
+
+        {consentLoaded && consentLogs.length === 0 && (
+          <div className="bg-sepia-800/20 border border-dashed border-sepia-700 rounded-xl p-6 text-center text-sepia-600 text-sm">
+            Sin registros de consentimiento todavía.
+          </div>
+        )}
+
+        {consentLoaded && consentLogs.length > 0 && (
+          <div className="overflow-x-auto rounded-xl border border-sepia-800">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-sepia-800/50 text-sepia-400 uppercase tracking-widest">
+                  <th className="text-left px-4 py-2.5">Nombre</th>
+                  <th className="text-left px-4 py-2.5">Fecha</th>
+                  <th className="text-left px-4 py-2.5">Hora</th>
+                  <th className="text-left px-4 py-2.5">Tipo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {consentLogs.map((log, i) => {
+                  const dt = new Date(log.consented_at);
+                  return (
+                    <tr
+                      key={log.id}
+                      className={`border-t border-sepia-800 ${
+                        i % 2 === 0 ? 'bg-sepia-900/20' : 'bg-sepia-800/10'
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 text-sepia-100 font-medium">{log.client_name}</td>
+                      <td className="px-4 py-2.5 text-sepia-400">
+                        {dt.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-2.5 text-sepia-500">
+                        {dt.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {log.is_return_visit
+                          ? <span className="text-cyan-400">Reingreso</span>
+                          : <span className="text-green-400">Primera vez</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
