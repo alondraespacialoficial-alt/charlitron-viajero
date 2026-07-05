@@ -120,7 +120,6 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [privateCode, setPrivateCode]       = useState('');
   const [privateLoading, setPrivateLoading] = useState(false);
   const [privateError, setPrivateError]     = useState('');
-  const privateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchAvatars = async () => {
