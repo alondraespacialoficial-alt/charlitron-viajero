@@ -559,6 +559,22 @@ export const AvatarsAdmin: React.FC = () => {
                   }`}>
                     {avatar.is_active ? 'Activo' : 'Inactivo'}
                   </span>
+                  {/* Indicador de código */}
+                  {avatar.access_code ? (
+                    <button
+                      type="button"
+                      title="Copiar código"
+                      onClick={() => navigator.clipboard.writeText(avatar.access_code!)}
+                      className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border text-green-300 border-green-700 bg-green-900/20 hover:bg-green-900/40 transition-all"
+                    >
+                      <Copy className="w-2.5 h-2.5" />
+                      {avatar.access_code}
+                    </button>
+                  ) : avatar.is_private ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-orange-400 border-orange-700 bg-orange-900/20">
+                      ⚠ Sin código
+                    </span>
+                  ) : null}
                 </div>
                 {avatar.description && (
                   <p className="text-sepia-500 text-xs mt-0.5">{avatar.description}</p>
