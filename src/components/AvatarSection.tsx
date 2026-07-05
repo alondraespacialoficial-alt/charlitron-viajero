@@ -100,6 +100,13 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [password, setPassword]             = useState('');
   const [errorMsg, setErrorMsg]             = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
+  const privateInputRef  = useRef<HTMLInputElement>(null);
+  const sectionRef       = useRef<HTMLElement>(null);
+
+  // Sube al inicio de la sección cada vez que cambia el paso
+  useEffect(() => {
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   // ── Acceso privado — intake ─────────────────────────────────
   const [intakeName, setIntakeName]         = useState('');
@@ -315,7 +322,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   };
 
   return (
-    <section className="min-h-screen bg-sepia-950 flex flex-col items-center justify-center px-6 py-16">
+    <section ref={sectionRef} className="min-h-screen bg-sepia-950 flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
           <p className="text-sepia-500 text-xs uppercase tracking-[0.25em] mb-3">Charlitron® Viajero del Tiempo</p>
