@@ -9,6 +9,16 @@ import { supabase } from '../supabase';
 
 const EMOJI_OPTIONS = ['🎩','🤖','🗺️','👑','⚔️','📜','🏛️','🎭','🧙','👨‍🏫','👩‍🏫','🪖','🔭','📿','🕯️','🌿'];
 
+function toSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
 /** Genera un código alfanumérico corto (6 chars) para compartir con clientes */
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -25,6 +35,7 @@ export const AvatarsAdmin: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [slugEdited, setSlugEdited] = useState(false);
 
   useEffect(() => { fetchAvatars(); }, []);
 
@@ -249,7 +260,14 @@ export const AvatarsAdmin: React.FC = () => {
                 <input
                   type="text"
                   value={editing.label || ''}
-                  onChange={(e) => setEditing({ ...editing, label: e.target.value })}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    const update: Partial<typeof editing> = { label };
+                    if (!editing.id && !slugEdited) {
+                      update.slug = toSlug(label);
+                    }
+                    setEditing({ ...editing, ...update });
+                  }}
                   placeholder="Ej: Don Ramón"
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
@@ -257,13 +275,19 @@ export const AvatarsAdmin: React.FC = () => {
 
               {/* Slug */}
               <div className="space-y-1">
-                <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest flex items-center gap-2">
                   Slug * <span className="normal-case text-sepia-600">(único, sin espacios)</span>
+                  {!editing.id && !slugEdited && (
+                    <span className="normal-case text-cyan-600 text-[10px]">← auto</span>
+                  )}
                 </label>
                 <input
                   type="text"
                   value={editing.slug || ''}
-                  onChange={(e) => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  onChange={(e) => {
+                    setSlugEdited(true);
+                    setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') });
+                  }}
                   placeholder="Ej: don-ramon"
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono text-sm"
                 />
@@ -498,7 +522,7 @@ export const AvatarsAdmin: React.FC = () => {
           Avatares ({avatars.length})
         </h3>
         <button
-          onClick={() => setEditing({ is_active: false, is_private: false, order_index: avatars.length, emoji: '🎭' })}
+          onClick={() => { setEditing({ is_active: false, is_private: false, order_index: avatars.length, emoji: '🎭' }); setSlugEdited(false); }}
           className="flex items-center gap-1.5 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all"
         >
           <Plus className="w-3.5 h-3.5" />
