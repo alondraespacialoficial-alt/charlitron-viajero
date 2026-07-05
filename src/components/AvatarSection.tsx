@@ -122,6 +122,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         .from('avatars')
         .select('*')
         .eq('is_active', true)
+        .eq('is_private', false)
         .order('order_index', { ascending: true });
       if (data) setAvatars(data);
       setLoadingAvatars(false);
