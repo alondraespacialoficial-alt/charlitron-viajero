@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, ShieldCheck } from 'lucide-react';
+import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, ShieldCheck, Search } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -85,6 +85,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
   const [avatars, setAvatars]               = useState<Avatar[]>([]);
   const [loadingAvatars, setLoadingAvatars] = useState(true);
+  const [searchQuery, setSearchQuery]       = useState('');
   const [password, setPassword]             = useState('');
   const [errorMsg, setErrorMsg]             = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -400,15 +401,33 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               </div>
 
               {/* ── Cards de avatares ─────────────────────────────────── */}
+              {!loadingAvatars && avatars.length > 0 && (
+                <div className="relative max-w-sm mx-auto">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sepia-600 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar avatar por nombre…"
+                    className="w-full bg-sepia-900/60 border border-sepia-700 focus:border-sepia-500 rounded-xl pl-9 pr-4 py-2.5 text-sepia-200 placeholder-sepia-600 text-sm outline-none transition-colors"
+                  />
+                </div>
+              )}
               {loadingAvatars ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-6 h-6 text-sepia-600 animate-spin" />
                 </div>
               ) : avatars.length === 0 ? (
                 <p className="text-sepia-600 text-sm text-center py-8">No hay avatares activos por el momento.</p>
-              ) : (
+              ) : (() => {
+                const filtered = avatars.filter(a =>
+                  a.label.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                return filtered.length === 0 ? (
+                  <p className="text-sepia-600 text-sm text-center py-8">No se encontró ningún avatar con ese nombre.</p>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {avatars.map((avatar) => (
+                  {filtered.map((avatar) => (
                     <motion.button
                       key={avatar.slug}
                       whileHover={{ scale: 1.03, y: -4 }}
@@ -426,7 +445,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                     </motion.button>
                   ))}
                 </div>
-              )}
+                );
+              })()}
 
               {/* ── Acceso privado de cliente — botón disparador ─────── */}
               <motion.div
