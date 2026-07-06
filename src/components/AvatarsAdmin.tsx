@@ -122,9 +122,10 @@ export const AvatarsAdmin: React.FC = () => {
     setConsentLoading(true);
     setConsentError('');
     try {
-      const { data, error } = await supabase.functions.invoke('get-consent-logs');
-      if (error) throw error;
-      setConsentLogs(data?.data ?? []);
+      const res = await fetch('/api/get-consent-logs', { method: 'POST' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setConsentLogs(json?.data ?? []);
       setConsentLoaded(true);
     } catch {
       setConsentError('No se pudieron cargar los registros.');
