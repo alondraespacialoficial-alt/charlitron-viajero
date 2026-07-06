@@ -2067,7 +2067,7 @@ export default function App() {
     }
 
     isFirstUrlUpdate.current = false;
-  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars];
+  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
