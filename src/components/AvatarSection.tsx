@@ -72,6 +72,13 @@ const LS_INTAKE_KEY = 'charlitron_private_intake_v1';
 // Versión del aviso mostrado — actualizar si cambia el texto del consentimiento
 const NOTICE_VERSION = '1.0';
 
+const LOADING_MSGS = [
+  'Despertando al personaje…',
+  'Conectando con el pasado…',
+  'Preparando la conversación…',
+  'Un momento más…',
+];
+
 interface AvatarSectionProps {
   accessPassword?: string;
 }
@@ -88,6 +95,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [searchQuery, setSearchQuery]       = useState('');
   const [password, setPassword]             = useState('');
   const [errorMsg, setErrorMsg]             = useState('');
+  const [loadingMsgIdx, setLoadingMsgIdx]   = useState(0);
+  const [showToast, setShowToast]           = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const privateInputRef  = useRef<HTMLInputElement>(null);
   const sectionRef       = useRef<HTMLElement>(null);
@@ -95,6 +104,22 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   // Sube al inicio de la sección cada vez que cambia el paso
   useEffect(() => {
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
+
+  // Mensajes rotativos durante la carga
+  useEffect(() => {
+    if (step !== 'loading') return;
+    setLoadingMsgIdx(0);
+    const id = setInterval(() => setLoadingMsgIdx(i => (i + 1) % LOADING_MSGS.length), 1400);
+    return () => clearInterval(id);
+  }, [step]);
+
+  // Toast al activarse el avatar
+  useEffect(() => {
+    if (step !== 'active') return;
+    setShowToast(true);
+    const id = setTimeout(() => setShowToast(false), 5000);
+    return () => clearTimeout(id);
   }, [step]);
 
   // ── Acceso privado — intake ─────────────────────────────────
@@ -765,16 +790,32 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
             </motion.div>
           )}
 
-          {step === 'loading' && (
+          {step === 'loading' && selectedAvatar && (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-4 py-20"
+              className="flex flex-col items-center gap-6 py-16"
             >
-              <Loader2 className="w-10 h-10 text-sepia-400 animate-spin" />
-              <p className="text-sepia-400 text-sm">Cargando avatar…</p>
+              {selectedAvatar.image_url
+                ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-28 h-28 rounded-full object-cover border-2 border-sepia-600 opacity-80 animate-pulse" />
+                : <span className="text-7xl animate-pulse">{selectedAvatar.emoji}</span>
+              }
+              <p className="text-sepia-200 font-serif text-lg">{selectedAvatar.label}</p>
+              <Loader2 className="w-7 h-7 text-sepia-500 animate-spin" />
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={loadingMsgIdx}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-sepia-400 text-sm tracking-wide"
+                >
+                  {LOADING_MSGS[loadingMsgIdx]}
+                </motion.p>
+              </AnimatePresence>
             </motion.div>
           )}
 
@@ -829,6 +870,28 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
 
         </AnimatePresence>
       </div>
+
+      {/* Toast — avatar listo */}
+      <AnimatePresence>
+        {showToast && selectedAvatar && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+            className="fixed bottom-8 right-8 z-[200] flex items-center gap-3 bg-sepia-800 border border-sepia-600 rounded-2xl px-5 py-4 shadow-2xl max-w-xs"
+          >
+            {selectedAvatar.image_url
+              ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-10 h-10 rounded-full object-cover border border-sepia-600 flex-shrink-0" />
+              : <span className="text-2xl flex-shrink-0">{selectedAvatar.emoji}</span>
+            }
+            <div>
+              <p className="text-sepia-100 text-sm font-bold">{selectedAvatar.label} está listo</p>
+              <p className="text-sepia-400 text-xs mt-0.5">Búscalo abajo a la derecha ↓</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
