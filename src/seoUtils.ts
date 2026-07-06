@@ -209,6 +209,76 @@ export const generateShareUrl = (
 };
 
 /**
+ * Actualiza meta tags al navegar a una sección de la app
+ */
+const SECTION_META: Record<string, { title: string; description: string; path: string }> = {
+  galeria: {
+    title: 'Galería de Fotos Restauradas | Charlitron®',
+    description: 'Explora fotografías históricas de San Luis Potosí restauradas con inteligencia artificial. Imágenes del pasado recuperadas con detalle y color.',
+    path: 'galeria',
+  },
+  tienda: {
+    title: 'Tienda | Charlitron® Viajero del Tiempo',
+    description: 'Productos únicos inspirados en la historia y memoria de San Luis Potosí. Recuerdos, artículos de colección y más de Charlitron®.',
+    path: 'tienda',
+  },
+  avatares: {
+    title: 'Museo de Avatares Interactivos | Charlitron®',
+    description: 'Conversa con personajes históricos recreados con inteligencia artificial. Experiencias educativas e inmersivas para explorar la historia de México.',
+    path: 'avatares',
+  },
+  cursos: {
+    title: 'Cursos de Historia y Genealogía | Charlitron®',
+    description: 'Aprende sobre historia, genealogía y memoria familiar con los cursos especializados de Charlitron® Viajero del Tiempo.',
+    path: 'cursos',
+  },
+  concursos: {
+    title: 'Concursos de Historia y Memoria | Charlitron®',
+    description: 'Participa en concursos de historia, memoria y fotografía. Comparte tu historia y conecta con la comunidad de Charlitron®.',
+    path: 'concursos',
+  },
+  conferencias: {
+    title: 'Conferencias de Historia | Charlitron®',
+    description: 'Conferencias sobre historia, patrimonio y memoria de San Luis Potosí. Reserva tu lugar y amplía tu conocimiento histórico.',
+    path: 'conferencias',
+  },
+  mural: {
+    title: 'Mural Comunitario | Charlitron®',
+    description: 'El mural de la memoria comunitaria de Charlitron® Viajero del Tiempo. Historias visuales del patrimonio de San Luis Potosí.',
+    path: 'mural',
+  },
+  colaboradores: {
+    title: 'Colaboradores | Charlitron®',
+    description: 'Conoce a los colaboradores, historiadores y aliados del proyecto Charlitron® Viajero del Tiempo.',
+    path: 'colaboradores',
+  },
+  arbol: {
+    title: 'Árbol Genealógico | Charlitron®',
+    description: 'Explora y construye tu árbol genealógico. Descubre tus raíces familiares con la ayuda de Charlitron® Viajero del Tiempo.',
+    path: 'arbol-genealogico',
+  },
+  investiga: {
+    title: 'Investiga tu Historia | Charlitron®',
+    description: 'Servicio de investigación genealógica y rescate de historia familiar. Descubre tus raíces con Charlitron® Viajero del Tiempo.',
+    path: 'investiga',
+  },
+};
+
+export const setSectionMetaTags = (section: string) => {
+  const meta = SECTION_META[section];
+  if (!meta) return;
+  const url = `https://charlitronviajerdeltiempo.com/${meta.path}`;
+  document.title = meta.title;
+  updateOrCreateMetaTag('description', meta.description);
+  updateOrCreateMetaTag('og:title', meta.title);
+  updateOrCreateMetaTag('og:description', meta.description);
+  updateOrCreateMetaTag('og:url', url);
+  updateOrCreateMetaTag('og:type', 'website');
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', url);
+};
+
+/**
  * Restaura los meta tags a los valores generales
  */
 export const resetMetaTags = () => {

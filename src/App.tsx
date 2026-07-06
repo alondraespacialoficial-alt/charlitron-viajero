@@ -26,7 +26,7 @@ import { FavoritesPanel } from './components/FavoritesPanel';
 import { InstallPrompt } from './components/InstallPrompt';
 import { AIChatBubble } from './components/AIChatBubble';
 import { AvatarSection } from './components/AvatarSection';
-import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags } from './seoUtils';
+import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags, setSectionMetaTags } from './seoUtils';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
 
@@ -2050,8 +2050,24 @@ export default function App() {
         window.history.pushState(null, '', newPath);
       }
     }
+
+    // Meta tags por sección
+    if (!selectedStory && !legalView) {
+      if (showGallery)        setSectionMetaTags('galeria');
+      else if (showShop)          setSectionMetaTags('tienda');
+      else if (showAvatars)       setSectionMetaTags('avatares');
+      else if (showCourses)       setSectionMetaTags('cursos');
+      else if (showContests)      setSectionMetaTags('concursos');
+      else if (showConferences)   setSectionMetaTags('conferencias');
+      else if (showMural)         setSectionMetaTags('mural');
+      else if (showCollaborators) setSectionMetaTags('colaboradores');
+      else if (showFamilyTree)    setSectionMetaTags('arbol');
+      else if (showInvestigation) setSectionMetaTags('investiga');
+      else                        resetMetaTags();
+    }
+
     isFirstUrlUpdate.current = false;
-  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars]);
+  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars];
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
