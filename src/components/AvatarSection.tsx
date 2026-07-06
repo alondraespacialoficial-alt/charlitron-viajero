@@ -786,6 +786,17 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 >
                   Iniciar sesión
                 </button>
+                <p className="text-sepia-600 text-xs text-center">
+                  ¿No tienes código?{' '}
+                  <a
+                    href={AVATAR_WA_LINK}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sepia-400 hover:text-sepia-200 underline underline-offset-2 transition-colors"
+                  >
+                    Solicítalo por WhatsApp →
+                  </a>
+                </p>
               </form>
             </motion.div>
           )}
