@@ -1887,14 +1887,18 @@ export default function App() {
           // Routing de secciones ya se aplica en useState desde INITIAL_PATH.
           // Aquí solo manejamos slugs de historias (requieren que los datos estén cargados).
           const segment = INITIAL_PATH;
-          if (segment && !['galeria','tienda','investiga','concursos','conferencias',
+          // Soporte para URLs del tipo /historia/slug (generadas al compartir)
+          const slugToFind = segment.startsWith('historia/')
+            ? segment.replace('historia/', '')
+            : segment;
+          if (slugToFind && !['galeria','tienda','investiga','concursos','conferencias',
                             'mural','colaboradores','arbol','historias',
-                            'terminos','privacidad'].includes(segment)) {
-            const foundBySlug = data.find(s => s.slug && s.slug === segment);
+                            'terminos','privacidad'].includes(slugToFind)) {
+            const foundBySlug = data.find(s => s.slug && s.slug === slugToFind);
             if (foundBySlug) {
               setSelectedStory(foundBySlug);
             } else {
-              const foundById = data.find(s => s.id === segment);
+              const foundById = data.find(s => s.id === slugToFind);
               if (foundById) setSelectedStory(foundById);
             }
           }
