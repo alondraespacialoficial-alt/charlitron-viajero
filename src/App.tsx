@@ -3,32 +3,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
 import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
-import { FamilyTreeManager } from './components/FamilyTreeManager';
 import { supabase } from './supabase';
-import { AdminPanel } from './components/AdminPanel';
-import { LegalPage } from './components/LegalPage';
 import { HistoriansSection } from './components/HistoriansSection';
-import { RestoredGallery } from './components/RestoredGallery';
-import { InvestigationSection } from './components/InvestigationSection';
-import { ShopSection } from './components/ShopSection';
-import { ContestsSection } from './components/ContestsSection';
-import { ConferencesSection } from './components/ConferencesSection';
-import { CoursesSection } from './components/CoursesSection';
-import { MuralSection } from './components/MuralSection';
 import { SearchResults } from './components/SearchResults';
-import { CollaboratorsSection } from './components/CollaboratorsSection';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { InstallPrompt } from './components/InstallPrompt';
 import { AIChatBubble } from './components/AIChatBubble';
-import { AvatarSection } from './components/AvatarSection';
+
+// Secciones cargadas bajo demanda (mejora rendimiento inicial)
+const AdminPanel        = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const LegalPage         = lazy(() => import('./components/LegalPage').then(m => ({ default: m.LegalPage })));
+const RestoredGallery   = lazy(() => import('./components/RestoredGallery').then(m => ({ default: m.RestoredGallery })));
+const InvestigationSection = lazy(() => import('./components/InvestigationSection').then(m => ({ default: m.InvestigationSection })));
+const ShopSection       = lazy(() => import('./components/ShopSection').then(m => ({ default: m.ShopSection })));
+const ContestsSection   = lazy(() => import('./components/ContestsSection').then(m => ({ default: m.ContestsSection })));
+const ConferencesSection = lazy(() => import('./components/ConferencesSection').then(m => ({ default: m.ConferencesSection })));
+const CoursesSection    = lazy(() => import('./components/CoursesSection').then(m => ({ default: m.CoursesSection })));
+const MuralSection      = lazy(() => import('./components/MuralSection').then(m => ({ default: m.MuralSection })));
+const CollaboratorsSection = lazy(() => import('./components/CollaboratorsSection').then(m => ({ default: m.CollaboratorsSection })));
+const AvatarSection     = lazy(() => import('./components/AvatarSection').then(m => ({ default: m.AvatarSection })));
+const FamilyTreeManager = lazy(() => import('./components/FamilyTreeManager').then(m => ({ default: m.FamilyTreeManager })));
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags, setSectionMetaTags } from './seoUtils';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
+
+const SectionLoader = () => (
+  <div className="min-h-screen bg-sepia-950 flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-sepia-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 // --- Components ---
 
@@ -63,6 +71,7 @@ const Timeline = ({ stories, onSelectStory }: { stories: Story[], onSelectStory:
                           src={story.thumbnail} 
                           alt={story.title} 
                           className="w-full h-full object-cover sepia-filter group-hover/item:sepia-0 transition-all duration-500 pointer-events-none select-none"
+                          loading="lazy"
                           referrerPolicy="no-referrer"
                           onContextMenu={(e) => e.preventDefault()}
                           onDragStart={(e) => e.preventDefault()}
@@ -884,6 +893,7 @@ const StoryCard = ({ story, onClick }: { story: Story, onClick: () => void }) =>
         <img 
           src={story.thumbnail} 
           alt={story.title} 
+          loading="lazy"
           className="w-full h-full object-cover sepia-filter group-hover:scale-110 transition-transform duration-700"
           referrerPolicy="no-referrer"
         />
@@ -1551,6 +1561,7 @@ const TravelPhotosSection = ({ photos }: { photos: TravelPhoto[] }) => {
                   src={photo.url} 
                   alt={photo.character_name}
                   className="w-full h-full object-cover sepia-[0.3] group-hover:sepia-0 transition-all duration-700 pointer-events-none select-none"
+                  loading="lazy"
                   referrerPolicy="no-referrer"
                   onContextMenu={(e) => e.preventDefault()}
                   onDragStart={(e) => e.preventDefault()}
@@ -2220,6 +2231,7 @@ export default function App() {
         </a>
 
         {isAdminAuthenticated && (
+          <Suspense fallback={<SectionLoader />}>
           <AdminPanel 
             initialStories={stories}
             initialTravelPhotos={travelPhotos}
@@ -2228,6 +2240,7 @@ export default function App() {
             onSettingsUpdate={fetchIntroVideo}
             onClose={() => setIsAdminAuthenticated(false)}
           />
+          </Suspense>
         )}
 
         {legalView ? (
@@ -2238,10 +2251,12 @@ export default function App() {
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.5 }}
           >
-            <LegalPage 
-              type={legalView} 
-              onBack={() => setLegalView(null)} 
-            />
+            <Suspense fallback={<SectionLoader />}>
+              <LegalPage 
+                type={legalView} 
+                onBack={() => setLegalView(null)} 
+              />
+            </Suspense>
           </motion.div>
         ) : showGallery ? (
           <motion.div
@@ -2251,7 +2266,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <RestoredGallery onBack={() => setShowGallery(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <RestoredGallery onBack={() => setShowGallery(false)} />
+            </Suspense>
           </motion.div>
         ) : showShop ? (
           <motion.div
@@ -2261,7 +2278,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <ShopSection onBack={() => setShowShop(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <ShopSection onBack={() => setShowShop(false)} />
+            </Suspense>
           </motion.div>
         ) : showInvestigation ? (
           <motion.div
@@ -2271,7 +2290,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <InvestigationSection onBack={() => setShowInvestigation(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <InvestigationSection onBack={() => setShowInvestigation(false)} />
+            </Suspense>
           </motion.div>
         ) : showContests ? (
           <motion.div
@@ -2281,7 +2302,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <ContestsSection />
+            <Suspense fallback={<SectionLoader />}>
+              <ContestsSection />
+            </Suspense>
           </motion.div>
         ) : showConferences ? (
           <motion.div
@@ -2301,7 +2324,9 @@ export default function App() {
                   Regresar
                 </button>
               </div>
-              <ConferencesSection initialFolio={INITIAL_FOLIO} />
+              <Suspense fallback={<SectionLoader />}>
+                <ConferencesSection initialFolio={INITIAL_FOLIO} />
+              </Suspense>
             </div>
           </motion.div>
         ) : showCourses ? (
@@ -2322,7 +2347,9 @@ export default function App() {
                   Regresar
                 </button>
               </div>
-              <CoursesSection />
+              <Suspense fallback={<SectionLoader />}>
+                <CoursesSection />
+              </Suspense>
             </div>
           </motion.div>
         ) : showMural ? (
@@ -2333,7 +2360,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <MuralSection onBack={() => setShowMural(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <MuralSection onBack={() => setShowMural(false)} />
+            </Suspense>
           </motion.div>
         ) : showCollaborators ? (
           <motion.div
@@ -2343,7 +2372,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <CollaboratorsSection onBack={() => setShowCollaborators(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <CollaboratorsSection onBack={() => setShowCollaborators(false)} />
+            </Suspense>
           </motion.div>
         ) : showAvatars ? (
           <motion.div
@@ -2364,7 +2395,9 @@ export default function App() {
                 </button>
               </div>
               {/* Contraseña de acceso público a los avatares */}
-              <AvatarSection accessPassword="2003" />
+              <Suspense fallback={<SectionLoader />}>
+                <AvatarSection accessPassword="2003" />
+              </Suspense>
             </div>
           </motion.div>
         ) : showFamilyTree ? (
@@ -2375,7 +2408,9 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
           >
-            <FamilyTreeManager onBack={() => setShowFamilyTree(false)} />
+            <Suspense fallback={<SectionLoader />}>
+              <FamilyTreeManager onBack={() => setShowFamilyTree(false)} />
+            </Suspense>
           </motion.div>
         ) : !selectedStory ? (
           <motion.main 
