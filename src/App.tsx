@@ -1291,11 +1291,11 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
           </section>
         ) : story.thumbnail ? (
           <section className="mb-24 flex justify-center">
-            <div className="w-full aspect-video bg-sepia-950 rounded-3xl overflow-hidden shadow-2xl relative group">
+            <div className="w-full bg-sepia-950 rounded-3xl overflow-hidden shadow-2xl relative group flex items-center justify-center">
               <img 
                 src={story.thumbnail} 
                 alt={story.title} 
-                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none select-none"
+                className="w-full max-h-[85vh] object-contain opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none select-none"
                 referrerPolicy="no-referrer"
                 onContextMenu={(e) => e.preventDefault()}
                 onDragStart={(e) => e.preventDefault()}
