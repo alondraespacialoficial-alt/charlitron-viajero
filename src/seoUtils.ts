@@ -34,7 +34,7 @@ export const updateMetaTags = (
   category?: string,
   year?: string
 ) => {
-  const baseUrl = 'https://charlitronviajerdeltiempo.com';
+  const baseUrl = 'https://charlitronviajerodeltiempo.com';
   const url = `${baseUrl}/historia/${slug}`;
   
   // Actualizar título de la página
@@ -105,25 +105,25 @@ const updateBreadcrumbSchema = (title: string, slug: string, category?: string) 
         "@type": "ListItem",
         "position": 1,
         "name": "Inicio",
-        "item": "https://charlitronviajerdeltiempo.com"
+        "item": "https://charlitronviajerodeltiempo.com"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Historias",
-        "item": "https://charlitronviajerdeltiempo.com#historias"
+        "item": "https://charlitronviajerodeltiempo.com#historias"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": category || "Categoría",
-        "item": `https://charlitronviajerdeltiempo.com#historias?cat=${category}`
+        "item": `https://charlitronviajerodeltiempo.com#historias?cat=${category}`
       },
       {
         "@type": "ListItem",
         "position": 4,
         "name": title,
-        "item": `https://charlitronviajerdeltiempo.com/historia/${slug}`
+        "item": `https://charlitronviajerodeltiempo.com/historia/${slug}`
       }
     ]
   };
@@ -201,7 +201,7 @@ export const generateShareUrl = (
   slug: string,
   description?: string
 ): string => {
-  const url = `https://charlitronviajerdeltiempo.com/historia/${slug}`;
+  const url = `https://charlitronviajerodeltiempo.com/historia/${slug}`;
   const text = encodeURIComponent(
     `📚 *${title}*\n\n${description || 'Mira esta historia en Charlitron®'}\n\n${url}`
   );
@@ -267,7 +267,7 @@ const SECTION_META: Record<string, { title: string; description: string; path: s
 export const setSectionMetaTags = (section: string) => {
   const meta = SECTION_META[section];
   if (!meta) return;
-  const url = `https://charlitronviajerdeltiempo.com/${meta.path}`;
+  const url = `https://charlitronviajerodeltiempo.com/${meta.path}`;
   document.title = meta.title;
   updateOrCreateMetaTag('description', meta.description);
   updateOrCreateMetaTag('og:title', meta.title);
@@ -288,7 +288,7 @@ export const resetMetaTags = () => {
     'Charlitron® Viajero del Tiempo: Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional.'
   );
   
-  const baseUrl = 'https://charlitronviajerdeltiempo.com';
+  const baseUrl = 'https://charlitronviajerodeltiempo.com';
   updateOrCreateMetaTag('og:title', 'Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos');
   updateOrCreateMetaTag(
     'og:description',

@@ -34,8 +34,8 @@ User-agent: facebookexternalhit
 Allow: /
 
 # Sitemap
-Sitemap: https://charlitronviajerdeltiempo.com/sitemap.xml
+Sitemap: https://charlitronviajerodeltiempo.com/sitemap.xml
 
 # Host preferido
-Host: charlitronviajerdeltiempo.com
+Host: charlitronviajerodeltiempo.com
 

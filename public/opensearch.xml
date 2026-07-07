@@ -9,14 +9,14 @@
   <Image height="16" width="16" type="image/x-icon">data:image/x-icon;base64,</Image>
   
   <!-- URL de búsqueda -->
-  <Url type="text/html" template="https://charlitronviajerdeltiempo.com/?buscar={searchTerms}" />
-  <Url type="application/opensearchdescription+xml" rel="self" template="https://charlitronviajerdeltiempo.com/opensearch.xml" />
+  <Url type="text/html" template="https://charlitronviajerodeltiempo.com/?buscar={searchTerms}" />
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://charlitronviajerodeltiempo.com/opensearch.xml" />
   
   <!-- Resultados sugeridos (opcional) -->
-  <Url type="application/x-suggestions+json" template="https://charlitronviajerdeltiempo.com/api/suggerir?q={searchTerms}" />
+  <Url type="application/x-suggestions+json" template="https://charlitronviajerodeltiempo.com/api/suggerir?q={searchTerms}" />
   
   <!-- Contacto -->
-  <Contact>info@charlitronviajerdeltiempo.com</Contact>
+  <Contact>info@charlitronviajerodeltiempo.com</Contact>
   
   <!-- Sindicación -->
   <SyndicationRight>open</SyndicationRight>
