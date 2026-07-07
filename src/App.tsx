@@ -1334,12 +1334,12 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
                 key={idx}
                 whileHover={{ scale: 1.05 }}
                 onClick={() => setActiveImageIndex(idx)}
-                className="aspect-square rounded-2xl overflow-hidden shadow-md border-4 border-white cursor-zoom-in relative group"
+                className="rounded-2xl overflow-hidden shadow-md border-4 border-white cursor-zoom-in relative group bg-sepia-950 flex items-center justify-center min-h-[160px]"
               >
                 <img 
                   src={img} 
                   alt={`Gallery ${idx}`} 
-                  className="w-full h-full object-cover sepia-filter group-hover:sepia-0 transition-all duration-500 pointer-events-none select-none"
+                  className="w-full max-h-[320px] object-contain sepia-filter group-hover:sepia-0 transition-all duration-500 pointer-events-none select-none"
                   referrerPolicy="no-referrer"
                   onContextMenu={(e) => e.preventDefault()}
                   onDragStart={(e) => e.preventDefault()}

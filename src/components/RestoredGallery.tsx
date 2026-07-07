@@ -157,7 +157,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                 className="group relative"
               >
                 <div 
-                  className={`${photo.is_vertical ? 'aspect-[4/5]' : 'aspect-video'} rounded-2xl overflow-hidden shadow-xl border-8 border-white cursor-zoom-in relative bg-sepia-200 group-hover:shadow-2xl transition-all duration-500`}
+                  className="rounded-2xl overflow-hidden shadow-xl border-8 border-white cursor-zoom-in relative bg-sepia-950 group-hover:shadow-2xl transition-all duration-500 flex items-center justify-center min-h-[200px]"
                   onClick={() => setActivePhoto(photo)}
                 >
                   {/* Favorite Button */}
@@ -176,7 +176,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                     <img 
                       src={photo.url} 
                       alt={photo.title}
-                      className="w-full h-full object-cover transition-all duration-700 sepia-filter grayscale-[0.3] contrast-[1.1] brightness-[0.9] group-hover:sepia-0 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100 group-hover:scale-105 pointer-events-none select-none"
+                      className="w-full max-h-[500px] object-contain transition-all duration-700 sepia-filter grayscale-[0.3] contrast-[1.1] brightness-[0.9] group-hover:sepia-0 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100 pointer-events-none select-none"
                       referrerPolicy="no-referrer"
                       onContextMenu={(e) => e.preventDefault()}
                       onDragStart={(e) => e.preventDefault()}
