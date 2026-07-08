@@ -5,7 +5,7 @@ import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
 
-const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder al Museo de Avatares Interactivos. ¿Cómo obtengo mi código de acceso?')}`;
+const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder a la Galería de Avatares Históricos. ¿Cómo obtengo mi código de acceso?')}`;
 
 const RUNWAY_WIDGET_URL = 'https://cdn.dev.runwayml.com/prod/widget.js';
 const WIDGET_SCRIPT_ID  = 'runway-character-widget';
@@ -343,7 +343,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
         <div className="text-center mb-10">
           <p className="text-sepia-500 text-xs uppercase tracking-[0.25em] mb-3">Charlitron® Viajero del Tiempo</p>
           <h2 className="text-sepia-100 font-serif text-3xl md:text-4xl uppercase tracking-widest mb-4">
-            Museo de Avatares Interactivos
+            Galería de Avatares Históricos™
           </h2>
           <p className="text-sepia-400 text-sm md:text-base tracking-wide max-w-xl mx-auto leading-relaxed">
             Conversaciones con la historia, la memoria y la inteligencia artificial responsable.
@@ -706,7 +706,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
 
               <p className="text-sepia-400 text-xs leading-relaxed">
                 Introduce la clave de acceso que te fue enviada para abrir tu experiencia
-                privada en el Museo de Avatares.
+                privada en la Galería de Avatares Históricos™.
               </p>
 
               <form onSubmit={handlePrivateAccess} className="space-y-4">
