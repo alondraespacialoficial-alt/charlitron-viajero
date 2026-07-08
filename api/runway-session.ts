@@ -1,11 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Mapa de slugs a nombres de variable de entorno
-// Para agregar un nuevo avatar: añade la variable en Vercel y registrala aquí
+// =============================================================
+// CUENTA PRINCIPAL — RUNWAYML_API_SECRET
+// Para agregar un avatar aquí: crea RUNWAY_AVATAR_NOMBRE en Vercel
+// =============================================================
 const AVATAR_ENV_MAP: Record<string, string> = {
-  jose: 'RUNWAY_AVATAR_JOSE',
+  jose:       'RUNWAY_AVATAR_JOSE',
   charlitron: 'RUNWAY_AVATAR_CHARLITRON',
-  guia: 'RUNWAY_AVATAR_GUIA',
+  guia:       'RUNWAY_AVATAR_GUIA',
+};
+
+// =============================================================
+// CUENTA SECUNDARIA — RUNWAYML_API_SECRET_2
+// Para agregar un avatar aquí: crea RUNWAY_AVATAR_NOMBRE en Vercel
+// y registra el slug en este mapa
+// =============================================================
+const AVATAR_ENV_MAP_2: Record<string, string> = {
+  hidalgo: 'RUNWAY_AVATAR_HIDALGO',
 };
 
 const RUNWAY_API_BASE = 'https://api.runwayml.com/v1';
@@ -25,7 +36,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing or invalid slug' });
   }
 
-  const envKey = AVATAR_ENV_MAP[slug.toLowerCase()];
+  // Buscar el slug primero en cuenta principal, luego en secundaria
+  const isSecondary = slug.toLowerCase() in AVATAR_ENV_MAP_2;
+  const envKey = isSecondary
+    ? AVATAR_ENV_MAP_2[slug.toLowerCase()]
+    : AVATAR_ENV_MAP[slug.toLowerCase()];
+
   if (!envKey) {
     return res.status(404).json({ error: `Avatar "${slug}" not found` });
   }
@@ -37,10 +53,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Avatar not configured on this environment' });
   }
 
-  // Leer la API key — nunca se expone al cliente
-  const apiKey = process.env.RUNWAYML_API_SECRET;
+  // Seleccionar la API key según la cuenta del avatar
+  // Cuenta principal: RUNWAYML_API_SECRET
+  // Cuenta secundaria: RUNWAYML_API_SECRET_2
+  const apiKeyName = isSecondary ? 'RUNWAYML_API_SECRET_2' : 'RUNWAYML_API_SECRET';
+  const apiKey = process.env[apiKeyName];
   if (!apiKey) {
-    console.error('RUNWAYML_API_SECRET is not set');
+    console.error(`${apiKeyName} is not set`);
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
