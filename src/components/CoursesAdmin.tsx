@@ -22,6 +22,7 @@ export const CoursesAdmin: React.FC = () => {
   const [isSavingCourse, setIsSavingCourse] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState<string | null>(null);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isUploadingCertImg, setIsUploadingCertImg] = useState<string | null>(null);
 
   // ── Lessons ────────────────────────────────────────────────────────
   const [lessons, setLessons] = useState<CourseLesson[]>([]);
@@ -81,6 +82,22 @@ export const CoursesAdmin: React.FC = () => {
     const answers: Record<string, string> = {};
     (data || []).forEach(q => { answers[q.id] = q.answer_text || ''; });
     setAnswerTexts(answers);
+  };
+
+  // ── Certificate image upload ─────────────────────────────────────────
+  const handleCertImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'certificate_bg_url' | 'logo_url' | 'signature_url') => {
+    const file = e.target.files?.[0];
+    if (!file || !editingCourse) return;
+    setIsUploadingCertImg(field);
+    try {
+      const folder = 'courses/cert';
+      const fileName = `${folder}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
+      setEditingCourse({ ...editingCourse, [field]: data.publicUrl });
+    } catch { showMsg('error', 'Error al subir la imagen'); }
+    finally { setIsUploadingCertImg(null); }
   };
 
   // ── Banner upload ──────────────────────────────────────────────────
@@ -147,6 +164,10 @@ export const CoursesAdmin: React.FC = () => {
         duration_text: editingCourse.duration_text?.trim() || null,
         level: editingCourse.level || null,
         what_you_learn: editingCourse.what_you_learn?.trim() || null,
+        certificate_bg_url: editingCourse.certificate_bg_url?.trim() || null,
+        logo_url: editingCourse.logo_url?.trim() || null,
+        signature_url: editingCourse.signature_url?.trim() || null,
+        federation_legend: editingCourse.federation_legend?.trim() || null,
       };
       if (editingCourse.id) {
         const { error } = await supabase.from('courses').update(payload).eq('id', editingCourse.id);
@@ -348,6 +369,38 @@ export const CoursesAdmin: React.FC = () => {
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">% del instructor (0-100)</label>
                 <input type="number" min={0} max={100} step={1} value={editingCourse.instructor_share ?? 0} onChange={e => setEditingCourse({ ...editingCourse, instructor_share: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500" />
+              </div>
+              {/* ── Constancia / Certificado ── */}
+              <div className="md:col-span-2">
+                <p className="text-xs text-sepia-400 uppercase tracking-widest font-bold mb-3 border-t border-sepia-700 pt-4">Constancia (PDF)</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {(['certificate_bg_url', 'logo_url', 'signature_url'] as const).map(field => {
+                    const labels = { certificate_bg_url: 'Fondo', logo_url: 'Logo', signature_url: 'Firma' };
+                    return (
+                      <div key={field} className="space-y-2">
+                        <label className="text-xs text-sepia-500 uppercase tracking-widest">{labels[field]}</label>
+                        {editingCourse[field] && (
+                          <div className="relative">
+                            <img src={editingCourse[field] as string} alt={labels[field]} className="w-full h-16 object-cover rounded-lg border border-sepia-700" />
+                            <button onClick={() => setEditingCourse({ ...editingCourse, [field]: '' })} className="absolute top-1 right-1 bg-red-900/80 text-red-300 rounded-full p-0.5"><X className="w-3 h-3" /></button>
+                          </div>
+                        )}
+                        <label className="flex items-center gap-2 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-3 py-2 hover:border-sepia-500 transition-all text-xs">
+                          {isUploadingCertImg === field ? <Loader2 className="w-3.5 h-3.5 text-sepia-400 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-sepia-400" />}
+                          <span className="text-sepia-400">{isUploadingCertImg === field ? 'Subiendo...' : 'Subir imagen'}</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleCertImageUpload(e, field)} disabled={!!isUploadingCertImg} />
+                        </label>
+                        <input type="url" value={(editingCourse[field] as string) || ''} onChange={e => setEditingCourse({ ...editingCourse, [field]: e.target.value })}
+                          placeholder="O pegar URL..." className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-1.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-xs" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Leyenda de federación / institución (opcional)</label>
+                <textarea rows={2} value={editingCourse.federation_legend || ''} onChange={e => setEditingCourse({ ...editingCourse, federation_legend: e.target.value })}
+                  placeholder="Ej: Avalado por la Asociación Mexicana de Genealogía y Heráldica" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm" />
               </div>
               <div className="md:col-span-2 flex items-center gap-3">
                 <label className="relative inline-flex items-center cursor-pointer">

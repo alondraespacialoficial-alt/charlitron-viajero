@@ -6,6 +6,7 @@ import {
   AlertCircle, Clock, Loader2, MessageCircle, Search,
   HelpCircle, User, Award, DollarSign, GraduationCap,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -74,6 +75,9 @@ export const CoursesSection: React.FC = () => {
 
   // Image lightbox
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+
+  // Certificate
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -262,6 +266,245 @@ export const CoursesSection: React.FC = () => {
     }
   };
 
+  // ── Certificate helpers ───────────────────────────────────────────
+  const loadImage = (url: string): Promise<{ base64: string; w: number; h: number } | null> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve({ base64: canvas.toDataURL('image/png'), w: img.naturalWidth, h: img.naturalHeight });
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+
+  const handleDownloadCertificate = async () => {
+    if (!unlockedCourse || !unlockedEnrollment) return;
+    setIsGeneratingCertificate(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const W = 297, H = 210, cx = W / 2;
+
+      // Fondo oscuro sepia
+      doc.setFillColor(20, 16, 12);
+      doc.rect(0, 0, W, H, 'F');
+
+      // Imagen de fondo (si existe)
+      if (unlockedCourse.certificate_bg_url) {
+        const bgData = await loadImage(unlockedCourse.certificate_bg_url);
+        if (bgData) {
+          const aspect = bgData.w / bgData.h;
+          let bW = W, bH = W / aspect;
+          if (bH < H) { bH = H; bW = H * aspect; }
+          const bX = (W - bW) / 2, bY = (H - bH) / 2;
+          doc.saveGraphicsState();
+          (doc as any).setGState((doc as any).GState({ opacity: 0.13 }));
+          doc.addImage(bgData.base64, 'PNG', bX, bY, bW, bH);
+          doc.restoreGraphicsState();
+        }
+      }
+
+      // Barras laterales doradas
+      doc.setFillColor(110, 82, 45);
+      doc.rect(0, 0, 7, H, 'F');
+      doc.rect(W - 7, 0, 7, H, 'F');
+      doc.setFillColor(90, 67, 35);
+      doc.rect(0, 0, W, 5, 'F');
+      doc.rect(0, H - 5, W, 5, 'F');
+
+      // Borde interior
+      doc.setDrawColor(100, 75, 40);
+      doc.setLineWidth(0.4);
+      doc.rect(10, 7, W - 20, H - 14);
+
+      // Ornamentos en esquinas
+      doc.setFillColor(130, 98, 52);
+      [[10, 7], [W - 13, 7], [10, H - 10], [W - 13, H - 10]].forEach(([x, y]) => {
+        doc.rect(x, y, 3, 3, 'F');
+      });
+
+      let y = 13;
+
+      // Logo
+      if (unlockedCourse.logo_url) {
+        const imgData = await loadImage(unlockedCourse.logo_url);
+        if (imgData) {
+          const maxH = 22, maxW = 80;
+          const aspect = imgData.w / imgData.h;
+          let iH = maxH, iW = iH * aspect;
+          if (iW > maxW) { iW = maxW; iH = iW / aspect; }
+          doc.addImage(imgData.base64, 'PNG', cx - iW / 2, y, iW, iH);
+          y += iH + 3;
+        }
+      }
+
+      // Nombre del sitio
+      doc.setFontSize(7.5);
+      doc.setTextColor(120, 92, 52);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CHARLITRON VIAJERO DEL TIEMPO', cx, y + 4.5, { align: 'center', charSpace: 1.5 });
+      y += 9;
+
+      // Línea divisoria
+      doc.setDrawColor(75, 56, 30);
+      doc.setLineWidth(0.3);
+      doc.line(30, y, W - 30, y);
+      y += 8;
+
+      // Título CONSTANCIA
+      doc.setFontSize(23);
+      doc.setTextColor(225, 210, 180);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CONSTANCIA DE CURSO', cx, y + 8, { align: 'center' });
+      y += 14;
+
+      // Línea dorada gruesa
+      doc.setDrawColor(155, 118, 58);
+      doc.setLineWidth(0.6);
+      doc.line(50, y, W - 50, y);
+      y += 10;
+
+      // "Se otorga a:"
+      doc.setFontSize(9.5);
+      doc.setTextColor(145, 125, 95);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Se otorga la presente constancia a:', cx, y, { align: 'center' });
+      y += 11;
+
+      // Nombre del alumno
+      doc.setFontSize(22);
+      doc.setTextColor(208, 165, 88);
+      doc.setFont('helvetica', 'bold');
+      const nameLines = doc.splitTextToSize(unlockedEnrollment.student_name.toUpperCase(), W - 100) as string[];
+      doc.text(nameLines, cx, y, { align: 'center' });
+      y += nameLines.length * 9;
+
+      // Línea bajo el nombre
+      const nameLineW = Math.min(doc.getTextWidth(nameLines[0]) + 24, W - 80);
+      doc.setDrawColor(155, 118, 58);
+      doc.setLineWidth(0.5);
+      doc.line(cx - nameLineW / 2, y, cx + nameLineW / 2, y);
+      y += 9;
+
+      // "Por haber completado..."
+      doc.setFontSize(9);
+      doc.setTextColor(145, 125, 95);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Por haber completado satisfactoriamente el curso:', cx, y, { align: 'center' });
+      y += 10;
+
+      // Título del curso
+      doc.setFontSize(14);
+      doc.setTextColor(230, 215, 190);
+      doc.setFont('helvetica', 'bold');
+      const titleLines = doc.splitTextToSize(`"${unlockedCourse.title}"`, W - 90) as string[];
+      doc.text(titleLines, cx, y, { align: 'center' });
+      y += titleLines.length * 7 + 5;
+
+      // Instructor
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(155, 135, 105);
+      const instructorLabel = unlockedCourse.instructor_name || 'Charlitron Viajero del Tiempo';
+      doc.text(`Instructor: ${instructorLabel}`, cx, y, { align: 'center' });
+      y += 7;
+
+      // Duración
+      if (unlockedCourse.duration_text) {
+        doc.setFontSize(8);
+        doc.setTextColor(130, 105, 75);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Duración: ${unlockedCourse.duration_text}`, cx, y, { align: 'center' });
+        y += 7;
+      }
+
+      // Sección inferior
+      const footerY = H - 20;
+      const sigBlockY = 158;
+
+      // Firma digital
+      if (unlockedCourse.signature_url) {
+        const sigData = await loadImage(unlockedCourse.signature_url);
+        if (sigData) {
+          const maxSigW = 65, maxSigH = 24;
+          const sigAspect = sigData.w / sigData.h;
+          let sW = maxSigW, sH = sW / sigAspect;
+          if (sH > maxSigH) { sH = maxSigH; sW = sH * sigAspect; }
+          doc.saveGraphicsState();
+          (doc as any).setGState((doc as any).GState({ opacity: 0.72 }));
+          doc.addImage(sigData.base64, 'PNG', 18 + (65 - sW) / 2, sigBlockY, sW, sH);
+          doc.restoreGraphicsState();
+        }
+        doc.setDrawColor(100, 77, 44);
+        doc.setLineWidth(0.4);
+        doc.line(14, footerY - 6, 84, footerY - 6);
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(120, 95, 58);
+        doc.text('Firma y Sello Autorizado', 49, footerY - 1, { align: 'center' });
+      }
+
+      // QR de verificación
+      const qrUrl = `https://charlitronviajerodeltiempo.com/cursos?codigo=${unlockedEnrollment.access_code}`;
+      const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 200, margin: 1,
+        color: { dark: '#dab064', light: '#14100c' },
+      });
+      const qrSize = 22;
+      doc.addImage(qrDataUrl, 'PNG', W - 37, sigBlockY, qrSize, qrSize);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 78, 45);
+      doc.text('Escanear para verificar', W - 26, footerY - 8, { align: 'center' });
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(130, 100, 55);
+      doc.text(unlockedEnrollment.access_code || '', W - 26, footerY - 3, { align: 'center' });
+
+      // Leyenda de federación
+      if (unlockedCourse.federation_legend?.trim()) {
+        const legendLines = doc.splitTextToSize(unlockedCourse.federation_legend.trim(), 160) as string[];
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(105, 82, 52);
+        const legendY = footerY - 6 - legendLines.length * 4;
+        doc.text(legendLines, cx, legendY, { align: 'center' });
+      }
+
+      // Pie de página
+      doc.setDrawColor(65, 50, 28);
+      doc.setLineWidth(0.3);
+      doc.line(12, footerY, W - 12, footerY);
+      doc.setFontSize(7);
+      doc.setFont('courier', 'bold');
+      doc.setTextColor(140, 110, 68);
+      doc.text(`Código: ${unlockedEnrollment.access_code || ''}`, 14, footerY + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(85, 66, 42);
+      const fechaGen = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+      doc.text(`Emitido el ${fechaGen}`, 14, footerY + 11);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(105, 80, 48);
+      doc.text('charlitronviajerodeltiempo.com', cx, footerY + 8.5, { align: 'center' });
+
+      doc.save(`constancia-${unlockedEnrollment.access_code || 'curso'}.pdf`);
+    } catch (err) {
+      console.error('Error generando constancia:', err);
+    } finally {
+      setIsGeneratingCertificate(false);
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────
   return (
     <section className="py-24 px-6 bg-sepia-950 min-h-screen">
@@ -429,6 +672,15 @@ export const CoursesSection: React.FC = () => {
                 <p className="text-sepia-500 text-xs uppercase tracking-widest mb-1">Acceso activo</p>
                 <h3 className="text-sepia-100 font-serif text-xl">{unlockedCourse.title}</h3>
                 <p className="text-sepia-400 text-sm mt-1">{unlockedEnrollment?.student_name}</p>
+                <button
+                  onClick={handleDownloadCertificate}
+                  disabled={isGeneratingCertificate}
+                  className="mt-2 flex items-center gap-1.5 text-xs text-sepia-400 hover:text-sepia-200 border border-sepia-700 hover:border-sepia-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                >
+                  {isGeneratingCertificate
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generando...</>
+                    : <><Award className="w-3.5 h-3.5" /> Descargar Constancia PDF</>}
+                </button>
               </div>
               <button
                 onClick={() => { setUnlockedCourse(null); setUnlockedEnrollment(null); setAccessCode(''); setUnlockedLessons([]); setQuestions([]); }}

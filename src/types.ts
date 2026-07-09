@@ -267,6 +267,10 @@ export interface Course {
   duration_text?: string;
   level?: 'basico' | 'intermedio' | 'avanzado';
   what_you_learn?: string;
+  certificate_bg_url?: string;
+  logo_url?: string;
+  signature_url?: string;
+  federation_legend?: string;
   created_at?: string;
   updated_at?: string;
 }
