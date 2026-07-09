@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // 3. Verificar avatar disponible
-  const av = codeRow.avatars as {
+  const av = (codeRow.avatars as unknown) as {
     id: string; slug: string; label: string; description: string;
     emoji: string; image_url: string; pub_key: string;
     is_active: boolean; is_private: boolean;
