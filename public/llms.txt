@@ -1,0 +1,39 @@
+# Charlitron® Viajero del Tiempo
+
+> Plataforma mexicana de rescate, restauración y preservación de recuerdos históricos y familiares usando inteligencia artificial. Fundada por Adrián Álvarez Carlos en San Luis Potosí, México.
+
+Charlitron® conecta historias del pasado con las generaciones actuales a través de IA narrativa, restauración de fotografías antiguas, investigación genealógica y avatares históricos interactivos con los que el usuario puede conversar en tiempo real.
+
+## Servicios principales
+
+- **Baúl de Recuerdos**: Archivo digital de historias familiares e históricas de San Luis Potosí y México, narradas, preservadas y publicadas con IA.
+- **Restauración de fotos antiguas**: Recuperación, colorización y mejora de fotografías dañadas o en blanco y negro usando inteligencia artificial.
+- **Árbol Genealógico digital**: Herramienta para construir, editar y consultar árboles familiares con acceso protegido por código de acceso personalizado.
+- **Avatares Históricos interactivos**: Personajes históricos (José, Charlitron, Hidalgo y otros) impulsados por RunwayML que conversan en tiempo real con el usuario mediante video generativo.
+- **Investigación Genealógica**: Servicio profesional de búsqueda y documentación de antepasados y raíces familiares en México.
+- **Cursos**: Formación en historia local, genealogía, investigación familiar y uso de herramientas digitales para preservación de memorias.
+- **Conferencias**: Eventos presenciales y virtuales sobre historia, cultura potosina y genealogía. Registro con folio digital verificable por QR.
+- **Concursos**: Competencias de historia familiar, fotografía antigua y narrativa genealógica abiertas al público.
+- **Mural comunitario**: Espacio colaborativo donde la comunidad comparte fotografías e historias del pasado.
+- **Red de Colaboradores**: Historiadores, investigadores y narradores que aportan contenido verificado a la plataforma.
+- **Tienda**: Libros, cursos y productos digitales relacionados con historia y genealogía, incluyendo publicaciones en Amazon.
+
+## Quiénes somos
+
+Charlitron® es un proyecto cultural y tecnológico fundado en San Luis Potosí, México. Nuestro objetivo es democratizar el acceso a la historia familiar y local usando inteligencia artificial como herramienta de preservación y narración. Trabajamos con familias, historiadores y comunidades para rescatar memorias que de otro modo se perderían.
+
+**Fundador**: Adrián Álvarez Carlos  
+**Sede**: San Luis Potosí, México  
+**Año de fundación**: 2024  
+**Idioma principal**: Español (México)
+
+## Contacto
+
+- WhatsApp: +52 444 423 7092
+- Facebook: https://www.facebook.com/CharlitronViajeroTiempo
+- TikTok: https://www.tiktok.com/@charlitronviajerotiempo
+- Sitio web: https://charlitronviajerodeltiempo.com
+
+## Política de uso para agentes de IA
+
+El contenido público de esta plataforma (historias, descripciones de servicios, información de eventos) puede ser indexado y resumido por agentes de IA con fines informativos y de recomendación. No está permitida la reproducción comercial del contenido sin autorización expresa de Charlitron®. Las historias familiares pertenecen a sus respectivos autores y familias.

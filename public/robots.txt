@@ -3,21 +3,21 @@
 
 User-agent: *
 Allow: /
-Allow: /src/
-Allow: /public/
 Disallow: /admin
-Disallow: /api/admin
-Disallow: /*.json$
+Disallow: /api/
 Disallow: /private/
 
 # Google
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
-Request-rate: 10/1s
 
 # Google Images
 User-agent: Googlebot-Image
+Allow: /
+
+# Google AI (Search Generative Experience)
+User-agent: Google-Extended
 Allow: /
 
 # Bing
@@ -25,13 +25,36 @@ User-agent: Bingbot
 Allow: /
 Crawl-delay: 0
 
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Meta AI
+User-agent: meta-externalagent
+Allow: /
+User-agent: facebookexternalhit
+Allow: /
+
 # Pinterest
 User-agent: Pinterestbot
 Allow: /
 
-# Meta/Facebook
-User-agent: facebookexternalhit
+# Common Crawl (base de datos de IA open source)
+User-agent: CCBot
 Allow: /
+
+# Archivo de referencia para LLMs
+# https://charlitronviajerodeltiempo.com/llms.txt
 
 # Sitemap
 Sitemap: https://charlitronviajerodeltiempo.com/sitemap.xml

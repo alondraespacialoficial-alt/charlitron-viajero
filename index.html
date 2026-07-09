@@ -104,6 +104,101 @@
     }
     </script>
 
+    <!-- LocalBusiness Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Charlitron® Viajero del Tiempo",
+      "description": "Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional.",
+      "url": "https://charlitronviajerodeltiempo.com",
+      "image": "https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png",
+      "telephone": "+524444237092",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "San Luis Potosí",
+        "addressRegion": "SLP",
+        "addressCountry": "MX"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 22.1505,
+        "longitude": -100.9855
+      },
+      "founder": {
+        "@type": "Person",
+        "name": "Adrián Álvarez Carlos"
+      },
+      "sameAs": [
+        "https://www.facebook.com/CharlitronViajeroTiempo",
+        "https://www.tiktok.com/@charlitronviajerotiempo"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios Charlitron®",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Restauración de fotografías antiguas con IA" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Árbol genealógico digital" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Investigación genealógica" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Avatares históricos interactivos con IA" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Preservación de historias familiares" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Cursos de historia y genealogía" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Conferencias de historia local" } }
+        ]
+      }
+    }
+    </script>
+
+    <!-- FAQPage Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Qué es Charlitron® Viajero del Tiempo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Charlitron® es una plataforma cultural mexicana que rescata y preserva historias familiares e históricas usando inteligencia artificial. Ofrece restauración de fotos antiguas, árboles genealógicos digitales, avatares históricos interactivos e investigación genealógica, con sede en San Luis Potosí, México."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo puedo restaurar una fotografía antigua con Charlitron®?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Puedes contactarnos vía WhatsApp al +52 444 423 7092 o a través de nuestra página en Facebook. Nuestro equipo aplica herramientas de inteligencia artificial para recuperar, mejorar y colorizar fotografías dañadas o en blanco y negro."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Qué son los Avatares Históricos de Charlitron®?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Son personajes históricos interactivos impulsados por inteligencia artificial generativa que conversan en tiempo real con el usuario mediante video. Incluyen figuras como José, Charlitron, Hidalgo y otros. El acceso se obtiene con un código personalizado."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo accedo al árbol genealógico digital?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "El árbol genealógico digital requiere un código de acceso personal que se obtiene al contratar el servicio. Con el código puedes construir, editar y compartir tu árbol familiar de forma digital y segura."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Dónde está ubicado Charlitron® Viajero del Tiempo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Charlitron® tiene su sede en San Luis Potosí, México, aunque atiende de forma digital a familias de todo el país y del extranjero."
+          }
+        }
+      ]
+    }
+    </script>
+
     <!-- Favicon & App Icons -->
     <link rel="icon" type="image/png" href="https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png" />
     <link rel="apple-touch-icon" href="https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png" />
@@ -126,9 +221,37 @@
     <!-- Alternate para otros idiomas (si en futuro tendrás) -->
     <link rel="alternate" hreflang="es-MX" href="https://charlitronviajerodeltiempo.com" />
     <link rel="alternate" hreflang="x-default" href="https://charlitronviajerodeltiempo.com" />
+
+    <!-- Referencia para agentes de IA / LLMs -->
+    <link rel="llms-txt" href="/llms.txt" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:2rem;color:#333;">
+        <h1>Charlitron® Viajero del Tiempo — El Baúl de los Recuerdos</h1>
+        <p>Plataforma mexicana de rescate y preservación de historias familiares e históricas usando inteligencia artificial. Fundada por Adrián Álvarez Carlos en San Luis Potosí, México.</p>
+
+        <h2>Nuestros servicios</h2>
+        <ul>
+          <li><strong>Baúl de Recuerdos:</strong> Archivo de historias familiares e históricas de San Luis Potosí narradas con IA.</li>
+          <li><strong>Restauración de fotos antiguas:</strong> Recuperación y colorización de fotografías dañadas o en blanco y negro.</li>
+          <li><strong>Árbol Genealógico digital:</strong> Herramienta para construir y consultar árboles familiares con acceso por código.</li>
+          <li><strong>Avatares Históricos:</strong> Personajes históricos interactivos impulsados por IA generativa para conversación en tiempo real.</li>
+          <li><strong>Investigación Genealógica:</strong> Servicio profesional de búsqueda de antepasados y raíces familiares en México.</li>
+          <li><strong>Cursos y Conferencias:</strong> Formación y eventos sobre historia local, genealogía y cultura potosina.</li>
+          <li><strong>Concursos:</strong> Competencias de historia familiar y fotografía antigua.</li>
+        </ul>
+
+        <h2>Contacto</h2>
+        <p>WhatsApp: +52 444 423 7092 | San Luis Potosí, México</p>
+        <p>
+          <a href="https://www.facebook.com/CharlitronViajeroTiempo">Facebook</a> ·
+          <a href="https://www.tiktok.com/@charlitronviajerotiempo">TikTok</a>
+        </p>
+        <p>Para usar esta aplicación es necesario activar JavaScript en tu navegador.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Google Analytics (si lo necesitas después) -->
