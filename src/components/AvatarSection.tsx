@@ -97,6 +97,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [errorMsg, setErrorMsg]             = useState('');
   const [loadingMsgIdx, setLoadingMsgIdx]   = useState(0);
   const [showToast, setShowToast]           = useState(false);
+  const [failedImages, setFailedImages]     = useState<Set<string>>(new Set());
+  const markImgFailed = (id: string) => setFailedImages(prev => { const s = new Set(prev); s.add(id); return s; });
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const privateInputRef  = useRef<HTMLInputElement>(null);
   const sectionRef       = useRef<HTMLElement>(null);
@@ -460,8 +462,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                       onClick={() => handleSelectAvatar(avatar)}
                       className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
                     >
-                      {avatar.image_url
-                        ? <img src={avatar.image_url} alt={avatar.label} className="w-20 h-20 rounded-full object-cover border-2 border-sepia-700 group-hover:border-sepia-500 transition-colors" />
+                      {avatar.image_url && !failedImages.has(avatar.id)
+                        ? <img src={avatar.image_url} alt={avatar.label} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => markImgFailed(avatar.id)} className="w-20 h-20 rounded-full object-cover border-2 border-sepia-700 group-hover:border-sepia-500 transition-colors" />
                         : <span className="text-5xl">{avatar.emoji}</span>
                       }
                       <span className="text-sepia-100 font-serif text-lg">{avatar.label}</span>
@@ -752,8 +754,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 <ChevronLeft className="w-4 h-4" /> Volver
               </button>
               <div className="flex items-center gap-3 mb-6">
-                {selectedAvatar.image_url
-                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-12 h-12 rounded-full object-cover border border-sepia-700" />
+                {selectedAvatar.image_url && !failedImages.has(selectedAvatar.id)
+                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} referrerPolicy="no-referrer" onError={() => markImgFailed(selectedAvatar.id)} className="w-12 h-12 rounded-full object-cover border border-sepia-700" />
                   : <span className="text-3xl">{selectedAvatar.emoji}</span>
                 }
                 <div>
@@ -809,8 +811,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-6 py-16"
             >
-              {selectedAvatar.image_url
-                ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-28 h-28 rounded-full object-cover border-2 border-sepia-600 opacity-80 animate-pulse" />
+              {selectedAvatar.image_url && !failedImages.has(selectedAvatar.id)
+                ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} referrerPolicy="no-referrer" onError={() => markImgFailed(selectedAvatar.id)} className="w-28 h-28 rounded-full object-cover border-2 border-sepia-600 opacity-80 animate-pulse" />
                 : <span className="text-7xl animate-pulse">{selectedAvatar.emoji}</span>
               }
               <p className="text-sepia-200 font-serif text-lg">{selectedAvatar.label}</p>
@@ -839,8 +841,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               className="flex flex-col items-center gap-6"
             >
               <div className="bg-sepia-900/60 border border-sepia-700 rounded-2xl p-8 text-center max-w-md w-full">
-                {selectedAvatar.image_url
-                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-24 h-24 rounded-full object-cover border-2 border-sepia-600 mx-auto mb-4" />
+                {selectedAvatar.image_url && !failedImages.has(selectedAvatar.id)
+                  ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} referrerPolicy="no-referrer" onError={() => markImgFailed(selectedAvatar.id)} className="w-24 h-24 rounded-full object-cover border-2 border-sepia-600 mx-auto mb-4" />
                   : <span className="text-6xl block mb-4">{selectedAvatar.emoji}</span>
                 }
                 <h3 className="text-sepia-100 font-serif text-2xl mb-2">{selectedAvatar.label}</h3>
@@ -892,8 +894,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
             transition={{ type: 'spring', damping: 24, stiffness: 300 }}
             className="fixed bottom-8 right-8 z-[200] flex items-center gap-3 bg-sepia-800 border border-sepia-600 rounded-2xl px-5 py-4 shadow-2xl max-w-xs"
           >
-            {selectedAvatar.image_url
-              ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} className="w-10 h-10 rounded-full object-cover border border-sepia-600 flex-shrink-0" />
+            {selectedAvatar.image_url && !failedImages.has(selectedAvatar.id)
+              ? <img src={selectedAvatar.image_url} alt={selectedAvatar.label} referrerPolicy="no-referrer" onError={() => markImgFailed(selectedAvatar.id)} className="w-10 h-10 rounded-full object-cover border border-sepia-600 flex-shrink-0" />
               : <span className="text-2xl flex-shrink-0">{selectedAvatar.emoji}</span>
             }
             <div>
