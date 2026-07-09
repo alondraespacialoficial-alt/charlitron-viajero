@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 // Variable de entorno requerida en Vercel (sin prefijo VITE_):
 //   GEMINI_API_KEY — clave de Google Gemini AI
@@ -93,35 +93,15 @@ DEBES RESPONDER ÚNICAMENTE EN FORMATO JSON con la siguiente estructura:
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            exploration: { type: Type.STRING },
-            parchment: {
-              type: Type.OBJECT,
-              properties: {
-                title:     { type: Type.STRING },
-                name:      { type: Type.STRING },
-                origin:    { type: Type.STRING },
-                region:    { type: Type.STRING },
-                symbols:   { type: Type.STRING },
-                stories:   { type: Type.STRING },
-                trace:     { type: Type.STRING },
-                certainty: { type: Type.STRING },
-                closing:   { type: Type.STRING },
-              },
-              required: ['title', 'name', 'origin', 'region', 'symbols', 'stories', 'trace', 'certainty', 'closing'],
-            },
-          },
-          required: ['exploration', 'parchment'],
-        },
       },
     });
 
-    const data = JSON.parse(response.text ?? '{}');
+    const text = response.text ?? '';
+    const data = JSON.parse(text);
     return res.status(200).json(data);
-  } catch (err) {
-    console.error('[gemini-investigation] error:', err);
-    return res.status(500).json({ error: 'Error al conectar con los archivos históricos.' });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[gemini-investigation] error:', message);
+    return res.status(500).json({ error: message });
   }
 }
