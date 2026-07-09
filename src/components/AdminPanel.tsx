@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto, Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
+import { generateSlug } from '../seoUtils';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
 import { ConferencesAdmin } from './ConferencesAdmin';
@@ -844,10 +845,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     setIsSaving(true);
     try {
+      const storyId = editingStory.id || crypto.randomUUID();
       const storyToSave = {
         ...editingStory,
-        id: editingStory.id || crypto.randomUUID(),
+        id: storyId,
         gallery: editingStory.gallery || [],
+        // Guardar slug para que los links compartidos funcionen correctamente
+        slug: editingStory.slug || generateSlug(editingStory.title || '', storyId),
       };
 
       const { data, error } = await supabase

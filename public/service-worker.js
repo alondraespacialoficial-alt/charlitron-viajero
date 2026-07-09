@@ -71,6 +71,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Ignorar esquemas no compatibles con Cache API (chrome-extension, etc.)
+  const reqUrl = event.request.url;
+  if (!reqUrl.startsWith('http://') && !reqUrl.startsWith('https://')) {
+    return;
+  }
+
   const url = new URL(event.request.url);
   const isImage = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url.pathname);
   const isExternalImage = isImage && url.hostname !== self.location.hostname;
