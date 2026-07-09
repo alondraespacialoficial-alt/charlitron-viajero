@@ -16,7 +16,6 @@ import {
   Users,
   MessageCircle
 } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { supabase } from '../supabase';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -89,78 +88,16 @@ export const InvestigationSection = ({ onBack }: InvestigationSectionProps) => {
     setError(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const prompt = `Actúa como un archivista de memoria y linaje con rigor histórico y sensibilidad narrativa para la app "El Baúl de los Recuerdos".
-      
-      OBJETIVO: Investigar profundamente el apellido paterno "${formData.surname}" y el materno "${formData.maternalSurname || 'No especificado'}" para la persona "${formData.fullName}".
-      
-      CONTEXTO DEL USUARIO:
-      - Apellido Paterno: ${formData.surname}
-      - Apellido Materno: ${formData.maternalSurname || 'No especificado'}
-      - Nombre Completo: ${formData.fullName}
-      - Lugar asociado: ${formData.origin || 'No especificado'}
-      - Memoria familiar: ${formData.legend || 'No especificada'}
-      - Antepasado: ${formData.ancestor || 'No especificado'}
-      - Lugar de nacimiento del antepasado: ${formData.ancestorBirthplace || 'No especificado'}
-      - Oficio/Tradición familiar: ${formData.familyTrade || 'No especificado'}
-
-      REGLAS CRÍTICAS:
-      1. NUNCA inventes datos. Distingue siempre entre: dato documentado, memoria familiar, coincidencia posible e interpretación simbólica.
-      2. Usa palabras gatillo de certeza obligatorias: "documentado", "probable", "posible", "asociado", "según memoria familiar", "en construcción".
-      3. Tono: elegante, claro, sobrio, cálido, formal, evocador. NUNCA grandilocuente ni fantasioso.
-      4. No inventes parentescos ni atribuyas cargos sin evidencia.
-      5. No certifiques descendencias no verificadas.
-      6. No perfilar personas reales vivas con información no comprobada.
-      7. PROFUNDIDAD: Investiga etimología, variantes geográficas y posibles migraciones. Si el oficio familiar coincide con el origen del apellido (ej. Herrero), menciónalo.
-
-      DEBES RESPONDER ÚNICAMENTE EN FORMATO JSON con la siguiente estructura:
-      {
-        "exploration": "Texto detallado y extenso del reporte de exploración con secciones de origen (etimología y geografía), memoria familiar, coincidencias históricas, nivel de certeza y una conclusión reflexiva.",
-        "parchment": {
-          "title": "Crónica de Memoria y Linaje",
-          "name": "${formData.fullName}",
-          "origin": "Texto detallado sobre el origen probable y significado de los apellidos",
-          "region": "${formData.origin || 'Raíces en el tiempo'}",
-          "symbols": "Descripción de símbolos, colores o elementos heráldicos asociados (ej. Un roble por la fuerza, azul por la lealtad)",
-          "stories": "Breve relato o leyenda asociada al apellido o a la región de origen",
-          "trace": "4 o 5 valores simbólicos o virtudes asociadas al linaje",
-          "certainty": "Nivel de certeza (alta/media/posible/en construcción)",
-          "closing": "Frase poética final que resuma la esencia del linaje"
-        }
-      }`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              exploration: { type: Type.STRING },
-              parchment: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  name: { type: Type.STRING },
-                  origin: { type: Type.STRING },
-                  region: { type: Type.STRING },
-                  symbols: { type: Type.STRING },
-                  stories: { type: Type.STRING },
-                  trace: { type: Type.STRING },
-                  certainty: { type: Type.STRING },
-                  closing: { type: Type.STRING }
-                },
-                required: ["title", "name", "origin", "region", "symbols", "stories", "trace", "certainty", "closing"]
-              }
-            },
-            required: ["exploration", "parchment"]
-          }
-        }
+      const res = await fetch('/api/gemini-investigation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
-
-      const data = JSON.parse(response.text);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error((errBody as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      const data = await res.json();
       if (data) {
         setReport(data);
         setStep('result');
