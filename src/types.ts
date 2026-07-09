@@ -263,6 +263,10 @@ export interface Course {
   order_index?: number;
   collaborator_code?: string;
   instructor_share?: number;
+  instructor_name?: string;
+  duration_text?: string;
+  level?: 'basico' | 'intermedio' | 'avanzado';
+  what_you_learn?: string;
   created_at?: string;
   updated_at?: string;
 }

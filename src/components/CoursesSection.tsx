@@ -4,7 +4,7 @@ import {
   BookOpen, Lock, Unlock, Play, FileText, Image as ImageIcon,
   Volume2, Download, Send, X, ChevronRight, CheckCircle2,
   AlertCircle, Clock, Loader2, MessageCircle, Search,
-  HelpCircle, User, Award, DollarSign,
+  HelpCircle, User, Award, DollarSign, GraduationCap,
 } from 'lucide-react';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
 import { supabase } from '../supabase';
@@ -338,14 +338,37 @@ export const CoursesSection: React.FC = () => {
                       </div>
                     )}
                     <div className="p-5 space-y-3">
-                      <h3 className="text-sepia-100 font-serif text-lg line-clamp-2">{course.title}</h3>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sepia-100 font-serif text-lg line-clamp-2 flex-1">{course.title}</h3>
+                        {course.level && (
+                          <span className={`flex-shrink-0 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                            course.level === 'basico' ? 'text-green-400 border-green-700 bg-green-900/20' :
+                            course.level === 'intermedio' ? 'text-amber-400 border-amber-700 bg-amber-900/20' :
+                            'text-red-400 border-red-700 bg-red-900/20'
+                          }`}>{course.level}</span>
+                        )}
+                      </div>
+                      {course.instructor_name && (
+                        <div className="flex items-center gap-1.5 text-sepia-500 text-xs">
+                          <User className="w-3 h-3" />
+                          <span>{course.instructor_name}</span>
+                        </div>
+                      )}
                       {course.description && (
                         <p className="text-sepia-400 text-sm line-clamp-2">{course.description}</p>
                       )}
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-bold ${course.price === 0 ? 'text-green-400' : 'text-sepia-200'}`}>
-                          {formatPrice(course.price)}
-                        </span>
+                        <div className="space-y-0.5">
+                          <span className={`text-sm font-bold ${course.price === 0 ? 'text-green-400' : 'text-sepia-200'}`}>
+                            {formatPrice(course.price)}
+                          </span>
+                          {course.duration_text && (
+                            <div className="flex items-center gap-1 text-sepia-600 text-xs">
+                              <Clock className="w-3 h-3" />
+                              <span>{course.duration_text}</span>
+                            </div>
+                          )}
+                        </div>
                         <button className="flex items-center gap-1.5 text-sepia-400 hover:text-sepia-200 text-xs uppercase tracking-widest font-bold transition-colors">
                           Ver más <ChevronRight className="w-3.5 h-3.5" />
                         </button>
@@ -769,8 +792,44 @@ export const CoursesSection: React.FC = () => {
                     {selectedCourse.banner_url && (
                       <img src={selectedCourse.banner_url} alt="" className="w-full rounded-xl object-cover max-h-52" />
                     )}
+                    {/* Metadatos rápidos */}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCourse.level && (
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                          selectedCourse.level === 'basico' ? 'text-green-400 border-green-700 bg-green-900/20' :
+                          selectedCourse.level === 'intermedio' ? 'text-amber-400 border-amber-700 bg-amber-900/20' :
+                          'text-red-400 border-red-700 bg-red-900/20'
+                        }`}>{selectedCourse.level}</span>
+                      )}
+                      {selectedCourse.duration_text && (
+                        <span className="flex items-center gap-1 text-[10px] text-sepia-500 border border-sepia-700 bg-sepia-800/30 px-2.5 py-1 rounded-full">
+                          <Clock className="w-3 h-3" />{selectedCourse.duration_text}
+                        </span>
+                      )}
+                      {selectedCourse.instructor_name && (
+                        <span className="flex items-center gap-1 text-[10px] text-sepia-500 border border-sepia-700 bg-sepia-800/30 px-2.5 py-1 rounded-full">
+                          <User className="w-3 h-3" />{selectedCourse.instructor_name}
+                        </span>
+                      )}
+                    </div>
                     {selectedCourse.description && (
                       <p className="text-sepia-300 text-sm leading-relaxed">{selectedCourse.description}</p>
+                    )}
+                    {/* ¿Qué aprenderás? */}
+                    {selectedCourse.what_you_learn && (
+                      <div className="bg-sepia-800/30 border border-sepia-700 rounded-xl p-4 space-y-2">
+                        <p className="flex items-center gap-2 text-xs text-sepia-400 uppercase tracking-widest font-bold">
+                          <GraduationCap className="w-3.5 h-3.5" /> ¿Qué aprenderás?
+                        </p>
+                        <ul className="space-y-1.5">
+                          {selectedCourse.what_you_learn.split('\n').filter(Boolean).map((item, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-sepia-300">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-sepia-500 mt-0.5 flex-shrink-0" />
+                              {item.trim()}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
 
                     {/* Lista de lecciones */}

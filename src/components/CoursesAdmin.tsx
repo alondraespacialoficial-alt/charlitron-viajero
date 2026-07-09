@@ -143,6 +143,10 @@ export const CoursesAdmin: React.FC = () => {
         order_index: editingCourse.order_index ?? 0,
         collaborator_code: editingCourse.collaborator_code?.trim().toUpperCase() || null,
         instructor_share: editingCourse.instructor_share ?? 0,
+        instructor_name: editingCourse.instructor_name?.trim() || null,
+        duration_text: editingCourse.duration_text?.trim() || null,
+        level: editingCourse.level || null,
+        what_you_learn: editingCourse.what_you_learn?.trim() || null,
       };
       if (editingCourse.id) {
         const { error } = await supabase.from('courses').update(payload).eq('id', editingCourse.id);
@@ -311,9 +315,34 @@ export const CoursesAdmin: React.FC = () => {
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500" />
               </div>
               <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Instructor</label>
+                <input type="text" value={editingCourse.instructor_name || ''} onChange={e => setEditingCourse({ ...editingCourse, instructor_name: e.target.value })}
+                  placeholder="Ej: Adrián Álvarez Carlos" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Duración</label>
+                <input type="text" value={editingCourse.duration_text || ''} onChange={e => setEditingCourse({ ...editingCourse, duration_text: e.target.value })}
+                  placeholder="Ej: 6 horas · 8 lecciones" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Nivel</label>
+                <select value={editingCourse.level || ''} onChange={e => setEditingCourse({ ...editingCourse, level: (e.target.value as Course['level']) || undefined })}
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500 text-sm">
+                  <option value="">Sin especificar</option>
+                  <option value="basico">Básico</option>
+                  <option value="intermedio">Intermedio</option>
+                  <option value="avanzado">Avanzado</option>
+                </select>
+              </div>
+              <div className="space-y-1">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Código colaborador (opcional)</label>
                 <input type="text" value={editingCourse.collaborator_code || ''} onChange={e => setEditingCourse({ ...editingCourse, collaborator_code: e.target.value.toUpperCase() })}
                   placeholder="Ej: COLB-XXXX" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono text-sm" />
+              </div>
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">¿Qué aprenderás? (una línea por punto)</label>
+                <textarea rows={4} value={editingCourse.what_you_learn || ''} onChange={e => setEditingCourse({ ...editingCourse, what_you_learn: e.target.value })}
+                  placeholder="Identificar apellidos de origen hebreo\nInterpretar documentos del siglo XIX\nUsar herramientas de búsqueda genealógica" className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">% del instructor (0-100)</label>
