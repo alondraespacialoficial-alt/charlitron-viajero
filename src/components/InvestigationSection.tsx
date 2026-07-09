@@ -113,7 +113,8 @@ export const InvestigationSection = ({ onBack }: InvestigationSectionProps) => {
       }
     } catch (err) {
       console.error('Error generating investigation:', err);
-      setError('Hubo un error al conectar con los archivos históricos. Por favor, inténtalo de nuevo.');
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      setError(`Error: ${msg}`);
       setStep('form');
     }
   };
