@@ -369,7 +369,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
 
                 <div className="space-y-4 text-left max-w-2xl mx-auto bg-sepia-900/30 border border-sepia-800/60 rounded-2xl p-6 md:p-8">
                   <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
-                    En este espacio, la historia no solo se observa: también se conversa. El{' '}
+                    En este espacio, la historia no solo se observa: también se conversa. La{' '}
                     <strong className="text-sepia-200">Galería de Avatares Históricos Charlitron®</strong> de
                     Charlitron® Viajero del Tiempo reúne experiencias digitales creadas a partir
                     de investigación, memoria documentada y reconstrucción narrativa para acercarte
