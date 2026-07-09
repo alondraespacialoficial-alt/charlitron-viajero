@@ -1765,6 +1765,7 @@ export default function App() {
   const [logoClicks, setLogoClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [adminToken, setAdminToken] = useState('');
   const [adminLoginLoading, setAdminLoginLoading] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
@@ -2117,6 +2118,7 @@ export default function App() {
         body: { password: adminPassword },
       });
       if (!error && data?.valid === true) {
+        setAdminToken(adminPassword);
         setIsAdminAuthenticated(true);
         setShowAdminLogin(false);
         setAdminPassword('');
@@ -2242,7 +2244,8 @@ export default function App() {
             onStoriesUpdate={setStories}
             onTravelPhotosUpdate={setTravelPhotos}
             onSettingsUpdate={fetchIntroVideo}
-            onClose={() => setIsAdminAuthenticated(false)}
+            adminToken={adminToken}
+            onClose={() => { setIsAdminAuthenticated(false); setAdminToken(''); }}
           />
           </Suspense>
         )}

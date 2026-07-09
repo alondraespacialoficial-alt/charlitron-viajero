@@ -52,6 +52,7 @@ interface AdminPanelProps {
   onSettingsUpdate?: () => void;
   initialStories: Story[];
   initialTravelPhotos?: TravelPhoto[];
+  adminToken?: string;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
@@ -60,7 +61,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onTravelPhotosUpdate,
   onSettingsUpdate, 
   initialStories,
-  initialTravelPhotos = []
+  initialTravelPhotos = [],
+  adminToken = ''
 }) => {
   const [stories, setStories] = useState<Story[]>(initialStories);
   const [historians, setHistorians] = useState<Historian[]>([]);
@@ -3201,7 +3203,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-3xl mx-auto"
               >
-                <AvatarsAdmin />
+                <AvatarsAdmin adminToken={adminToken} />
               </motion.div>
             ) : viewMode === 'courses' ? (
               <motion.div 

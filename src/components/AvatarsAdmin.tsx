@@ -25,7 +25,7 @@ function generateCode(): string {
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-export const AvatarsAdmin: React.FC = () => {
+export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '' }) => {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [editing, setEditing] = useState<Partial<Avatar> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -122,7 +122,10 @@ export const AvatarsAdmin: React.FC = () => {
     setConsentLoading(true);
     setConsentError('');
     try {
-      const res = await fetch('/api/get-consent-logs', { method: 'POST' });
+      const res = await fetch('/api/get-consent-logs', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setConsentLogs(json?.data ?? []);
