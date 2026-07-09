@@ -1894,13 +1894,11 @@ export default function App() {
           if (slugToFind && !['galeria','tienda','investiga','concursos','conferencias',
                             'mural','colaboradores','arbol','historias',
                             'terminos','privacidad'].includes(slugToFind)) {
-            const foundBySlug = data.find(s => s.slug && s.slug === slugToFind);
-            if (foundBySlug) {
-              setSelectedStory(foundBySlug);
-            } else {
-              const foundById = data.find(s => s.id === slugToFind);
-              if (foundById) setSelectedStory(foundById);
-            }
+            const found =
+              data.find(s => s.slug && s.slug === slugToFind) ||
+              data.find(s => generateSlug(s.title, s.id) === slugToFind) ||
+              data.find(s => s.id === slugToFind);
+            if (found) setSelectedStory(found);
           }
         }
       } catch (error) {
@@ -1959,13 +1957,15 @@ export default function App() {
       } else if (path === 'avatares-legal') {
         setLegalView('avatars');
       } else if (path && path !== 'historias') {
-        const foundBySlug = stories.find(s => s.slug && s.slug === path);
-        if (foundBySlug) {
-          setSelectedStory(foundBySlug);
-        } else {
-          const foundById = stories.find(s => s.id === path);
-          if (foundById) setSelectedStory(foundById);
-        }
+        // Soporte para URLs del tipo /historia/slug (generadas al compartir)
+        const slugToFind = path.startsWith('historia/')
+          ? path.replace('historia/', '')
+          : path;
+        const found =
+          stories.find(s => s.slug && s.slug === slugToFind) ||
+          stories.find(s => generateSlug(s.title, s.id) === slugToFind) ||
+          stories.find(s => s.id === slugToFind);
+        if (found) setSelectedStory(found);
       }
     };
     window.addEventListener('popstate', handlePopState);
