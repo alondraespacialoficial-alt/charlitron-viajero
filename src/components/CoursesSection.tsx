@@ -5,6 +5,7 @@ import {
   Volume2, Download, Send, X, ChevronRight, CheckCircle2,
   AlertCircle, Clock, Loader2, MessageCircle, Search,
   HelpCircle, User, Award, DollarSign, GraduationCap, Users,
+  Upload, Video, Plus, Edit2, Trash2, Save,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
@@ -12,6 +13,7 @@ import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
 
 type ActiveTab = 'catalog' | 'access' | 'collaborator';
+type CollabSubTab = 'courses' | 'students' | 'upload';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const getYouTubeEmbedUrl = (url: string): string | null => {
@@ -77,6 +79,28 @@ export const CoursesSection: React.FC = () => {
   const [collabViewName, setCollabViewName] = useState<string | null>(null);
   type CollabEntry = CourseEnrollment & { course_title: string; course_price: number };
   const [collabViewEnrollments, setCollabViewEnrollments] = useState<CollabEntry[]>([]);
+
+  // ── Subir curso como colaborador ─────────────────────────────────
+  const [collabSubTab, setCollabSubTab] = useState<CollabSubTab>('students');
+  const [collabSubmitForm, setCollabSubmitForm] = useState({
+    title: '', description: '', banner_url: '', price: 0,
+    instructor_name: '', duration_text: '', level: '', what_you_learn: '',
+  });
+  const [collabSubmitting, setCollabSubmitting] = useState(false);
+  const [collabSubmitError, setCollabSubmitError] = useState<string | null>(null);
+  const [collabSubmitSuccess, setCollabSubmitSuccess] = useState(false);
+  const [collabBannerUploading, setCollabBannerUploading] = useState(false);
+
+  // ── Gestión de cursos y lecciones como colaborador ────────────────
+  const [collabCourses, setCollabCourses] = useState<Course[]>([]);
+  const [collabSelectedCourse, setCollabSelectedCourse] = useState<Course | null>(null);
+  const [collabLessons, setCollabLessons] = useState<CourseLesson[]>([]);
+  const [collabEditingLesson, setCollabEditingLesson] = useState<Partial<CourseLesson> | null>(null);
+  const [collabIsSavingLesson, setCollabIsSavingLesson] = useState(false);
+  const [collabIsDeletingLesson, setCollabIsDeletingLesson] = useState<string | null>(null);
+  const [collabUploadingMedia, setCollabUploadingMedia] = useState<string | null>(null);
+  const [collabNewImageUrl, setCollabNewImageUrl] = useState('');
+  const [collabLessonMsg, setCollabLessonMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [answerTarget, setAnswerTarget] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
@@ -267,6 +291,7 @@ export const CoursesSection: React.FC = () => {
     setCollabViewError(null);
     setCollabViewName(null);
     setCollabViewEnrollments([]);
+    setCollabCourses([]);
     try {
       const { data: collab } = await supabase
         .from('collaborators')
@@ -279,23 +304,26 @@ export const CoursesSection: React.FC = () => {
 
       const { data: myCourses } = await supabase
         .from('courses')
-        .select('id, title, price')
-        .eq('collaborator_code', code);
+        .select('*')
+        .eq('collaborator_code', code)
+        .order('order_index', { ascending: true });
+
+      setCollabCourses(myCourses || []);
 
       if (!myCourses || myCourses.length === 0) return;
 
       const { data: enrs } = await supabase
         .from('course_enrollments')
         .select('*')
-        .in('course_id', myCourses.map((c: { id: string }) => c.id))
+        .in('course_id', myCourses.map((c: Course) => c.id))
         .eq('status', 'paid')
         .order('created_at', { ascending: false });
 
       setCollabViewEnrollments(
         (enrs || []).map((e: CourseEnrollment) => ({
           ...e,
-          course_title: myCourses.find((c: { id: string; title: string }) => c.id === e.course_id)?.title || '—',
-          course_price: myCourses.find((c: { id: string; price: number }) => c.id === e.course_id)?.price || 0,
+          course_title: myCourses.find((c: Course) => c.id === e.course_id)?.title || '—',
+          course_price: myCourses.find((c: Course) => c.id === e.course_id)?.price || 0,
         }))
       );
     } catch {
@@ -303,6 +331,89 @@ export const CoursesSection: React.FC = () => {
     } finally {
       setCollabViewLoading(false);
     }
+  };
+
+  // ── Lecciones del colaborador ─────────────────────────────────────
+  const fetchCollabLessons = async (courseId: string) => {
+    const { data } = await supabase
+      .from('course_lessons')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('order_index', { ascending: true });
+    setCollabLessons((data || []).map(l => ({ ...l, images: Array.isArray(l.images) ? l.images : [] })));
+  };
+
+  const showCollabMsg = (type: 'success' | 'error', text: string) => {
+    setCollabLessonMsg({ type, text });
+    setTimeout(() => setCollabLessonMsg(null), 3000);
+  };
+
+  const handleCollabMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'audio_url' | 'pdf_url') => {
+    const file = e.target.files?.[0];
+    if (!file || !collabEditingLesson) return;
+    setCollabUploadingMedia(field);
+    try {
+      const folder = field === 'pdf_url' ? 'courses/pdfs' : 'courses/audio';
+      const fileName = `${folder}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
+      setCollabEditingLesson(l => ({ ...l!, [field]: data.publicUrl }));
+    } catch { showCollabMsg('error', 'Error al subir el archivo'); }
+    finally { setCollabUploadingMedia(null); }
+  };
+
+  const handleCollabImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !collabEditingLesson) return;
+    setCollabUploadingMedia('image');
+    try {
+      const fileName = `courses/images/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
+      setCollabEditingLesson(l => ({ ...l!, images: [...(l!.images || []), data.publicUrl] }));
+    } catch { showCollabMsg('error', 'Error al subir la imagen'); }
+    finally { setCollabUploadingMedia(null); }
+  };
+
+  const handleCollabSaveLesson = async () => {
+    if (!collabEditingLesson?.title?.trim() || !collabSelectedCourse) return;
+    setCollabIsSavingLesson(true);
+    try {
+      const payload = {
+        course_id: collabSelectedCourse.id,
+        title: collabEditingLesson.title,
+        description: collabEditingLesson.description || null,
+        video_url: collabEditingLesson.video_url || null,
+        audio_url: collabEditingLesson.audio_url || null,
+        pdf_url: collabEditingLesson.pdf_url || null,
+        images: collabEditingLesson.images || [],
+        text_content: collabEditingLesson.text_content || null,
+        order_index: collabEditingLesson.order_index ?? collabLessons.length,
+        is_free_preview: collabEditingLesson.is_free_preview ?? false,
+      };
+      if (collabEditingLesson.id) {
+        const { error } = await supabase.from('course_lessons').update(payload).eq('id', collabEditingLesson.id);
+        if (error) throw error;
+        showCollabMsg('success', 'Lección actualizada');
+      } else {
+        const { error } = await supabase.from('course_lessons').insert([payload]);
+        if (error) throw error;
+        showCollabMsg('success', 'Lección creada');
+      }
+      setCollabEditingLesson(null);
+      fetchCollabLessons(collabSelectedCourse.id);
+    } catch { showCollabMsg('error', 'Error al guardar la lección'); }
+    finally { setCollabIsSavingLesson(false); }
+  };
+
+  const handleCollabDeleteLesson = async (id: string) => {
+    if (!confirm('¿Eliminar esta lección?')) return;
+    setCollabIsDeletingLesson(id);
+    await supabase.from('course_lessons').delete().eq('id', id);
+    if (collabSelectedCourse) fetchCollabLessons(collabSelectedCourse.id);
+    setCollabIsDeletingLesson(null);
   };
 
   // ── Answer question ───────────────────────────────────────────────
@@ -319,6 +430,52 @@ export const CoursesSection: React.FC = () => {
       if (unlockedCourse) await fetchQuestions(unlockedCourse.id, activeLessonId || undefined);
     } finally {
       setIsAnswering(false);
+    }
+  };
+
+  // ── Subir banner desde colaborador ───────────────────────────────
+  const handleCollabBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCollabBannerUploading(true);
+    try {
+      const fileName = `courses/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
+      setCollabSubmitForm(f => ({ ...f, banner_url: data.publicUrl }));
+    } catch { /* el usuario puede pegar URL manualmente */ }
+    finally { setCollabBannerUploading(false); }
+  };
+
+  // ── Enviar curso para revisión del admin ─────────────────────────
+  const handleCollabSubmitCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!collabSubmitForm.title.trim() || !collabViewCode) return;
+    setCollabSubmitting(true);
+    setCollabSubmitError(null);
+    try {
+      const { error } = await supabase.from('courses').insert([{
+        title: collabSubmitForm.title.trim(),
+        description: collabSubmitForm.description.trim() || null,
+        banner_url: collabSubmitForm.banner_url.trim() || null,
+        price: collabSubmitForm.price,
+        instructor_name: (collabSubmitForm.instructor_name.trim() || collabViewName) || null,
+        duration_text: collabSubmitForm.duration_text.trim() || null,
+        level: collabSubmitForm.level || null,
+        what_you_learn: collabSubmitForm.what_you_learn.trim() || null,
+        collaborator_code: collabViewCode,
+        is_active: false,
+        pending_review: true,
+        order_index: 999,
+        instructor_share: 0,
+      }]);
+      if (error) throw error;
+      setCollabSubmitSuccess(true);
+    } catch {
+      setCollabSubmitError('Error al enviar el curso. Intenta de nuevo.');
+    } finally {
+      setCollabSubmitting(false);
     }
   };
 
@@ -1039,88 +1196,535 @@ export const CoursesSection: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Header colaborador */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sepia-500 text-xs uppercase tracking-widest">Colaborador verificado</p>
                     <p className="text-sepia-100 font-serif text-xl">{collabViewName}</p>
                   </div>
                   <button
-                    onClick={() => { setCollabViewName(null); setCollabViewCode(''); setCollabViewEnrollments([]); }}
+                    onClick={() => {
+                      setCollabViewName(null); setCollabViewCode(''); setCollabViewEnrollments([]);
+                      setCollabCourses([]); setCollabSelectedCourse(null); setCollabLessons([]);
+                      setCollabEditingLesson(null); setCollabSubTab('courses');
+                      setCollabSubmitSuccess(false);
+                      setCollabSubmitForm({ title: '', description: '', banner_url: '', price: 0, instructor_name: '', duration_text: '', level: '', what_you_learn: '' });
+                    }}
                     className="text-sepia-600 hover:text-sepia-300 border border-sepia-700 px-3 py-1.5 rounded-xl text-xs uppercase tracking-widest transition-all"
                   >
                     Salir
                   </button>
                 </div>
 
-                {collabViewEnrollments.length === 0 ? (
-                  <div className="text-center py-16 text-sepia-600 space-y-3">
-                    <GraduationCap className="w-10 h-10 mx-auto opacity-40" />
-                    <p>Sin alumnos con pago confirmado en tus cursos aún.</p>
-                  </div>
-                ) : (
+                {/* Sub-tabs */}
+                <div className="flex gap-1 bg-sepia-900/60 border border-sepia-800 rounded-xl p-1">
+                  {([
+                    { key: 'courses', label: 'Mis Cursos', Icon: BookOpen },
+                    { key: 'students', label: 'Mis Alumnos', Icon: GraduationCap },
+                    { key: 'upload', label: 'Subir Curso', Icon: Upload },
+                  ] as { key: CollabSubTab; label: string; Icon: React.ElementType }[]).map(({ key, label, Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setCollabSubTab(key)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex-1 justify-center ${
+                        collabSubTab === key ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-500 hover:text-sepia-200'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sub-tab: Mis Cursos */}
+                {collabSubTab === 'courses' && (
                   <div className="space-y-4">
-                    {/* Resumen */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-sepia-800/40 border border-sepia-700 rounded-2xl">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-sepia-100">{collabViewEnrollments.length}</p>
-                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Total alumnos</p>
+                    <AnimatePresence>
+                      {collabLessonMsg && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                          className={`flex items-center gap-2 p-3 rounded-xl text-sm border ${collabLessonMsg.type === 'success' ? 'bg-green-900/30 border-green-700 text-green-400' : 'bg-red-900/30 border-red-700 text-red-400'}`}>
+                          {collabLessonMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                          {collabLessonMsg.text}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {collabCourses.length === 0 ? (
+                      <div className="text-center py-12 text-sepia-600 space-y-2">
+                        <BookOpen className="w-10 h-10 mx-auto opacity-40" />
+                        <p>Aún no tienes cursos asignados.</p>
+                        <p className="text-xs">Usa la pestaña "Subir Curso" para proponer uno.</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-green-400">{collabViewEnrollments.filter(e => e.collab_paid).length}</p>
-                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Te pagaron ✓</p>
-                      </div>
-                      <div className="text-center col-span-2 sm:col-span-1">
-                        <p className="text-2xl font-bold text-amber-400">{collabViewEnrollments.filter(e => !e.collab_paid).length}</p>
-                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Pendiente de cobrar</p>
-                      </div>
-                    </div>
-                    {/* Tabla */}
-                    <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Alumnos con acceso activo</p>
-                    <div className="overflow-x-auto rounded-xl border border-sepia-800">
-                      <table className="w-full text-sm">
-                        <thead className="bg-sepia-900/60">
-                          <tr>
-                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Alumno</th>
-                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden md:table-cell">Email</th>
-                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden sm:table-cell">Curso</th>
-                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Pago a ti</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {collabViewEnrollments.map(e => (
-                            <tr key={e.id} className="border-t border-sepia-800/60 hover:bg-sepia-900/30 transition-colors">
-                              <td className="py-3 px-4">
-                                <p className="text-sepia-200 font-medium">{e.student_name}</p>
-                                <p className="text-sepia-600 text-xs mt-0.5">{e.student_phone || '—'}</p>
-                              </td>
-                              <td className="py-3 px-4 hidden md:table-cell">
-                                <p className="text-sepia-400 text-xs">{e.student_email}</p>
-                              </td>
-                              <td className="py-3 px-4 hidden sm:table-cell">
-                                <p className="text-sepia-400 text-xs line-clamp-2">{e.course_title}</p>
-                              </td>
-                              <td className="py-3 px-4">
-                                {e.collab_paid ? (
-                                  <div>
-                                    <span className="flex items-center gap-1 text-green-400 text-xs font-bold">
-                                      <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
-                                    </span>
-                                    {e.collab_paid_at && (
-                                      <p className="text-sepia-600 text-[10px] mt-0.5">
-                                        {new Date(e.collab_paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                      </p>
-                                    )}
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sepia-500 text-xs uppercase tracking-widest font-bold">Tus cursos ({collabCourses.length})</p>
+                        {collabCourses.map(course => (
+                          <div key={course.id}>
+                            <div
+                              onClick={() => {
+                                if (collabSelectedCourse?.id === course.id) {
+                                  setCollabSelectedCourse(null); setCollabLessons([]); setCollabEditingLesson(null);
+                                } else {
+                                  setCollabSelectedCourse(course); setCollabEditingLesson(null);
+                                  fetchCollabLessons(course.id);
+                                }
+                              }}
+                              className={`cursor-pointer border rounded-xl p-4 transition-all space-y-1 ${
+                                collabSelectedCourse?.id === course.id
+                                  ? 'border-sepia-500 bg-sepia-700/40'
+                                  : 'border-sepia-800 bg-sepia-800/30 hover:border-sepia-600'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sepia-100 font-serif text-sm flex-1 line-clamp-1">{course.title}</p>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                                  course.pending_review
+                                    ? 'text-amber-400 border-amber-600 bg-amber-900/30'
+                                    : course.is_active ? 'text-green-400 border-green-700 bg-green-900/30' : 'text-sepia-500 border-sepia-700'
+                                }`}>
+                                  {course.pending_review ? 'Pendiente revisión' : course.is_active ? 'Publicado' : 'Oculto'}
+                                </span>
+                              </div>
+                              <p className="text-sepia-500 text-xs">{course.price === 0 ? 'Acceso libre' : `$${course.price} MXN`}</p>
+                            </div>
+
+                            {/* Panel de lecciones del curso seleccionado */}
+                            {collabSelectedCourse?.id === course.id && (
+                              <div className="border border-sepia-700 border-t-0 rounded-b-2xl p-5 bg-sepia-900/40 space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Lecciones ({collabLessons.length})</p>
+                                  <button
+                                    onClick={() => setCollabEditingLesson({ is_free_preview: false, order_index: collabLessons.length })}
+                                    className="flex items-center gap-1.5 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" /> Nueva lección
+                                  </button>
+                                </div>
+
+                                {/* Formulario editar/crear lección */}
+                                <AnimatePresence>
+                                  {collabEditingLesson && (
+                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                      className="bg-sepia-800/50 border border-amber-700/40 rounded-2xl p-5 space-y-4"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-sepia-100 font-serif">{collabEditingLesson.id ? 'Editar Lección' : 'Nueva Lección'}</p>
+                                        <button onClick={() => setCollabEditingLesson(null)} className="text-sepia-500 hover:text-sepia-200"><X className="w-5 h-5" /></button>
+                                      </div>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2 space-y-1">
+                                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Título *</label>
+                                          <input type="text" value={collabEditingLesson.title || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, title: e.target.value }))}
+                                            placeholder="Nombre de la lección"
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                                          />
+                                        </div>
+                                        <div className="md:col-span-2 space-y-1">
+                                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Descripción corta</label>
+                                          <input type="text" value={collabEditingLesson.description || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, description: e.target.value }))}
+                                            placeholder="Resumen de la lección"
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                                          />
+                                        </div>
+
+                                        {/* Video */}
+                                        <div className="md:col-span-2 space-y-1">
+                                          <label className="flex items-center gap-2 text-xs text-sepia-400 uppercase tracking-widest"><Video className="w-3.5 h-3.5" /> Video (URL YouTube o directo)</label>
+                                          <input type="url" value={collabEditingLesson.video_url || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, video_url: e.target.value }))}
+                                            placeholder="https://youtube.com/watch?v=..."
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                                          />
+                                        </div>
+
+                                        {/* Audio */}
+                                        <div className="space-y-2">
+                                          <label className="flex items-center gap-2 text-xs text-sepia-400 uppercase tracking-widest"><Volume2 className="w-3.5 h-3.5" /> Audio</label>
+                                          {collabEditingLesson.audio_url && (
+                                            <div className="flex items-center gap-2 bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2">
+                                              <Volume2 className="w-4 h-4 text-sepia-400 flex-shrink-0" />
+                                              <span className="text-sepia-300 text-xs truncate flex-1">{collabEditingLesson.audio_url.split('/').pop()}</span>
+                                              <button type="button" onClick={() => setCollabEditingLesson(l => ({ ...l!, audio_url: '' }))} className="text-sepia-600 hover:text-red-400"><X className="w-4 h-4" /></button>
+                                            </div>
+                                          )}
+                                          <label className="flex items-center gap-2 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-3 py-2.5 hover:border-sepia-500 transition-all text-sm">
+                                            {collabUploadingMedia === 'audio_url' ? <Loader2 className="w-4 h-4 text-sepia-400 animate-spin" /> : <Upload className="w-4 h-4 text-sepia-400" />}
+                                            <span className="text-sepia-400">{collabUploadingMedia === 'audio_url' ? 'Subiendo...' : 'Subir audio (mp3)'}</span>
+                                            <input type="file" accept="audio/*" className="hidden" onChange={e => handleCollabMediaUpload(e, 'audio_url')} disabled={!!collabUploadingMedia} />
+                                          </label>
+                                          <input type="url" value={collabEditingLesson.audio_url || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, audio_url: e.target.value }))}
+                                            placeholder="O pegar URL del audio..."
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-xs"
+                                          />
+                                        </div>
+
+                                        {/* PDF */}
+                                        <div className="space-y-2">
+                                          <label className="flex items-center gap-2 text-xs text-sepia-400 uppercase tracking-widest"><FileText className="w-3.5 h-3.5" /> PDF</label>
+                                          {collabEditingLesson.pdf_url && (
+                                            <div className="flex items-center gap-2 bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2">
+                                              <FileText className="w-4 h-4 text-red-400 flex-shrink-0" />
+                                              <span className="text-sepia-300 text-xs truncate flex-1">{collabEditingLesson.pdf_url.split('/').pop()}</span>
+                                              <button type="button" onClick={() => setCollabEditingLesson(l => ({ ...l!, pdf_url: '' }))} className="text-sepia-600 hover:text-red-400"><X className="w-4 h-4" /></button>
+                                            </div>
+                                          )}
+                                          <label className="flex items-center gap-2 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-3 py-2.5 hover:border-sepia-500 transition-all text-sm">
+                                            {collabUploadingMedia === 'pdf_url' ? <Loader2 className="w-4 h-4 text-sepia-400 animate-spin" /> : <Upload className="w-4 h-4 text-sepia-400" />}
+                                            <span className="text-sepia-400">{collabUploadingMedia === 'pdf_url' ? 'Subiendo...' : 'Subir PDF'}</span>
+                                            <input type="file" accept="application/pdf" className="hidden" onChange={e => handleCollabMediaUpload(e, 'pdf_url')} disabled={!!collabUploadingMedia} />
+                                          </label>
+                                          <input type="url" value={collabEditingLesson.pdf_url || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, pdf_url: e.target.value }))}
+                                            placeholder="O pegar URL del PDF..."
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-xs"
+                                          />
+                                        </div>
+
+                                        {/* Imágenes */}
+                                        <div className="md:col-span-2 space-y-2">
+                                          <label className="flex items-center gap-2 text-xs text-sepia-400 uppercase tracking-widest"><ImageIcon className="w-3.5 h-3.5" /> Imágenes</label>
+                                          {(collabEditingLesson.images || []).length > 0 && (
+                                            <div className="grid grid-cols-4 gap-2">
+                                              {(collabEditingLesson.images || []).map((img, idx) => (
+                                                <div key={idx} className="relative group">
+                                                  <img src={img} alt="" className="w-full h-16 object-cover rounded-lg border border-sepia-700" />
+                                                  <button type="button"
+                                                    onClick={() => setCollabEditingLesson(l => ({ ...l!, images: l!.images!.filter((_, i) => i !== idx) }))}
+                                                    className="absolute top-0.5 right-0.5 bg-red-900/80 text-red-300 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <X className="w-3 h-3" />
+                                                  </button>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                          <label className="flex items-center gap-2 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-3 py-2.5 hover:border-sepia-500 transition-all text-sm">
+                                            {collabUploadingMedia === 'image' ? <Loader2 className="w-4 h-4 text-sepia-400 animate-spin" /> : <Upload className="w-4 h-4 text-sepia-400" />}
+                                            <span className="text-sepia-400">{collabUploadingMedia === 'image' ? 'Subiendo...' : 'Subir imagen'}</span>
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleCollabImageUpload} disabled={!!collabUploadingMedia} />
+                                          </label>
+                                          <div className="flex gap-2">
+                                            <input type="url" value={collabNewImageUrl} onChange={e => setCollabNewImageUrl(e.target.value)}
+                                              placeholder="O pegar URL de imagen..."
+                                              className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-xs"
+                                            />
+                                            <button type="button"
+                                              onClick={() => { if (collabNewImageUrl.trim()) { setCollabEditingLesson(l => ({ ...l!, images: [...(l!.images || []), collabNewImageUrl.trim()] })); setCollabNewImageUrl(''); } }}
+                                              className="bg-sepia-600 hover:bg-sepia-500 text-sepia-100 px-3 py-2 rounded-xl text-xs font-bold transition-all">
+                                              + Añadir
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        {/* Texto */}
+                                        <div className="md:col-span-2 space-y-1">
+                                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Notas / Texto de la lección</label>
+                                          <textarea rows={5} value={collabEditingLesson.text_content || ''}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, text_content: e.target.value }))}
+                                            placeholder="Escribe aquí las notas o explicaciones de la lección..."
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm leading-relaxed"
+                                          />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Orden</label>
+                                          <input type="number" min={0} value={collabEditingLesson.order_index ?? collabLessons.length}
+                                            onChange={e => setCollabEditingLesson(l => ({ ...l!, order_index: parseInt(e.target.value) || 0 }))}
+                                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
+                                          />
+                                        </div>
+                                        <div className="flex items-center gap-3 self-end pb-1">
+                                          <label className="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked={collabEditingLesson.is_free_preview ?? false}
+                                              onChange={e => setCollabEditingLesson(l => ({ ...l!, is_free_preview: e.target.checked }))}
+                                              className="sr-only peer"
+                                            />
+                                            <div className="w-10 h-6 bg-sepia-700 rounded-full peer-checked:bg-green-600 transition-all after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4" />
+                                          </label>
+                                          <span className="text-sepia-400 text-sm">Vista previa gratuita</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex gap-3">
+                                        <button onClick={handleCollabSaveLesson} disabled={collabIsSavingLesson}
+                                          className="flex items-center gap-2 bg-amber-700/60 hover:bg-amber-700/80 disabled:opacity-50 text-amber-100 font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-xl transition-all border border-amber-600">
+                                          {collabIsSavingLesson ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Guardar Lección
+                                        </button>
+                                        <button onClick={() => setCollabEditingLesson(null)} className="text-sepia-400 hover:text-sepia-200 border border-sepia-700 px-5 py-2.5 rounded-xl text-xs uppercase tracking-widest transition-all">Cancelar</button>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                {/* Lista de lecciones */}
+                                {collabLessons.length === 0 ? (
+                                  <div className="bg-sepia-800/30 border border-dashed border-sepia-700 rounded-xl p-8 text-center text-sepia-600 text-sm">
+                                    Sin lecciones. Crea la primera con el botón "Nueva lección".
                                   </div>
                                 ) : (
-                                  <span className="text-amber-500 text-xs font-bold">Pendiente</span>
+                                  <div className="space-y-2">
+                                    {collabLessons.map((lesson, i) => (
+                                      <div key={lesson.id} className="border border-sepia-800 rounded-xl p-4 bg-sepia-900/30 space-y-2">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <span className="text-sepia-600 font-mono text-xs flex-shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                                            {lesson.is_free_preview ? <Unlock className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> : <Lock className="w-3.5 h-3.5 text-sepia-600 flex-shrink-0" />}
+                                            <p className="text-sepia-200 text-sm font-medium line-clamp-1">{lesson.title}</p>
+                                          </div>
+                                          <div className="flex gap-1 flex-shrink-0">
+                                            <button onClick={() => setCollabEditingLesson(lesson)} className="text-sepia-500 hover:text-sepia-200 p-1 rounded-lg hover:bg-sepia-700 transition-all"><Edit2 className="w-3.5 h-3.5" /></button>
+                                            <button onClick={() => handleCollabDeleteLesson(lesson.id)} disabled={collabIsDeletingLesson === lesson.id} className="text-sepia-500 hover:text-red-400 p-1 rounded-lg hover:bg-sepia-700 transition-all">
+                                              {collabIsDeletingLesson === lesson.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-2 ml-8 flex-wrap">
+                                          {lesson.video_url && <span className="flex items-center gap-1 text-[10px] text-sepia-500 bg-sepia-800 px-2 py-0.5 rounded-full"><Video className="w-2.5 h-2.5" />Video</span>}
+                                          {lesson.audio_url && <span className="flex items-center gap-1 text-[10px] text-sepia-500 bg-sepia-800 px-2 py-0.5 rounded-full"><Volume2 className="w-2.5 h-2.5" />Audio</span>}
+                                          {lesson.pdf_url && <span className="flex items-center gap-1 text-[10px] text-sepia-500 bg-sepia-800 px-2 py-0.5 rounded-full"><FileText className="w-2.5 h-2.5" />PDF</span>}
+                                          {lesson.images?.length ? <span className="flex items-center gap-1 text-[10px] text-sepia-500 bg-sepia-800 px-2 py-0.5 rounded-full"><ImageIcon className="w-2.5 h-2.5" />{lesson.images.length} img</span> : null}
+                                          {lesson.text_content && <span className="flex items-center gap-1 text-[10px] text-sepia-500 bg-sepia-800 px-2 py-0.5 rounded-full"><FileText className="w-2.5 h-2.5" />Texto</span>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                )}
+
+                {/* Sub-tab: Mis Alumnos */}
+                {collabSubTab === 'students' && (
+                  collabViewEnrollments.length === 0 ? (
+                    <div className="text-center py-16 text-sepia-600 space-y-3">
+                      <GraduationCap className="w-10 h-10 mx-auto opacity-40" />
+                      <p>Sin alumnos con pago confirmado en tus cursos aún.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Resumen */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-sepia-800/40 border border-sepia-700 rounded-2xl">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-sepia-100">{collabViewEnrollments.length}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Total alumnos</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-400">{collabViewEnrollments.filter(e => e.collab_paid).length}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Te pagaron ✓</p>
+                        </div>
+                        <div className="text-center col-span-2 sm:col-span-1">
+                          <p className="text-2xl font-bold text-amber-400">{collabViewEnrollments.filter(e => !e.collab_paid).length}</p>
+                          <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Pendiente de cobrar</p>
+                        </div>
+                      </div>
+                      {/* Tabla */}
+                      <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Alumnos con acceso activo</p>
+                      <div className="overflow-x-auto rounded-xl border border-sepia-800">
+                        <table className="w-full text-sm">
+                          <thead className="bg-sepia-900/60">
+                            <tr>
+                              <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Alumno</th>
+                              <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden md:table-cell">Email</th>
+                              <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden sm:table-cell">Curso</th>
+                              <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Pago a ti</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {collabViewEnrollments.map(e => (
+                              <tr key={e.id} className="border-t border-sepia-800/60 hover:bg-sepia-900/30 transition-colors">
+                                <td className="py-3 px-4">
+                                  <p className="text-sepia-200 font-medium">{e.student_name}</p>
+                                  <p className="text-sepia-600 text-xs mt-0.5">{e.student_phone || '—'}</p>
+                                </td>
+                                <td className="py-3 px-4 hidden md:table-cell">
+                                  <p className="text-sepia-400 text-xs">{e.student_email}</p>
+                                </td>
+                                <td className="py-3 px-4 hidden sm:table-cell">
+                                  <p className="text-sepia-400 text-xs line-clamp-2">{e.course_title}</p>
+                                </td>
+                                <td className="py-3 px-4">
+                                  {e.collab_paid ? (
+                                    <div>
+                                      <span className="flex items-center gap-1 text-green-400 text-xs font-bold">
+                                        <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+                                      </span>
+                                      {e.collab_paid_at && (
+                                        <p className="text-sepia-600 text-[10px] mt-0.5">
+                                          {new Date(e.collab_paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-amber-500 text-xs font-bold">Pendiente</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Sub-tab: Subir Curso */}
+                {collabSubTab === 'upload' && (
+                  collabSubmitSuccess ? (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-5 py-8">
+                      <CheckCircle2 className="w-14 h-14 text-green-400 mx-auto" />
+                      <div>
+                        <p className="text-sepia-100 font-serif text-xl">¡Curso enviado para revisión!</p>
+                        <p className="text-sepia-400 text-sm mt-2 max-w-sm mx-auto">
+                          El administrador revisará tu curso y lo publicará si todo está en orden.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setCollabSubmitSuccess(false);
+                          setCollabSubmitForm({ title: '', description: '', banner_url: '', price: 0, instructor_name: '', duration_text: '', level: '', what_you_learn: '' });
+                        }}
+                        className="bg-sepia-700 hover:bg-sepia-600 text-sepia-100 px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all"
+                      >
+                        Enviar otro curso
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleCollabSubmitCourse} className="space-y-5">
+                      <div className="bg-amber-900/20 border border-amber-700/50 rounded-xl px-4 py-3 text-amber-300 text-xs leading-relaxed">
+                        El curso quedará <strong>pendiente de aprobación</strong>. El administrador lo revisará antes de publicarlo.
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2 space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Título del curso *</label>
+                          <input
+                            type="text"
+                            required
+                            value={collabSubmitForm.title}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, title: e.target.value }))}
+                            placeholder="Nombre del curso"
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Descripción</label>
+                          <textarea
+                            rows={3}
+                            value={collabSubmitForm.description}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, description: e.target.value }))}
+                            placeholder="¿De qué trata el curso?"
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm"
+                          />
+                        </div>
+
+                        {/* Banner */}
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Imagen de portada</label>
+                          {collabSubmitForm.banner_url && (
+                            <div className="relative w-full rounded-xl overflow-hidden border border-sepia-700 bg-sepia-900">
+                              <img src={collabSubmitForm.banner_url} alt="Banner" className="w-full h-40 object-cover" />
+                              <button type="button" onClick={() => setCollabSubmitForm(f => ({ ...f, banner_url: '' }))} className="absolute top-2 right-2 bg-red-900/80 text-red-300 rounded-full p-1"><X className="w-4 h-4" /></button>
+                            </div>
+                          )}
+                          <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-3 hover:border-sepia-500 transition-all">
+                            {collabBannerUploading ? <Loader2 className="w-5 h-5 text-sepia-400 animate-spin" /> : <Upload className="w-5 h-5 text-sepia-400" />}
+                            <span className="text-sepia-400 text-sm">{collabBannerUploading ? 'Subiendo...' : 'Subir imagen de portada'}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleCollabBannerUpload} disabled={collabBannerUploading} />
+                          </label>
+                          <input
+                            type="url"
+                            value={collabSubmitForm.banner_url}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, banner_url: e.target.value }))}
+                            placeholder="O pegar URL de la imagen..."
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Precio MXN (0 = acceso libre)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={collabSubmitForm.price}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))}
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Nivel</label>
+                          <select
+                            value={collabSubmitForm.level}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, level: e.target.value }))}
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500 text-sm"
+                          >
+                            <option value="">Sin especificar</option>
+                            <option value="basico">Básico</option>
+                            <option value="intermedio">Intermedio</option>
+                            <option value="avanzado">Avanzado</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Tu nombre como instructor</label>
+                          <input
+                            type="text"
+                            value={collabSubmitForm.instructor_name}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, instructor_name: e.target.value }))}
+                            placeholder={collabViewName || 'Nombre del instructor'}
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">Duración estimada</label>
+                          <input
+                            type="text"
+                            value={collabSubmitForm.duration_text}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, duration_text: e.target.value }))}
+                            placeholder="Ej: 6 horas · 8 lecciones"
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-1">
+                          <label className="text-xs text-sepia-400 uppercase tracking-widest">¿Qué aprenderá el alumno? (una línea por punto)</label>
+                          <textarea
+                            rows={4}
+                            value={collabSubmitForm.what_you_learn}
+                            onChange={e => setCollabSubmitForm(f => ({ ...f, what_you_learn: e.target.value }))}
+                            placeholder={'Identificar apellidos de origen hebreo\nInterpretar documentos del siglo XIX\nUsar herramientas de búsqueda genealógica'}
+                            className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      {collabSubmitError && (
+                        <div className="flex items-center gap-2 bg-red-900/30 border border-red-700 rounded-xl p-3 text-red-400 text-sm">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" /> {collabSubmitError}
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={collabSubmitting || !collabSubmitForm.title.trim()}
+                        className="flex items-center gap-2 bg-sepia-500 hover:bg-sepia-400 disabled:opacity-50 text-sepia-950 font-bold uppercase tracking-widest text-sm px-6 py-3 rounded-xl transition-all"
+                      >
+                        {collabSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Enviar para revisión
+                      </button>
+                    </form>
+                  )
                 )}
               </div>
             )}

@@ -5,7 +5,7 @@ import {
   AlertCircle, BookOpen, FileText, Image as ImageIcon,
   Video, Volume2, Lock, Unlock, ChevronDown, ChevronUp,
   HelpCircle, MessageSquare, Users, Key, Send, Eye,
-  DollarSign, BadgeCheck,
+  DollarSign, BadgeCheck, Clock,
 } from 'lucide-react';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
 import { supabase } from '../supabase';
@@ -44,6 +44,8 @@ export const CoursesAdmin: React.FC = () => {
   const [answerTexts, setAnswerTexts] = useState<Record<string, string>>({});
   const [savingAnswer, setSavingAnswer] = useState<string | null>(null);
   const [markingCollabPaid, setMarkingCollabPaid] = useState<string | null>(null);
+  const [approvingCourse, setApprovingCourse] = useState<string | null>(null);
+  const [rejectingCourse, setRejectingCourse] = useState<string | null>(null);
 
   useEffect(() => { fetchCourses(); }, []);
   useEffect(() => {
@@ -271,7 +273,7 @@ export const CoursesAdmin: React.FC = () => {
     finally { setSavingAnswer(null); }
   };
 
-  // ── Marcar pago al colaborador ─────────────────────────────────────
+  // ── Marcar pago al colaborador ───────────────────────────────────
   const handleMarkCollabPaid = async (enrollmentId: string, paid: boolean) => {
     setMarkingCollabPaid(enrollmentId);
     try {
@@ -283,6 +285,28 @@ export const CoursesAdmin: React.FC = () => {
       showMsg('success', paid ? 'Pagado al colaborador ✓' : 'Marcado como pendiente');
     } catch { showMsg('error', 'Error al actualizar'); }
     finally { setMarkingCollabPaid(null); }
+  };
+
+  // ── Aprobar / Rechazar curso pendiente de colaborador ────────────
+  const handleApproveCourse = async (id: string) => {
+    setApprovingCourse(id);
+    try {
+      const { error } = await supabase.from('courses').update({ is_active: true, pending_review: false }).eq('id', id);
+      if (error) throw error;
+      showMsg('success', '¡Curso aprobado y publicado!');
+      fetchCourses();
+    } catch { showMsg('error', 'Error al aprobar el curso'); }
+    finally { setApprovingCourse(null); }
+  };
+
+  const handleRejectCourse = async (id: string) => {
+    if (!confirm('¿Rechazar y eliminar este curso propuesto por el colaborador?')) return;
+    setRejectingCourse(id);
+    await supabase.from('courses').delete().eq('id', id);
+    if (selectedCourse?.id === id) { setSelectedCourse(null); setLessons([]); setEnrollments([]); setQuestions([]); }
+    fetchCourses();
+    showMsg('success', 'Curso rechazado y eliminado.');
+    setRejectingCourse(null);
   };
 
   const statusLabel = (s: string) => s === 'paid' ? 'Pagado' : s === 'cancelled' ? 'Cancelado' : 'Pendiente';
@@ -573,7 +597,14 @@ export const CoursesAdmin: React.FC = () => {
         {/* Lista de cursos */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sepia-300 font-bold uppercase tracking-widest text-xs">Cursos ({courses.length})</h3>
+            <div className="space-y-0.5">
+              <h3 className="text-sepia-300 font-bold uppercase tracking-widest text-xs">Cursos ({courses.length})</h3>
+              {courses.filter(c => c.pending_review).length > 0 && (
+                <p className="text-amber-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {courses.filter(c => c.pending_review).length} pendiente(s) de revisar
+                </p>
+              )}
+            </div>
             <button onClick={() => setEditingCourse({ is_active: true, price: 0, order_index: courses.length })}
               className="flex items-center gap-1.5 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-xl transition-all">
               <Plus className="w-3.5 h-3.5" /> Nuevo
@@ -585,13 +616,44 @@ export const CoursesAdmin: React.FC = () => {
             <div className="space-y-3">
               {courses.map(course => (
                 <div key={course.id} onClick={() => { setSelectedCourse(course); setAdminTab('lessons'); }}
-                  className={`cursor-pointer border rounded-xl p-4 transition-all space-y-2 ${selectedCourse?.id === course.id ? 'border-sepia-500 bg-sepia-700/40' : 'border-sepia-800 bg-sepia-800/30 hover:border-sepia-600'}`}>
+                  className={`cursor-pointer border rounded-xl p-4 transition-all space-y-2 ${
+                    course.pending_review
+                      ? 'border-amber-700/60 bg-amber-900/10'
+                      : selectedCourse?.id === course.id ? 'border-sepia-500 bg-sepia-700/40' : 'border-sepia-800 bg-sepia-800/30 hover:border-sepia-600'
+                  }`}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sepia-100 font-serif text-sm line-clamp-1 flex-1">{course.title}</p>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${course.is_active ? 'text-green-400 border-green-700 bg-green-900/30' : 'text-sepia-500 border-sepia-700'}`}>
-                      {course.is_active ? 'Activo' : 'Oculto'}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                      course.pending_review
+                        ? 'text-amber-400 border-amber-600 bg-amber-900/30'
+                        : course.is_active ? 'text-green-400 border-green-700 bg-green-900/30' : 'text-sepia-500 border-sepia-700'
+                    }`}>
+                      {course.pending_review ? 'Pendiente' : course.is_active ? 'Activo' : 'Oculto'}
                     </span>
                   </div>
+                  {course.collaborator_code && (
+                    <p className="text-sepia-600 text-[10px] font-mono">Colaborador: {course.collaborator_code}</p>
+                  )}
+                  {course.pending_review && (
+                    <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleApproveCourse(course.id); }}
+                        disabled={approvingCourse === course.id || rejectingCourse === course.id}
+                        className="flex items-center gap-1 bg-green-800/50 hover:bg-green-700/60 border border-green-600 text-green-300 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                      >
+                        {approvingCourse === course.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        Aprobar
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleRejectCourse(course.id); }}
+                        disabled={approvingCourse === course.id || rejectingCourse === course.id}
+                        className="flex items-center gap-1 bg-red-900/30 hover:bg-red-900/60 border border-red-800 text-red-400 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                      >
+                        {rejectingCourse === course.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                        Rechazar
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sepia-400 text-xs">{course.price === 0 ? 'Libre' : `$${course.price} MXN`}</span>
                     <div className="flex gap-1">

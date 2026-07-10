@@ -272,6 +272,7 @@ export interface Course {
   logo_url?: string;
   signature_url?: string;
   federation_legend?: string;
+  pending_review?: boolean;
   created_at?: string;
   updated_at?: string;
 }
