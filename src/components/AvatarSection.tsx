@@ -416,7 +416,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   {[
                     'Conversar con personajes históricos',
                     'Explorar épocas a través de su mirada',
-                    'Descubrir detalles que no vienen en los libros',
+                    'Descubrir matices históricos a partir de una experiencia interpretativa',
                     'Sentir cómo pensaban… cómo hablaban… cómo veían el mundo',
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">
