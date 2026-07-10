@@ -427,7 +427,7 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
                 </select>
               </div>
 
-              {/* Tipo de avatar */
+              {/* Tipo de avatar */}
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Tipo de avatar</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
