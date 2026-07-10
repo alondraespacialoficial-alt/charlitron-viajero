@@ -258,6 +258,53 @@ export const CoursesSection: React.FC = () => {
     setCollabName(data.name);
   };
 
+  // ── Cargar datos de colaborador (pestaña propia) ──────────────────
+  const handleCollabView = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = collabViewCode.trim().toUpperCase();
+    if (!code) return;
+    setCollabViewLoading(true);
+    setCollabViewError(null);
+    setCollabViewName(null);
+    setCollabViewEnrollments([]);
+    try {
+      const { data: collab } = await supabase
+        .from('collaborators')
+        .select('name')
+        .eq('code', code)
+        .eq('is_active', true)
+        .single();
+      if (!collab) { setCollabViewError('Código inválido o inactivo.'); return; }
+      setCollabViewName(collab.name);
+
+      const { data: myCourses } = await supabase
+        .from('courses')
+        .select('id, title, price')
+        .eq('collaborator_code', code);
+
+      if (!myCourses || myCourses.length === 0) return;
+
+      const { data: enrs } = await supabase
+        .from('course_enrollments')
+        .select('*')
+        .in('course_id', myCourses.map((c: { id: string }) => c.id))
+        .eq('status', 'paid')
+        .order('created_at', { ascending: false });
+
+      setCollabViewEnrollments(
+        (enrs || []).map((e: CourseEnrollment) => ({
+          ...e,
+          course_title: myCourses.find((c: { id: string; title: string }) => c.id === e.course_id)?.title || '—',
+          course_price: myCourses.find((c: { id: string; price: number }) => c.id === e.course_id)?.price || 0,
+        }))
+      );
+    } catch {
+      setCollabViewError('Error al cargar. Intenta de nuevo.');
+    } finally {
+      setCollabViewLoading(false);
+    }
+  };
+
   // ── Answer question ───────────────────────────────────────────────
   const handleAnswer = async (questionId: string) => {
     if (!answerText.trim() || !collabName) return;
