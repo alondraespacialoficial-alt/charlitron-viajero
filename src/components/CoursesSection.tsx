@@ -472,6 +472,13 @@ export const CoursesSection: React.FC = () => {
       }]);
       if (error) throw error;
       setCollabSubmitSuccess(true);
+      // Refrescar lista de cursos para que aparezca inmediatamente en "Mis Cursos"
+      const { data: updatedCourses } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('collaborator_code', collabViewCode)
+        .order('order_index', { ascending: true });
+      setCollabCourses(updatedCourses || []);
     } catch {
       setCollabSubmitError('Error al enviar el curso. Intenta de nuevo.');
     } finally {
