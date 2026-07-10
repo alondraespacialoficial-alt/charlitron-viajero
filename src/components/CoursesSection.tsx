@@ -101,6 +101,10 @@ export const CoursesSection: React.FC = () => {
   const [collabUploadingMedia, setCollabUploadingMedia] = useState<string | null>(null);
   const [collabNewImageUrl, setCollabNewImageUrl] = useState('');
   const [collabLessonMsg, setCollabLessonMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [collabEditingCourse, setCollabEditingCourse] = useState<Partial<Course> | null>(null);
+  const [collabIsSavingCourse, setCollabIsSavingCourse] = useState(false);
+  const [collabIsDeletingCourse, setCollabIsDeletingCourse] = useState<string | null>(null);
+  const [collabEditBannerUploading, setCollabEditBannerUploading] = useState(false);
 
   const [answerTarget, setAnswerTarget] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
@@ -414,6 +418,62 @@ export const CoursesSection: React.FC = () => {
     await supabase.from('course_lessons').delete().eq('id', id);
     if (collabSelectedCourse) fetchCollabLessons(collabSelectedCourse.id);
     setCollabIsDeletingLesson(null);
+  };
+
+  // ── Editar / Eliminar curso del colaborador ────────────────────────
+  const handleCollabEditBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !collabEditingCourse) return;
+    setCollabEditBannerUploading(true);
+    try {
+      const fileName = `courses/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from('images').upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
+      setCollabEditingCourse(c => ({ ...c!, banner_url: data.publicUrl }));
+    } catch { showCollabMsg('error', 'Error al subir la imagen'); }
+    finally { setCollabEditBannerUploading(false); }
+  };
+
+  const refreshCollabCourses = async () => {
+    const { data } = await supabase.from('courses').select('*').eq('collaborator_code', collabViewCode).order('order_index', { ascending: true });
+    setCollabCourses(data || []);
+  };
+
+  const handleCollabSaveCourse = async () => {
+    if (!collabEditingCourse?.title?.trim() || !collabEditingCourse.id) return;
+    setCollabIsSavingCourse(true);
+    try {
+      const { error } = await supabase.from('courses').update({
+        title: collabEditingCourse.title.trim(),
+        description: collabEditingCourse.description?.trim() || null,
+        banner_url: collabEditingCourse.banner_url?.trim() || null,
+        price: collabEditingCourse.price ?? 0,
+        instructor_name: collabEditingCourse.instructor_name?.trim() || null,
+        duration_text: collabEditingCourse.duration_text?.trim() || null,
+        level: collabEditingCourse.level || null,
+        what_you_learn: collabEditingCourse.what_you_learn?.trim() || null,
+      }).eq('id', collabEditingCourse.id).eq('collaborator_code', collabViewCode);
+      if (error) throw error;
+      showCollabMsg('success', 'Curso actualizado');
+      setCollabEditingCourse(null);
+      await refreshCollabCourses();
+    } catch { showCollabMsg('error', 'Error al guardar el curso'); }
+    finally { setCollabIsSavingCourse(false); }
+  };
+
+  const handleCollabDeleteCourse = async (id: string) => {
+    if (!confirm('¿Eliminar este curso y todas sus lecciones?')) return;
+    setCollabIsDeletingCourse(id);
+    try {
+      await supabase.from('course_lessons').delete().eq('course_id', id);
+      await supabase.from('courses').delete().eq('id', id).eq('collaborator_code', collabViewCode);
+      if (collabSelectedCourse?.id === id) { setCollabSelectedCourse(null); setCollabLessons([]); setCollabEditingLesson(null); }
+      if (collabEditingCourse?.id === id) setCollabEditingCourse(null);
+      await refreshCollabCourses();
+      showCollabMsg('success', 'Curso eliminado');
+    } catch { showCollabMsg('error', 'Error al eliminar el curso'); }
+    finally { setCollabIsDeletingCourse(null); }
   };
 
   // ── Answer question ───────────────────────────────────────────────
@@ -1273,6 +1333,105 @@ export const CoursesSection: React.FC = () => {
                     ) : (
                       <div className="space-y-3">
                         <p className="text-sepia-500 text-xs uppercase tracking-widest font-bold">Tus cursos ({collabCourses.length})</p>
+
+                        {/* Formulario editar curso */}
+                        <AnimatePresence>
+                          {collabEditingCourse && (
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                              className="bg-sepia-800/50 border border-sepia-600 rounded-2xl p-5 space-y-4"
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-sepia-100 font-serif">Editar curso</p>
+                                <button onClick={() => setCollabEditingCourse(null)} className="text-sepia-500 hover:text-sepia-200"><X className="w-5 h-5" /></button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2 space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Título *</label>
+                                  <input type="text" value={collabEditingCourse.title || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, title: e.target.value }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+                                  />
+                                </div>
+                                <div className="md:col-span-2 space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Descripción</label>
+                                  <textarea rows={3} value={collabEditingCourse.description || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, description: e.target.value }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm"
+                                  />
+                                </div>
+                                {/* Banner */}
+                                <div className="md:col-span-2 space-y-2">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Imagen de portada</label>
+                                  {collabEditingCourse.banner_url && (
+                                    <div className="relative w-full rounded-xl overflow-hidden border border-sepia-700">
+                                      <img src={collabEditingCourse.banner_url} alt="Banner" className="w-full h-32 object-cover" />
+                                      <button type="button" onClick={() => setCollabEditingCourse(c => ({ ...c!, banner_url: '' }))} className="absolute top-2 right-2 bg-red-900/80 text-red-300 rounded-full p-1"><X className="w-4 h-4" /></button>
+                                    </div>
+                                  )}
+                                  <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-3 hover:border-sepia-500 transition-all">
+                                    {collabEditBannerUploading ? <Loader2 className="w-5 h-5 text-sepia-400 animate-spin" /> : <Upload className="w-5 h-5 text-sepia-400" />}
+                                    <span className="text-sepia-400 text-sm">{collabEditBannerUploading ? 'Subiendo...' : 'Subir nueva imagen'}</span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleCollabEditBannerUpload} disabled={collabEditBannerUploading} />
+                                  </label>
+                                  <input type="url" value={collabEditingCourse.banner_url || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, banner_url: e.target.value }))}
+                                    placeholder="O pegar URL..."
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Precio MXN</label>
+                                  <input type="number" min={0} step={0.01} value={collabEditingCourse.price ?? 0}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, price: parseFloat(e.target.value) || 0 }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Nivel</label>
+                                  <select value={collabEditingCourse.level || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, level: (e.target.value as Course['level']) || undefined }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500 text-sm"
+                                  >
+                                    <option value="">Sin especificar</option>
+                                    <option value="basico">Básico</option>
+                                    <option value="intermedio">Intermedio</option>
+                                    <option value="avanzado">Avanzado</option>
+                                  </select>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Instructor</label>
+                                  <input type="text" value={collabEditingCourse.instructor_name || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, instructor_name: e.target.value }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">Duración estimada</label>
+                                  <input type="text" value={collabEditingCourse.duration_text || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, duration_text: e.target.value }))}
+                                    placeholder="Ej: 6 horas · 8 lecciones"
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                                  />
+                                </div>
+                                <div className="md:col-span-2 space-y-1">
+                                  <label className="text-xs text-sepia-400 uppercase tracking-widest">¿Qué aprenderá el alumno?</label>
+                                  <textarea rows={3} value={collabEditingCourse.what_you_learn || ''}
+                                    onChange={e => setCollabEditingCourse(c => ({ ...c!, what_you_learn: e.target.value }))}
+                                    className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 resize-none text-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-3">
+                                <button onClick={handleCollabSaveCourse} disabled={collabIsSavingCourse}
+                                  className="flex items-center gap-2 bg-sepia-500 hover:bg-sepia-400 disabled:opacity-50 text-sepia-950 font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-xl transition-all">
+                                  {collabIsSavingCourse ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Guardar cambios
+                                </button>
+                                <button onClick={() => setCollabEditingCourse(null)} className="text-sepia-400 hover:text-sepia-200 border border-sepia-700 px-5 py-2.5 rounded-xl text-xs uppercase tracking-widest transition-all">Cancelar</button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
                         {collabCourses.map(course => (
                           <div key={course.id}>
                             <div
@@ -1292,13 +1451,28 @@ export const CoursesSection: React.FC = () => {
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <p className="text-sepia-100 font-serif text-sm flex-1 line-clamp-1">{course.title}</p>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                                  course.pending_review
-                                    ? 'text-amber-400 border-amber-600 bg-amber-900/30'
-                                    : course.is_active ? 'text-green-400 border-green-700 bg-green-900/30' : 'text-sepia-500 border-sepia-700'
-                                }`}>
-                                  {course.pending_review ? 'Pendiente revisión' : course.is_active ? 'Publicado' : 'Oculto'}
-                                </span>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    course.pending_review
+                                      ? 'text-amber-400 border-amber-600 bg-amber-900/30'
+                                      : course.is_active ? 'text-green-400 border-green-700 bg-green-900/30' : 'text-sepia-500 border-sepia-700'
+                                  }`}>
+                                    {course.pending_review ? 'Pendiente' : course.is_active ? 'Publicado' : 'Oculto'}
+                                  </span>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setCollabEditingCourse(course); }}
+                                    className="text-sepia-500 hover:text-sepia-200 p-1 rounded-lg hover:bg-sepia-700 transition-all"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); handleCollabDeleteCourse(course.id); }}
+                                    disabled={collabIsDeletingCourse === course.id}
+                                    className="text-sepia-500 hover:text-red-400 p-1 rounded-lg hover:bg-sepia-700 transition-all disabled:opacity-50"
+                                  >
+                                    {collabIsDeletingCourse === course.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-sepia-500 text-xs">{course.price === 0 ? 'Acceso libre' : `$${course.price} MXN`}</p>
                             </div>
