@@ -301,6 +301,8 @@ export interface CourseEnrollment {
   access_code?: string;
   payment_notes?: string;
   paid_at?: string;
+  collab_paid?: boolean;     // Admin marcó que ya le pagó al colaborador
+  collab_paid_at?: string;   // Fecha en que se registró ese pago
   created_at?: string;
 }
 

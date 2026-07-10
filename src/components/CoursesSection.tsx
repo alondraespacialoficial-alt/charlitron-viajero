@@ -4,14 +4,14 @@ import {
   BookOpen, Lock, Unlock, Play, FileText, Image as ImageIcon,
   Volume2, Download, Send, X, ChevronRight, CheckCircle2,
   AlertCircle, Clock, Loader2, MessageCircle, Search,
-  HelpCircle, User, Award, DollarSign, GraduationCap,
+  HelpCircle, User, Award, DollarSign, GraduationCap, Users,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
 
-type ActiveTab = 'catalog' | 'access';
+type ActiveTab = 'catalog' | 'access' | 'collaborator';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const getYouTubeEmbedUrl = (url: string): string | null => {
@@ -69,6 +69,15 @@ export const CoursesSection: React.FC = () => {
   const [collabCode, setCollabCode] = useState('');
   const [collabName, setCollabName] = useState<string | null>(null);
   const [collabError, setCollabError] = useState<string | null>(null);
+
+  // ── Vista de colaborador (pestaña separada) ─────────────────────────
+  const [collabViewCode, setCollabViewCode] = useState('');
+  const [collabViewLoading, setCollabViewLoading] = useState(false);
+  const [collabViewError, setCollabViewError] = useState<string | null>(null);
+  const [collabViewName, setCollabViewName] = useState<string | null>(null);
+  type CollabEntry = CourseEnrollment & { course_title: string; course_price: number };
+  const [collabViewEnrollments, setCollabViewEnrollments] = useState<CollabEntry[]>([]);
+
   const [answerTarget, setAnswerTarget] = useState<string | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [isAnswering, setIsAnswering] = useState(false);
@@ -528,6 +537,7 @@ export const CoursesSection: React.FC = () => {
             {([
               { key: 'catalog', label: 'Catálogo', Icon: BookOpen },
               { key: 'access', label: 'Mi Acceso', Icon: Unlock },
+              { key: 'collaborator', label: 'Colaborador', Icon: Users },
             ] as { key: ActiveTab; label: string; Icon: React.ElementType }[]).map(({ key, label, Icon }) => (
               <button
                 key={key}
@@ -945,6 +955,128 @@ export const CoursesSection: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ══ TAB: COLABORADOR ════════════════════════════════ */}
+        {activeTab === 'collaborator' && (
+          <div className="max-w-3xl mx-auto">
+            {!collabViewName ? (
+              <div className="max-w-md mx-auto space-y-6 text-center">
+                <div className="space-y-2">
+                  <Users className="w-10 h-10 text-sepia-500 mx-auto" />
+                  <p className="text-sepia-300 font-serif text-lg">Acceso para colaboradores</p>
+                  <p className="text-sepia-500 text-sm">Ingresa tu código para ver los alumnos de tus cursos.</p>
+                </div>
+                <form onSubmit={handleCollabView} className="flex gap-3">
+                  <input
+                    type="text"
+                    value={collabViewCode}
+                    onChange={e => setCollabViewCode(e.target.value.toUpperCase())}
+                    placeholder="TU CÓDIGO"
+                    className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-3 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono text-center tracking-widest"
+                  />
+                  <button
+                    type="submit"
+                    disabled={collabViewLoading || !collabViewCode.trim()}
+                    className="bg-sepia-500 hover:bg-sepia-400 disabled:opacity-50 text-sepia-950 font-bold px-5 py-3 rounded-xl transition-all"
+                  >
+                    {collabViewLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+                  </button>
+                </form>
+                {collabViewError && (
+                  <div className="flex items-center gap-2 bg-red-900/30 border border-red-700 rounded-xl p-4 text-red-400 text-sm">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {collabViewError}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sepia-500 text-xs uppercase tracking-widest">Colaborador verificado</p>
+                    <p className="text-sepia-100 font-serif text-xl">{collabViewName}</p>
+                  </div>
+                  <button
+                    onClick={() => { setCollabViewName(null); setCollabViewCode(''); setCollabViewEnrollments([]); }}
+                    className="text-sepia-600 hover:text-sepia-300 border border-sepia-700 px-3 py-1.5 rounded-xl text-xs uppercase tracking-widest transition-all"
+                  >
+                    Salir
+                  </button>
+                </div>
+
+                {collabViewEnrollments.length === 0 ? (
+                  <div className="text-center py-16 text-sepia-600 space-y-3">
+                    <GraduationCap className="w-10 h-10 mx-auto opacity-40" />
+                    <p>Sin alumnos con pago confirmado en tus cursos aún.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Resumen */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-sepia-800/40 border border-sepia-700 rounded-2xl">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-sepia-100">{collabViewEnrollments.length}</p>
+                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Total alumnos</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-400">{collabViewEnrollments.filter(e => e.collab_paid).length}</p>
+                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Te pagaron ✓</p>
+                      </div>
+                      <div className="text-center col-span-2 sm:col-span-1">
+                        <p className="text-2xl font-bold text-amber-400">{collabViewEnrollments.filter(e => !e.collab_paid).length}</p>
+                        <p className="text-[10px] text-sepia-500 uppercase tracking-widest">Pendiente de cobrar</p>
+                      </div>
+                    </div>
+                    {/* Tabla */}
+                    <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Alumnos con acceso activo</p>
+                    <div className="overflow-x-auto rounded-xl border border-sepia-800">
+                      <table className="w-full text-sm">
+                        <thead className="bg-sepia-900/60">
+                          <tr>
+                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Alumno</th>
+                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden md:table-cell">Email</th>
+                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold hidden sm:table-cell">Curso</th>
+                            <th className="text-left py-3 px-4 text-sepia-500 text-xs uppercase tracking-widest font-bold">Pago a ti</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {collabViewEnrollments.map(e => (
+                            <tr key={e.id} className="border-t border-sepia-800/60 hover:bg-sepia-900/30 transition-colors">
+                              <td className="py-3 px-4">
+                                <p className="text-sepia-200 font-medium">{e.student_name}</p>
+                                <p className="text-sepia-600 text-xs mt-0.5">{e.student_phone || '—'}</p>
+                              </td>
+                              <td className="py-3 px-4 hidden md:table-cell">
+                                <p className="text-sepia-400 text-xs">{e.student_email}</p>
+                              </td>
+                              <td className="py-3 px-4 hidden sm:table-cell">
+                                <p className="text-sepia-400 text-xs line-clamp-2">{e.course_title}</p>
+                              </td>
+                              <td className="py-3 px-4">
+                                {e.collab_paid ? (
+                                  <div>
+                                    <span className="flex items-center gap-1 text-green-400 text-xs font-bold">
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+                                    </span>
+                                    {e.collab_paid_at && (
+                                      <p className="text-sepia-600 text-[10px] mt-0.5">
+                                        {new Date(e.collab_paid_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-amber-500 text-xs font-bold">Pendiente</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

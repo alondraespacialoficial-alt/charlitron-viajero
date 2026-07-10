@@ -5,6 +5,7 @@ import {
   AlertCircle, BookOpen, FileText, Image as ImageIcon,
   Video, Volume2, Lock, Unlock, ChevronDown, ChevronUp,
   HelpCircle, MessageSquare, Users, Key, Send, Eye,
+  DollarSign, BadgeCheck,
 } from 'lucide-react';
 import { Course, CourseLesson, CourseEnrollment, CourseQuestion } from '../types';
 import { supabase } from '../supabase';
@@ -42,6 +43,7 @@ export const CoursesAdmin: React.FC = () => {
   const [questions, setQuestions] = useState<CourseQuestion[]>([]);
   const [answerTexts, setAnswerTexts] = useState<Record<string, string>>({});
   const [savingAnswer, setSavingAnswer] = useState<string | null>(null);
+  const [markingCollabPaid, setMarkingCollabPaid] = useState<string | null>(null);
 
   useEffect(() => { fetchCourses(); }, []);
   useEffect(() => {
@@ -267,6 +269,20 @@ export const CoursesAdmin: React.FC = () => {
       if (selectedCourse) fetchQuestions(selectedCourse.id);
     } catch { showMsg('error', 'Error al guardar respuesta'); }
     finally { setSavingAnswer(null); }
+  };
+
+  // ── Marcar pago al colaborador ─────────────────────────────────────
+  const handleMarkCollabPaid = async (enrollmentId: string, paid: boolean) => {
+    setMarkingCollabPaid(enrollmentId);
+    try {
+      await supabase.from('course_enrollments').update({
+        collab_paid: paid,
+        collab_paid_at: paid ? new Date().toISOString() : null,
+      }).eq('id', enrollmentId);
+      if (selectedCourse) fetchEnrollments(selectedCourse.id);
+      showMsg('success', paid ? 'Pagado al colaborador ✓' : 'Marcado como pendiente');
+    } catch { showMsg('error', 'Error al actualizar'); }
+    finally { setMarkingCollabPaid(null); }
   };
 
   const statusLabel = (s: string) => s === 'paid' ? 'Pagado' : s === 'cancelled' ? 'Cancelado' : 'Pendiente';
@@ -696,6 +712,24 @@ export const CoursesAdmin: React.FC = () => {
                       </div>
                     );
                   })()}
+                  {/* Resumen pago al colaborador */}
+                  {selectedCourse?.collaborator_code && (() => {
+                    const cPaid    = enrollments.filter(e => e.status === 'paid' && e.collab_paid).length;
+                    const cPending = enrollments.filter(e => e.status === 'paid' && !e.collab_paid).length;
+                    return (cPaid + cPending) > 0 ? (
+                      <div className="flex items-center justify-between bg-sepia-800/30 border border-amber-800/40 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-2 text-sepia-400 text-xs">
+                          <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="uppercase tracking-widest">Pago al colaborador</span>
+                          <span className="text-sepia-600 normal-case font-mono">({selectedCourse.collaborator_code})</span>
+                        </div>
+                        <div className="flex gap-4 text-xs font-bold">
+                          <span className="text-green-400">{cPaid} pagados</span>
+                          <span className="text-amber-400">{cPending} pendientes</span>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="flex items-center gap-4 flex-wrap">
                     <p className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Inscritos ({enrollments.length})</p>
                     <div className="flex gap-2 text-xs">
@@ -734,6 +768,35 @@ export const CoursesAdmin: React.FC = () => {
                                     <input type="text" value={enrollmentNotes[enrollment.id] || ''} onChange={e => setEnrollmentNotes({ ...enrollmentNotes, [enrollment.id]: e.target.value })}
                                       placeholder="Ej: Transferencia BBVA #1234" className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm" />
                                   </div>
+                                  {/* Pago al colaborador */}
+                                  {selectedCourse?.collaborator_code && enrollment.status === 'paid' && (
+                                    <div className="flex items-center justify-between bg-sepia-800/40 border border-sepia-700 rounded-xl px-4 py-3">
+                                      <div className="space-y-0.5">
+                                        <p className="text-xs text-sepia-400 uppercase tracking-widest flex items-center gap-1.5">
+                                          <DollarSign className="w-3.5 h-3.5" /> Pagado al colaborador
+                                        </p>
+                                        {enrollment.collab_paid && enrollment.collab_paid_at && (
+                                          <p className="text-green-400 text-xs">{fmtDate(enrollment.collab_paid_at)}</p>
+                                        )}
+                                      </div>
+                                      <button
+                                        onClick={() => handleMarkCollabPaid(enrollment.id, !enrollment.collab_paid)}
+                                        disabled={markingCollabPaid === enrollment.id}
+                                        className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-lg transition-all disabled:opacity-50 border ${
+                                          enrollment.collab_paid
+                                            ? 'bg-green-900/30 border-green-700 text-green-400 hover:bg-sepia-800 hover:border-sepia-600 hover:text-sepia-400'
+                                            : 'bg-sepia-800 border-sepia-600 text-sepia-300 hover:bg-green-900/30 hover:border-green-700 hover:text-green-400'
+                                        }`}
+                                      >
+                                        {markingCollabPaid === enrollment.id
+                                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                          : enrollment.collab_paid
+                                          ? <><BadgeCheck className="w-3.5 h-3.5" /> Pagado</>
+                                          : <><DollarSign className="w-3.5 h-3.5" /> Marcar pagado</>
+                                        }
+                                      </button>
+                                    </div>
+                                  )}
                                   <div className="flex flex-wrap gap-2">
                                     {enrollment.status !== 'paid' && (
                                       <button onClick={() => handleUpdateEnrollment(enrollment.id, 'paid')} disabled={updatingEnrollment === enrollment.id}
