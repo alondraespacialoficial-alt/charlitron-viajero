@@ -221,6 +221,7 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
         private_client_label: editing.private_client_label?.trim() || null,
         is_active:   editing.pub_key?.trim() ? (editing.is_active ?? true) : false,
         order_index: editing.order_index ?? avatars.length,
+        era:         editing.era?.trim() || null,
       };
 
       if (editing.id) {
@@ -405,7 +406,28 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
                 />
               </div>
 
-              {/* Tipo de avatar */}
+              {/* Período histórico */}
+              <div className="space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">
+                  Período histórico{' '}
+                  <span className="normal-case text-sepia-600">(línea del tiempo)</span>
+                </label>
+                <select
+                  value={editing.era || ''}
+                  onChange={(e) => setEditing({ ...editing, era: e.target.value || undefined })}
+                  className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 outline-none focus:border-sepia-500"
+                >
+                  <option value="">— Sin asignar —</option>
+                  <option value="Virreinato">⚜️ Virreinato (1521–1810)</option>
+                  <option value="Independencia">🦅 Independencia (1810–1821)</option>
+                  <option value="República">📜 República (1821–1876)</option>
+                  <option value="Porfiriato">🎩 Porfiriato (1876–1910)</option>
+                  <option value="Revolución">⚔️ Revolución (1910–1940)</option>
+                  <option value="Siglo XX">🏙️ Siglo XX (1940–2000)</option>
+                </select>
+              </div>
+
+              {/* Tipo de avatar */
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Tipo de avatar</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
