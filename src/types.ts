@@ -203,6 +203,7 @@ export interface Avatar {
   private_client_label?: string | null;
   is_active: boolean;
   order_index: number;
+  era?: string;           // Período histórico (ej: 'Virreinato', 'Revolución')
   created_at?: string;
   updated_at?: string;
 }

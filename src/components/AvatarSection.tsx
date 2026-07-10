@@ -79,6 +79,97 @@ const LOADING_MSGS = [
   'Un momento más…',
 ];
 
+// ── Línea del tiempo ─────────────────────────────────────────────────────────
+
+const PERIODS = [
+  { id: 'virreinato',    label: 'Virreinato',    years: '1521–1810', icon: '⚜️' },
+  { id: 'independencia', label: 'Independencia', years: '1810–1821', icon: '🦅' },
+  { id: 'republica',     label: 'República',      years: '1821–1876', icon: '📜' },
+  { id: 'porfiriato',    label: 'Porfiriato',     years: '1876–1910', icon: '🎩' },
+  { id: 'revolucion',    label: 'Revolución',     years: '1910–1940', icon: '⚔️' },
+  { id: 'siglo-xx',      label: 'Siglo XX',       years: '1940–2000', icon: '🏙️' },
+] as const;
+
+type PeriodId = typeof PERIODS[number]['id'];
+
+/**
+ * Mapeo manual slug → período histórico.
+ * Actualiza este diccionario con los slugs reales de tus avatares.
+ * El campo `era` en la BD tiene siempre prioridad sobre este mapeo.
+ * Ejemplos:
+ *   'sor-juana': 'virreinato'
+ *   'hidalgo': 'independencia'
+ *   'juarez': 'republica'
+ *   'porfirio-diaz': 'porfiriato'
+ *   'zapata': 'revolucion'
+ */
+const SLUG_TO_PERIOD: Record<string, PeriodId> = {};
+
+function getAvatarPeriod(avatar: import('../types').Avatar): PeriodId | null {
+  if (avatar.era) {
+    const normalized = avatar.era
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '');
+    const match = PERIODS.find(
+      (p) =>
+        p.label.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '') === normalized ||
+        p.id === normalized,
+    );
+    if (match) return match.id;
+  }
+  return SLUG_TO_PERIOD[avatar.slug] ?? null;
+}
+
+interface TimelineProps {
+  activePeriod: PeriodId | null;
+  onSelect: (p: PeriodId | null) => void;
+}
+
+const HistoricalTimeline: React.FC<TimelineProps> = ({ activePeriod, onSelect }) => (
+  <div className="w-full space-y-3">
+    <p className="text-sepia-500 text-xs uppercase tracking-[0.2em] text-center select-none">
+      Explorar por período histórico
+    </p>
+    <div className="overflow-x-auto pb-1">
+      <div className="flex items-stretch gap-1.5 min-w-max mx-auto px-1 py-1">
+        <button
+          onClick={() => onSelect(null)}
+          className={`flex flex-col items-center justify-center px-4 py-2.5 rounded-xl border transition-all shrink-0 ${
+            activePeriod === null
+              ? 'bg-sepia-800 border-sepia-500 text-sepia-100 shadow-md'
+              : 'bg-sepia-900/40 border-sepia-800 text-sepia-500 hover:border-sepia-600 hover:text-sepia-300'
+          }`}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-widest">Todos</span>
+        </button>
+
+        <div className="flex items-center text-sepia-700 select-none px-0.5 text-xs">›</div>
+
+        {PERIODS.map((period, i) => (
+          <React.Fragment key={period.id}>
+            <button
+              onClick={() => onSelect(activePeriod === period.id ? null : period.id)}
+              className={`flex flex-col items-center px-3.5 py-2 rounded-xl border transition-all shrink-0 ${
+                activePeriod === period.id
+                  ? 'bg-sepia-800 border-sepia-500 text-sepia-100 shadow-md'
+                  : 'bg-sepia-900/40 border-sepia-800 text-sepia-500 hover:border-sepia-600 hover:text-sepia-300'
+              }`}
+            >
+              <span className="text-sm leading-none mb-1" aria-hidden="true">{period.icon}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">{period.label}</span>
+              <span className="text-[9px] opacity-50 mt-0.5 whitespace-nowrap">{period.years}</span>
+            </button>
+            {i < PERIODS.length - 1 && (
+              <div className="flex items-center text-sepia-700 select-none px-0.5 text-xs">›</div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 interface AvatarSectionProps {
   accessPassword?: string;
 }
@@ -93,6 +184,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [avatars, setAvatars]               = useState<Avatar[]>([]);
   const [loadingAvatars, setLoadingAvatars] = useState(true);
   const [searchQuery, setSearchQuery]       = useState('');
+  const [activePeriod, setActivePeriod]     = useState<PeriodId | null>(null);
   const [password, setPassword]             = useState('');
   const [errorMsg, setErrorMsg]             = useState('');
   const [loadingMsgIdx, setLoadingMsgIdx]   = useState(0);
@@ -427,6 +519,9 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 </ul>
               </div>
 
+              {/* ── Línea del tiempo histórica ───────────────────────── */}
+              <HistoricalTimeline activePeriod={activePeriod} onSelect={setActivePeriod} />
+
               {/* ── Cards de avatares ─────────────────────────────────── */}
               {!loadingAvatars && avatars.length > 0 && (
                 <div className="relative max-w-sm mx-auto">
@@ -454,13 +549,23 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   <p className="text-sepia-600 text-sm text-center py-8">No se encontró ningún avatar con ese nombre.</p>
                 ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {filtered.map((avatar) => (
+                  {filtered.map((avatar) => {
+                    const avatarPeriod = getAvatarPeriod(avatar);
+                    const isDimmed     = activePeriod !== null && avatarPeriod !== activePeriod;
+                    const isHighlighted = activePeriod !== null && avatarPeriod === activePeriod;
+                    return (
                     <motion.button
                       key={avatar.slug}
-                      whileHover={{ scale: 1.03, y: -4 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: isDimmed ? 1 : 1.03, y: isDimmed ? 0 : -4 }}
+                      whileTap={{ scale: isDimmed ? 1 : 0.97 }}
                       onClick={() => handleSelectAvatar(avatar)}
-                      className="bg-sepia-900/60 border border-sepia-700 hover:border-sepia-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-colors group"
+                      className={`bg-sepia-900/60 border rounded-2xl p-6 flex flex-col items-center gap-3 transition-all group ${
+                        isDimmed
+                          ? 'border-sepia-800 opacity-30 cursor-default'
+                          : isHighlighted
+                          ? 'border-sepia-500 ring-1 ring-sepia-600/40 hover:border-sepia-400'
+                          : 'border-sepia-700 hover:border-sepia-500'
+                      }`}
                     >
                       {avatar.image_url && !failedImages.has(avatar.id)
                         ? <img src={avatar.image_url} alt={avatar.label} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => markImgFailed(avatar.id)} className="w-20 h-20 rounded-full object-cover border-2 border-sepia-700 group-hover:border-sepia-500 transition-colors" />
@@ -470,7 +575,8 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                       <span className="text-sepia-500 text-xs">{avatar.description}</span>
                       <MessageCircle className="w-4 h-4 text-sepia-600 group-hover:text-sepia-400 transition-colors mt-1" />
                     </motion.button>
-                  ))}
+                    );
+                  })}
                 </div>
                 );
               })()}
