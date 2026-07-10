@@ -81,7 +81,7 @@ export const CoursesSection: React.FC = () => {
   const [collabViewEnrollments, setCollabViewEnrollments] = useState<CollabEntry[]>([]);
 
   // ── Subir curso como colaborador ─────────────────────────────────
-  const [collabSubTab, setCollabSubTab] = useState<CollabSubTab>('students');
+  const [collabSubTab, setCollabSubTab] = useState<CollabSubTab>('courses');
   const [collabSubmitForm, setCollabSubmitForm] = useState({
     title: '', description: '', banner_url: '', price: 0,
     instructor_name: '', duration_text: '', level: '', what_you_learn: '',
@@ -1257,10 +1257,18 @@ export const CoursesSection: React.FC = () => {
                     </AnimatePresence>
 
                     {collabCourses.length === 0 ? (
-                      <div className="text-center py-12 text-sepia-600 space-y-2">
+                      <div className="text-center py-12 text-sepia-600 space-y-4">
                         <BookOpen className="w-10 h-10 mx-auto opacity-40" />
-                        <p>Aún no tienes cursos asignados.</p>
-                        <p className="text-xs">Usa la pestaña "Subir Curso" para proponer uno.</p>
+                        <div className="space-y-1">
+                          <p className="text-sepia-400">Aún no tienes cursos asignados.</p>
+                          <p className="text-sepia-600 text-xs">Puedes proponer uno y el administrador lo revisará.</p>
+                        </div>
+                        <button
+                          onClick={() => setCollabSubTab('upload')}
+                          className="flex items-center gap-2 mx-auto bg-sepia-600 hover:bg-sepia-500 text-sepia-100 text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all"
+                        >
+                          <Upload className="w-3.5 h-3.5" /> Subir mi primer curso
+                        </button>
                       </div>
                     ) : (
                       <div className="space-y-3">
