@@ -194,7 +194,7 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, investigationEnabled }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, onHistorias, investigationEnabled }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
@@ -208,6 +208,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onMural: () => void,
   onCollaborators: () => void,
   onAvatars: () => void,
+  onHistorias: () => void,
   investigationEnabled: boolean
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -309,7 +310,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
                 <Video className="w-4 h-4" />
                 Avatares
               </button>
-              <a href="#historias" className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium">Historias</a>
+              <button onClick={onHistorias} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium">Historias</button>
               <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-all">Contacto</a>
             </div>
 
@@ -426,13 +427,12 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               <Video className="w-6 h-6" />
               Avatares
             </button>
-            <a 
-              href="#historias" 
-              onClick={() => setIsMenuOpen(false)}
+            <button
+              onClick={() => { onHistorias(); setIsMenuOpen(false); }}
               className="text-sepia-100 text-2xl font-serif uppercase tracking-widest"
             >
               Historias
-            </a>
+            </button>
             <a 
               href={WHATSAPP_LINK} 
               target="_blank" 
@@ -1926,9 +1926,11 @@ export default function App() {
       setShowInvestigation(false);
       setShowContests(false);
       setShowConferences(false);
+      setShowCourses(false);
       setShowFamilyTree(false);
       setShowMural(false);
       setShowCollaborators(false);
+      setShowAvatars(false);
       setSelectedStory(null);
       setLegalView(null);
       if (path === 'galeria') {
@@ -2163,17 +2165,18 @@ export default function App() {
       <Navbar 
         onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}
-        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFavorites={() => setShowFavorites(true)}
-        onContests={() => { setShowContests(true); setShowConferences(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onConferences={() => { setShowConferences(true); setShowContests(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowCollaborators(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowFamilyTree(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onContests={() => { setShowContests(true); setShowConferences(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onConferences={() => { setShowConferences(true); setShowContests(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowCollaborators(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowAvatars(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onAvatars={() => { setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
         investigationEnabled={investigationEnabled}
       />
       
