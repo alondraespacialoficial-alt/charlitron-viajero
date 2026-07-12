@@ -194,7 +194,7 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, onHistorias, investigationEnabled }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, onHistorias, investigationEnabled, logoUrl }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
@@ -209,7 +209,8 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onCollaborators: () => void,
   onAvatars: () => void,
   onHistorias: () => void,
-  investigationEnabled: boolean
+  investigationEnabled: boolean,
+  logoUrl: string
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -235,7 +236,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center group-hover:scale-110 transition-transform"
             >
               <img 
-                src="https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png" 
+                src={logoUrl} 
                 alt="Charlitron Logo" 
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
@@ -316,7 +317,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
 
             <div className="flex items-center gap-4">
               <img 
-                src="https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png" 
+                src={logoUrl} 
                 alt="Logo Charlitron" 
                 className="h-10 md:h-12 w-auto object-contain"
                 referrerPolicy="no-referrer"
@@ -458,7 +459,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   );
 };
 
-const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEnabled, introVideoUrl, introVideoIsVertical, heroBgUrl }: { 
+const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEnabled, introVideoUrl, introVideoIsVertical, heroBgUrl, logoUrl }: { 
   onSearch: (term: string) => void, 
   onSeeAll: () => void, 
   onGallery: () => void,
@@ -466,8 +467,10 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
   investigationEnabled: boolean,
   introVideoUrl?: string,
   introVideoIsVertical?: boolean,
-  heroBgUrl?: string
+  heroBgUrl?: string,
+  logoUrl?: string
 }) => {
+  const DEFAULT_LOGO = 'https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png';
   const [searchTerm, setSearchTerm] = useState('');
   const [showIntro, setShowIntro] = useState(false);
 
@@ -476,14 +479,14 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
     onSearch(searchTerm);
   };
 
-  const defaultBg = "https://image2url.com/r2/default/images/1773069369956-6e7ee890-47a9-4492-ba3d-bdf66ac19a98.png";
+  const DEFAULT_HERO_BG = "https://image2url.com/r2/default/images/1773069369956-6e7ee890-47a9-4492-ba3d-bdf66ac19a98.png";
 
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background with blur effect */}
       <div className="absolute inset-0 z-0">
         <img 
-          src={heroBgUrl || defaultBg} 
+          src={heroBgUrl || DEFAULT_HERO_BG} 
           alt="Charlitron® Portada" 
           className="w-full h-full object-cover object-center sepia-filter scale-110 blur-sm"
           referrerPolicy="no-referrer"
@@ -499,7 +502,7 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
           transition={{ duration: 0.8 }}
         >
           <img 
-            src="https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png" 
+            src={logoUrl || DEFAULT_LOGO} 
             alt="Charlitron Logo" 
             className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-8 object-contain drop-shadow-2xl"
             referrerPolicy="no-referrer"
@@ -619,7 +622,7 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
   );
 };
 
-const About = () => (
+const About = ({ logoUrl }: { logoUrl: string }) => (
   <section className="py-24 bg-sepia-100">
     <div className="max-w-4xl mx-auto px-6 text-center">
       <motion.div
@@ -629,7 +632,7 @@ const About = () => (
         transition={{ duration: 0.8 }}
       >
         <img 
-          src="https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png" 
+          src={logoUrl} 
           alt="Charlitron Logo" 
           className="w-16 h-16 mx-auto mb-6 object-contain opacity-80"
           referrerPolicy="no-referrer"
@@ -645,7 +648,14 @@ const About = () => (
   </section>
 );
 
-const Biography = () => (
+const Biography = ({ biographyPhotoUrl, book1CoverUrl, book1Url, book2CoverUrl, book2Url, amazonAuthorUrl }: {
+  biographyPhotoUrl: string,
+  book1CoverUrl: string,
+  book1Url: string,
+  book2CoverUrl: string,
+  book2Url: string,
+  amazonAuthorUrl: string
+}) => (
   <section className="py-24 bg-sepia-950 text-sepia-100 overflow-hidden relative">
     {/* Background Texture */}
     <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/paper.png')]"></div>
@@ -662,7 +672,7 @@ const Biography = () => (
         >
           <div className="relative z-10 rounded-2xl overflow-hidden border border-sepia-800 shadow-2xl">
             <img 
-              src="https://image2url.com/r2/default/images/1774207717060-c5974088-18bf-4a0f-956b-67625c091acb.png" 
+              src={biographyPhotoUrl} 
               alt="Adrián Álvarez Carlos - El Viajero del Tiempo" 
               className="w-full h-auto object-cover sepia-filter grayscale-[0.2] hover:scale-105 transition-transform duration-700"
               referrerPolicy="no-referrer"
@@ -749,13 +759,13 @@ const Biography = () => (
                 {[
                   {
                     title: '¿A qué realmente vengo al mundo?: 12 claves para recordar lo que el sistema quiso que olvidaras',
-                    cover: 'https://image2url.com/r2/default/images/1775196639063-785f29e7-3933-4b4f-b083-48efed064b4e.jpg',
-                    url: 'https://www.amazon.com.mx/stores/author/B0FKY392PJ',
+                    cover: book1CoverUrl,
+                    url: book1Url,
                   },
                   {
                     title: 'El Mapa del Éxito Real: 12 llaves invisibles para construir sin forzar y liderar desde el alma',
-                    cover: 'https://image2url.com/r2/default/images/1775197036814-cd9d796f-b4c4-4036-be6f-db2de668141f.jpg',
-                    url: 'https://www.amazon.com.mx/Mapa-del-%C3%89xito-Real-invisibles/dp/B0FQ32CKS5/ref=tmm_pap_swatch_0',
+                    cover: book2CoverUrl,
+                    url: book2Url,
                   },
                 ].map((book) => (
                   <motion.a
@@ -790,7 +800,7 @@ const Biography = () => (
                 ))}
               </div>
               <a
-                href="https://www.amazon.com.mx/stores/author/B0FKY392PJ"
+                href={amazonAuthorUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 mt-6 text-sepia-400 hover:text-sepia-100 transition-colors text-xs uppercase tracking-widest font-bold border border-sepia-700 hover:border-sepia-400 px-5 py-2.5 rounded-full"
@@ -1645,13 +1655,13 @@ const ContactCTA = () => (
   </section>
 );
 
-const Footer = ({ onLegalClick }: { onLegalClick: (type: 'privacy' | 'terms' | 'avatars') => void }) => (
+const Footer = ({ onLegalClick, logoUrl }: { onLegalClick: (type: 'privacy' | 'terms' | 'avatars') => void, logoUrl: string }) => (
   <footer className="py-16 bg-sepia-950 border-t border-sepia-900">
     <div className="max-w-7xl mx-auto px-6 text-center">
       <div className="flex flex-col items-center mb-8">
         <div className="flex items-center gap-3 mb-2">
           <img 
-            src="https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png" 
+            src={logoUrl} 
             alt="Charlitron Logo" 
             className="w-12 h-12 object-contain"
             referrerPolicy="no-referrer"
@@ -1746,6 +1756,14 @@ export default function App() {
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png');
+  const [biographyPhotoUrl, setBiographyPhotoUrl] = useState('https://image2url.com/r2/default/images/1774207717060-c5974088-18bf-4a0f-956b-67625c091acb.png');
+  const [platformsBannerUrl, setPlatformsBannerUrl] = useState('https://image2url.com/r2/default/images/1775456732330-72e615ee-61fa-4811-8409-a452b2ec805f.png');
+  const [book1CoverUrl, setBook1CoverUrl] = useState('https://image2url.com/r2/default/images/1775196639063-785f29e7-3933-4b4f-b083-48efed064b4e.jpg');
+  const [book1Url, setBook1Url] = useState('https://www.amazon.com.mx/stores/author/B0FKY392PJ');
+  const [book2CoverUrl, setBook2CoverUrl] = useState('https://image2url.com/r2/default/images/1775197036814-cd9d796f-b4c4-4036-be6f-db2de668141f.jpg');
+  const [book2Url, setBook2Url] = useState('https://www.amazon.com.mx/Mapa-del-%C3%89xito-Real-invisibles/dp/B0FQ32CKS5/ref=tmm_pap_swatch_0');
+  const [amazonAuthorUrl, setAmazonAuthorUrl] = useState('https://www.amazon.com.mx/stores/author/B0FKY392PJ');
   const [isLoading, setIsLoading] = useState(true);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -1798,6 +1816,21 @@ export default function App() {
         .eq('key', 'investigation_enabled')
         .maybeSingle();
       if (investigationData) setInvestigationEnabled(investigationData.value === 'true');
+
+      const settingsKeys: { key: string, setter: (v: string) => void }[] = [
+        { key: 'logo_url',            setter: setLogoUrl },
+        { key: 'biography_photo_url', setter: setBiographyPhotoUrl },
+        { key: 'platforms_banner_url',setter: setPlatformsBannerUrl },
+        { key: 'book1_cover_url',     setter: setBook1CoverUrl },
+        { key: 'book1_url',           setter: setBook1Url },
+        { key: 'book2_cover_url',     setter: setBook2CoverUrl },
+        { key: 'book2_url',           setter: setBook2Url },
+        { key: 'amazon_author_url',   setter: setAmazonAuthorUrl },
+      ];
+      await Promise.all(settingsKeys.map(async ({ key, setter }) => {
+        const { data } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
+        if (data?.value) setter(data.value);
+      }));
     } catch (err) {
       console.error('Error fetching intro video settings:', err);
     }
@@ -2178,6 +2211,7 @@ export default function App() {
         onAvatars={() => { setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
         investigationEnabled={investigationEnabled}
+        logoUrl={logoUrl}
       />
       
       <AnimatePresence mode="wait">
@@ -2438,8 +2472,9 @@ export default function App() {
               introVideoUrl={introVideoUrl} 
               introVideoIsVertical={introVideoIsVertical}
               heroBgUrl={heroBgUrl}
+              logoUrl={logoUrl}
             />
-            <About />
+            <About logoUrl={logoUrl} />
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -2447,15 +2482,24 @@ export default function App() {
               transition={{ duration: 0.7 }}
               className="w-full overflow-hidden"
             >
-              <img
-                src="https://image2url.com/r2/default/images/1775456732330-72e615ee-61fa-4811-8409-a452b2ec805f.png"
-                alt="Banner Charlitron® Viajero del Tiempo"
-                className="w-full h-auto object-cover"
-                referrerPolicy="no-referrer"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
+              {platformsBannerUrl && (
+                <img
+                  src={platformsBannerUrl}
+                  alt="Banner Charlitron® Viajero del Tiempo"
+                  className="w-full h-auto object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              )}
             </motion.section>
-            <Biography />
+            <Biography
+              biographyPhotoUrl={biographyPhotoUrl}
+              book1CoverUrl={book1CoverUrl}
+              book1Url={book1Url}
+              book2CoverUrl={book2CoverUrl}
+              book2Url={book2Url}
+              amazonAuthorUrl={amazonAuthorUrl}
+            />
             <HistoriansSection historians={historians} />
             <TravelPhotosSection photos={travelPhotos} />
             <Timeline stories={publicStories} onSelectStory={handleSelectStory} />
@@ -2571,7 +2615,7 @@ export default function App() {
         onViewGallery={() => setShowGallery(true)}
       />
 
-      <Footer onLegalClick={setLegalView} />
+      <Footer onLegalClick={setLegalView} logoUrl={logoUrl} />
     </div>
   );
 }

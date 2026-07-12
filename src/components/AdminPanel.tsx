@@ -88,6 +88,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [chatbotUrl, setChatbotUrl] = useState('');
   const [chatbotEnabled, setChatbotEnabled] = useState(false);
+  // URLs externas controlables
+  const [extLogoUrl, setExtLogoUrl] = useState('');
+  const [extBiographyPhotoUrl, setExtBiographyPhotoUrl] = useState('');
+  const [extPlatformsBannerUrl, setExtPlatformsBannerUrl] = useState('');
+  const [extBook1CoverUrl, setExtBook1CoverUrl] = useState('');
+  const [extBook1Url, setExtBook1Url] = useState('');
+  const [extBook2CoverUrl, setExtBook2CoverUrl] = useState('');
+  const [extBook2Url, setExtBook2Url] = useState('');
+  const [extAmazonAuthorUrl, setExtAmazonAuthorUrl] = useState('');
   const [investigationCodes, setInvestigationCodes] = useState<{ id: string, code: string, is_used: boolean, created_at: string }[]>([]);
   const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string, expires_at?: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -670,6 +679,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .maybeSingle();
       if (chatbotEnabledData) setChatbotEnabled(chatbotEnabledData.value === 'true');
 
+      const extKeys: { key: string, setter: (v: string) => void }[] = [
+        { key: 'logo_url',             setter: setExtLogoUrl },
+        { key: 'biography_photo_url',  setter: setExtBiographyPhotoUrl },
+        { key: 'platforms_banner_url', setter: setExtPlatformsBannerUrl },
+        { key: 'book1_cover_url',      setter: setExtBook1CoverUrl },
+        { key: 'book1_url',            setter: setExtBook1Url },
+        { key: 'book2_cover_url',      setter: setExtBook2CoverUrl },
+        { key: 'book2_url',            setter: setExtBook2Url },
+        { key: 'amazon_author_url',    setter: setExtAmazonAuthorUrl },
+      ];
+      await Promise.all(extKeys.map(async ({ key, setter }) => {
+        const { data } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
+        if (data?.value) setter(data.value);
+      }));
+
       fetchInvestigationCodes();
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -717,6 +741,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .from('site_settings')
         .upsert({ key: 'chatbot_enabled', value: chatbotEnabled.toString() });
       if (chatbotEnabledError) throw chatbotEnabledError;
+
+      // URLs externas
+      const extEntries = [
+        { key: 'logo_url',             value: extLogoUrl },
+        { key: 'biography_photo_url',  value: extBiographyPhotoUrl },
+        { key: 'platforms_banner_url', value: extPlatformsBannerUrl },
+        { key: 'book1_cover_url',      value: extBook1CoverUrl },
+        { key: 'book1_url',            value: extBook1Url },
+        { key: 'book2_cover_url',      value: extBook2CoverUrl },
+        { key: 'book2_url',            value: extBook2Url },
+        { key: 'amazon_author_url',    value: extAmazonAuthorUrl },
+      ];
+      for (const entry of extEntries) {
+        if (entry.value) {
+          const { error } = await supabase.from('site_settings').upsert({ key: entry.key, value: entry.value });
+          if (error) throw error;
+        }
+      }
       
       if (onSettingsUpdate) onSettingsUpdate();
       setMessage({ type: 'success', text: 'Configuración guardada correctamente' });
@@ -1607,6 +1649,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <iframe src={chatbotUrl} className="w-full h-full border-none" title="Vista previa del chat" loading="lazy" />
                         </div>
                       )}
+                    </div>
+
+                    {/* ── URLs Externas ─────────────────────────── */}
+                    <div className="space-y-6 pt-6 border-t border-sepia-800">
+                      <div className="flex items-center gap-3">
+                        <ImageIcon className="w-5 h-5 text-sepia-500" />
+                        <label className="text-sepia-100 font-serif text-xl">URLs de Imágenes y Libros</label>
+                      </div>
+                      <p className="text-sepia-400 text-sm">Controla las imágenes externas de la página principal. Si cambia el servidor de imágenes, actualiza los enlaces aquí sin tocar el código.</p>
+
+                      {[
+                        { label: 'Logo principal (Charlitron)', state: extLogoUrl, setter: setExtLogoUrl, placeholder: 'https://...', isImage: true },
+                        { label: 'Foto de Adrián Álvarez Carlos (Biografía)', state: extBiographyPhotoUrl, setter: setExtBiographyPhotoUrl, placeholder: 'https://...', isImage: true },
+                        { label: 'Banner plataformas digitales (entre About y Biografía)', state: extPlatformsBannerUrl, setter: setExtPlatformsBannerUrl, placeholder: 'https://...', isImage: true },
+                        { label: 'Portada Libro 1', state: extBook1CoverUrl, setter: setExtBook1CoverUrl, placeholder: 'https://...', isImage: true },
+                        { label: 'Enlace Amazon Libro 1', state: extBook1Url, setter: setExtBook1Url, placeholder: 'https://www.amazon.com.mx/...', isImage: false },
+                        { label: 'Portada Libro 2', state: extBook2CoverUrl, setter: setExtBook2CoverUrl, placeholder: 'https://...', isImage: true },
+                        { label: 'Enlace Amazon Libro 2', state: extBook2Url, setter: setExtBook2Url, placeholder: 'https://www.amazon.com.mx/...', isImage: false },
+                        { label: 'Enlace "Ver todos mis libros en Amazon"', state: extAmazonAuthorUrl, setter: setExtAmazonAuthorUrl, placeholder: 'https://www.amazon.com.mx/stores/author/...', isImage: false },
+                      ].map(({ label, state, setter, placeholder, isImage }) => (
+                        <div key={label} className="space-y-2">
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">{label}</label>
+                          <div className="flex gap-3 items-start">
+                            <input
+                              type="url"
+                              value={state}
+                              onChange={e => setter(e.target.value)}
+                              placeholder={placeholder}
+                              className="flex-1 bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all font-mono text-xs"
+                            />
+                            {isImage && state && (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden border border-sepia-700 flex-shrink-0 bg-sepia-900">
+                                <img src={state} alt={label} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
