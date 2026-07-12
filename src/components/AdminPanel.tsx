@@ -1659,32 +1659,69 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                       <p className="text-sepia-400 text-sm">Controla las imágenes externas de la página principal. Si cambia el servidor de imágenes, actualiza los enlaces aquí sin tocar el código.</p>
 
+                      {/* Campos de imagen con URL + subir desde PC */}
                       {[
-                        { label: 'Logo principal (Charlitron)', state: extLogoUrl, setter: setExtLogoUrl, placeholder: 'https://...', isImage: true },
-                        { label: 'Foto de Adrián Álvarez Carlos (Biografía)', state: extBiographyPhotoUrl, setter: setExtBiographyPhotoUrl, placeholder: 'https://...', isImage: true },
-                        { label: 'Banner plataformas digitales (entre About y Biografía)', state: extPlatformsBannerUrl, setter: setExtPlatformsBannerUrl, placeholder: 'https://...', isImage: true },
-                        { label: 'Portada Libro 1', state: extBook1CoverUrl, setter: setExtBook1CoverUrl, placeholder: 'https://...', isImage: true },
-                        { label: 'Enlace Amazon Libro 1', state: extBook1Url, setter: setExtBook1Url, placeholder: 'https://www.amazon.com.mx/...', isImage: false },
-                        { label: 'Portada Libro 2', state: extBook2CoverUrl, setter: setExtBook2CoverUrl, placeholder: 'https://...', isImage: true },
-                        { label: 'Enlace Amazon Libro 2', state: extBook2Url, setter: setExtBook2Url, placeholder: 'https://www.amazon.com.mx/...', isImage: false },
-                        { label: 'Enlace "Ver todos mis libros en Amazon"', state: extAmazonAuthorUrl, setter: setExtAmazonAuthorUrl, placeholder: 'https://www.amazon.com.mx/stores/author/...', isImage: false },
-                      ].map(({ label, state, setter, placeholder, isImage }) => (
-                        <div key={label} className="space-y-2">
+                        { label: 'Logo principal (Charlitron)', state: extLogoUrl, setter: setExtLogoUrl, uploadId: 'ext-logo' },
+                        { label: 'Foto de Adrián Álvarez Carlos (Biografía)', state: extBiographyPhotoUrl, setter: setExtBiographyPhotoUrl, uploadId: 'ext-bio' },
+                        { label: 'Banner plataformas digitales (entre About y Biografía)', state: extPlatformsBannerUrl, setter: setExtPlatformsBannerUrl, uploadId: 'ext-banner' },
+                        { label: 'Portada Libro 1', state: extBook1CoverUrl, setter: setExtBook1CoverUrl, uploadId: 'ext-book1-cover' },
+                        { label: 'Portada Libro 2', state: extBook2CoverUrl, setter: setExtBook2CoverUrl, uploadId: 'ext-book2-cover' },
+                      ].map(({ label, state, setter, uploadId }) => (
+                        <div key={uploadId} className="space-y-2">
                           <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">{label}</label>
-                          <div className="flex gap-3 items-start">
+                          <div className="flex gap-2 items-start">
                             <input
                               type="url"
                               value={state}
                               onChange={e => setter(e.target.value)}
-                              placeholder={placeholder}
+                              placeholder="https://... o sube desde tu dispositivo →"
                               className="flex-1 bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all font-mono text-xs"
                             />
-                            {isImage && state && (
-                              <div className="w-16 h-16 rounded-lg overflow-hidden border border-sepia-700 flex-shrink-0 bg-sepia-900">
+                            <label
+                              htmlFor={uploadId}
+                              className={`cursor-pointer flex items-center gap-1.5 px-3 py-3 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-xs font-bold transition-all flex-shrink-0 ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Subir imagen desde tu PC/celular"
+                            >
+                              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              <span className="hidden sm:inline">Subir</span>
+                              <input
+                                id={uploadId}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const url = await handleImageUpload(file);
+                                  if (url) setter(url);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+                            {state && (
+                              <div className="w-12 h-12 rounded-lg overflow-hidden border border-sepia-700 flex-shrink-0 bg-sepia-900">
                                 <img src={state} alt={label} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2'; }} />
                               </div>
                             )}
                           </div>
+                        </div>
+                      ))}
+
+                      {/* Campos solo de URL (enlaces Amazon) */}
+                      {[
+                        { label: 'Enlace Amazon Libro 1', state: extBook1Url, setter: setExtBook1Url, placeholder: 'https://www.amazon.com.mx/...' },
+                        { label: 'Enlace Amazon Libro 2', state: extBook2Url, setter: setExtBook2Url, placeholder: 'https://www.amazon.com.mx/...' },
+                        { label: 'Enlace "Ver todos mis libros en Amazon"', state: extAmazonAuthorUrl, setter: setExtAmazonAuthorUrl, placeholder: 'https://www.amazon.com.mx/stores/author/...' },
+                      ].map(({ label, state, setter, placeholder }) => (
+                        <div key={label} className="space-y-2">
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">{label}</label>
+                          <input
+                            type="url"
+                            value={state}
+                            onChange={e => setter(e.target.value)}
+                            placeholder={placeholder}
+                            className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all font-mono text-xs"
+                          />
                         </div>
                       ))}
                     </div>
