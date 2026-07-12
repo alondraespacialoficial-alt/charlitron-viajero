@@ -3,8 +3,8 @@
  * Permite que la app se descargue y funcione offline
  */
 
-const CACHE_NAME = 'charlitron-v3';
-const IMAGE_CACHE_NAME = 'charlitron-images-v3';
+const CACHE_NAME = 'charlitron-v4';
+const IMAGE_CACHE_NAME = 'charlitron-images-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -129,8 +129,13 @@ self.addEventListener('fetch', event => {
             if (response) {
               return response;
             }
-            // Si no está en cache, retornar offline page
-            return caches.match('/index.html');
+            // Solo retornar index.html para peticiones de navegación (HTML)
+            const acceptHeader = event.request.headers.get('Accept') || '';
+            if (event.request.mode === 'navigate' || acceptHeader.includes('text/html')) {
+              return caches.match('/index.html');
+            }
+            // Para fuentes, estilos, scripts externos: respuesta vacía para no romper MIME
+            return new Response('', { status: 503 });
           });
       })
   );
