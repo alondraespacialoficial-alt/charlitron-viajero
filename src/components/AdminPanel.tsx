@@ -84,6 +84,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
   const [heroBgUrl, setHeroBgUrl] = useState('');
+  const [avatarsBgUrl, setAvatarsBgUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [chatbotUrl, setChatbotUrl] = useState('');
@@ -645,6 +646,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setHeroBgUrl(heroData.value);
       }
 
+      const { data: avatarsBgData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'avatars_bg_url')
+        .maybeSingle();
+      if (avatarsBgData) setAvatarsBgUrl(avatarsBgData.value);
+
       const { data: investigationData } = await supabase
         .from('site_settings')
         .select('value')
@@ -720,6 +728,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .upsert({ key: 'hero_bg_url', value: heroBgUrl });
       
       if (heroError) throw heroError;
+
+      const { error: avatarsBgError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'avatars_bg_url', value: avatarsBgUrl });
+      if (avatarsBgError) throw avatarsBgError;
 
       const { error: investigationError } = await supabase
         .from('site_settings')
@@ -1582,6 +1595,49 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {heroBgUrl && (
                           <div className="aspect-video rounded-xl overflow-hidden border-2 border-sepia-800">
                             <img src={heroBgUrl} alt="Hero Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 pt-6 border-t border-sepia-800">
+                      <label className="text-sepia-100 font-serif text-xl block">Fondo Galería de Avatares</label>
+                      <p className="text-sepia-400 text-sm">Imagen de fondo tenue (7% opacidad) en la sección de Avatares Históricos.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">URL o subir imagen</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={avatarsBgUrl}
+                              onChange={e => setAvatarsBgUrl(e.target.value)}
+                              className="flex-1 bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                              placeholder="https://... o sube desde tu dispositivo →"
+                            />
+                            <label
+                              className={`cursor-pointer flex items-center gap-2 px-4 rounded-xl border border-sepia-700 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 text-sm font-bold transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                              title="Subir imagen directamente a Supabase"
+                            >
+                              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                              <span className="hidden sm:inline">Subir</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const url = await handleImageUpload(file);
+                                  if (url) setAvatarsBgUrl(url);
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-sepia-600 text-xs">Pega una URL o sube directamente. La imagen se muestra al 7% de opacidad para no tapar el texto.</p>
+                        </div>
+                        {avatarsBgUrl && (
+                          <div className="aspect-video rounded-xl overflow-hidden border-2 border-sepia-800">
+                            <img src={avatarsBgUrl} alt="Avatares BG Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                         )}
                       </div>

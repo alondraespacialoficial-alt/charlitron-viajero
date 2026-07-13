@@ -179,6 +179,16 @@ interface AvatarSectionProps {
 export const AvatarSection: React.FC<AvatarSectionProps> = ({
   accessPassword = '',
 }) => {
+  const [avatarsBgUrl, setAvatarsBgUrl] = React.useState('');
+
+  useEffect(() => {
+    supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'avatars_bg_url')
+      .maybeSingle()
+      .then(({ data }) => { if (data?.value) setAvatarsBgUrl(data.value); });
+  }, []);
   const [step, setStep]                     = useState<Step>('select');
   const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
   const [avatars, setAvatars]               = useState<Avatar[]>([]);
@@ -432,7 +442,26 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   };
 
   return (
-    <section ref={sectionRef} className="min-h-screen bg-sepia-950 flex flex-col items-center justify-center px-6 py-16">
+    <section
+      ref={sectionRef}
+      className="min-h-screen bg-sepia-950 flex flex-col items-center justify-center px-6 py-16 relative"
+    >
+      {/* Fondo estático tenue de la galería */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: `url(https://osulhjzqgqzodyjamrmn.supabase.co/storage/v1/object/public/images/2806ebb1-b2a1-4ac2-bbcb-61778e40db26.png)`,
+          opacity: 0.08,
+        }}
+      />
+      {avatarsBgUrl && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+          style={{ backgroundImage: `url(${avatarsBgUrl})`, opacity: 0.07 }}
+        />
+      )}
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
           <p className="text-sepia-500 text-xs uppercase tracking-[0.25em] mb-3">Charlitron® Viajero del Tiempo</p>
