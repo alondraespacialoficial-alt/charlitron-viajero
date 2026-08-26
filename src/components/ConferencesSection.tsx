@@ -148,12 +148,34 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
 
       if (error) throw error;
       setSubmittedTicket(data);
+      notifyTelegramRegistration(data, selectedConference, collaboratorName);
     } catch (err: any) {
       console.error('Error registering ticket:', err);
       setFormError('Ocurrió un error al registrar tu boleto. Intenta de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Aviso a Telegram: no debe interrumpir el registro si falla
+  const notifyTelegramRegistration = (
+    ticket: ConferenceTicket,
+    conference: Conference,
+    collaboratorName: string | null
+  ) => {
+    fetch('/api/notify-telegram-registration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conference_title: conference.title,
+        event_date: conference.event_date,
+        folio: ticket.folio,
+        attendee_name: ticket.attendee_name,
+        attendee_email: ticket.attendee_email,
+        attendee_phone: ticket.attendee_phone,
+        collaborator_name: collaboratorName,
+      }),
+    }).catch((err) => console.error('Error notificando a Telegram:', err));
   };
 
   // ── WhatsApp link ─────────────────────────────────────────────────
