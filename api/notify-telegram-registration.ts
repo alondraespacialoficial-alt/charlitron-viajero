@@ -12,6 +12,7 @@ interface RegistrationPayload {
   attendee_email?: unknown;
   attendee_phone?: unknown;
   collaborator_name?: unknown;
+  status?: unknown; // 'registered' (default) | 'paid'
 }
 
 function sanitize(value: unknown, maxLen = 200): string {
@@ -40,13 +41,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const attendeeEmail = sanitize(body.attendee_email, 150);
   const attendeePhone = sanitize(body.attendee_phone, 50);
   const collaboratorName = sanitize(body.collaborator_name, 150);
+  const isPaid = sanitize(body.status, 20) === 'paid';
 
   if (!attendeeName) {
     return res.status(400).json({ error: 'Falta el nombre del asistente.' });
   }
 
   const lines = [
-    '🎟️ Nuevo registro a conferencia',
+    isPaid ? '✅ Pago confirmado' : '🎟️ Nuevo registro a conferencia',
     `Evento: ${conferenceTitle}`,
     eventDate ? `Fecha: ${eventDate}` : null,
     `Folio: ${folio}`,

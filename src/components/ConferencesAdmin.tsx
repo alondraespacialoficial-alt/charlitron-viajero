@@ -251,6 +251,10 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
 
       if (error) throw error;
       setMessage({ type: 'success', text: `Boleto marcado como ${statusLabel(newStatus)}` });
+      if (newStatus === 'paid') {
+        const ticket = tickets.find((t) => t.id === ticketId);
+        if (ticket) notifyTelegramPaid(ticket);
+      }
       if (selectedConference) fetchTickets(selectedConference.id);
     } catch (err) {
       console.error('Error updating ticket:', err);
@@ -258,6 +262,24 @@ export const ConferencesAdmin: React.FC<ConferencesAdminProps> = () => {
     } finally {
       setUpdatingStatus(null);
     }
+  };
+
+  // Aviso a Telegram cuando se confirma el pago: no debe interrumpir el flujo si falla
+  const notifyTelegramPaid = (ticket: ConferenceTicket) => {
+    fetch('/api/notify-telegram-registration', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conference_title: selectedConference?.title,
+        event_date: selectedConference?.event_date,
+        folio: ticket.folio,
+        attendee_name: ticket.attendee_name,
+        attendee_email: ticket.attendee_email,
+        attendee_phone: ticket.attendee_phone,
+        collaborator_name: ticket.collaborator_name,
+        status: 'paid',
+      }),
+    }).catch((err) => console.error('Error notificando a Telegram:', err));
   };
 
   const handleSavePaymentNote = async (ticketId: string) => {
