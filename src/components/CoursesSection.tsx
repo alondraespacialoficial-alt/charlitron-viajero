@@ -50,7 +50,7 @@ export const CoursesSection: React.FC = () => {
 
   // Register
   const [showRegister, setShowRegister] = useState(false);
-  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '' });
+  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', wants_promos: false });
   const [isRegistering, setIsRegistering] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
   const [registeredEnrollment, setRegisteredEnrollment] = useState<CourseEnrollment | null>(null);
@@ -168,7 +168,7 @@ export const CoursesSection: React.FC = () => {
     setSelectedCourse(course);
     setShowRegister(false);
     setRegisteredEnrollment(null);
-    setRegForm({ name: '', email: '', phone: '' });
+    setRegForm({ name: '', email: '', phone: '', wants_promos: false });
     setRegError(null);
     await fetchPreviewLessons(course.id);
   };
@@ -194,6 +194,7 @@ export const CoursesSection: React.FC = () => {
       if (error) throw error;
       setRegisteredEnrollment(data);
       sendWelcomeEmail(data.student_email, data.student_name);
+      if (regForm.wants_promos) subscribeNewsletter(data.student_email, data.student_name);
     } catch {
       setRegError('Error al registrarse. Intenta de nuevo.');
     } finally {
@@ -209,6 +210,15 @@ export const CoursesSection: React.FC = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, context: 'course' }),
     }).catch((err) => console.error('Error enviando correo de bienvenida:', err));
+  };
+
+  const subscribeNewsletter = (email: string, name: string) => {
+    if (!email) return;
+    fetch('/api/subscribe-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, interest: 'course' }),
+    }).catch((err) => console.error('Error al suscribir al newsletter:', err));
   };
 
   // ── Access with code ──────────────────────────────────────────────
@@ -2011,6 +2021,15 @@ export const CoursesSection: React.FC = () => {
                         />
                       </div>
                     ))}
+                    <label className="flex items-start gap-2 text-sepia-400 text-xs leading-relaxed cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={regForm.wants_promos}
+                        onChange={(e) => setRegForm({ ...regForm, wants_promos: e.target.checked })}
+                        className="mt-0.5 accent-sepia-500"
+                      />
+                      Quiero recibir promociones y avisos de próximos cursos por correo.
+                    </label>
                     <div className="flex gap-2 pt-2">
                       <button type="button" onClick={() => setShowRegister(false)} className="flex-1 bg-sepia-800 hover:bg-sepia-700 text-sepia-400 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all">
                         Atrás

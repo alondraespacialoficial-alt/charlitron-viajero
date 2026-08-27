@@ -28,6 +28,7 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
     attendee_email: '',
     attendee_phone: '',
     collaborator_code: '',
+    wants_promos: false,
   });
 
   // ── Ticket lookup ─────────────────────────────────────────────────
@@ -86,7 +87,7 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
     setShowForm(true);
     setSubmittedTicket(null);
     setFormError(null);
-    setForm({ attendee_name: '', attendee_email: '', attendee_phone: '', collaborator_code: '' });
+    setForm({ attendee_name: '', attendee_email: '', attendee_phone: '', collaborator_code: '', wants_promos: false });
   };
 
   const handleCloseForm = () => {
@@ -150,6 +151,7 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
       setSubmittedTicket(data);
       notifyTelegramRegistration(data, selectedConference, collaboratorName);
       sendWelcomeEmail(data.attendee_email, data.attendee_name);
+      if (form.wants_promos) subscribeNewsletter(data.attendee_email, data.attendee_name);
     } catch (err: any) {
       console.error('Error registering ticket:', err);
       setFormError('Ocurrió un error al registrar tu boleto. Intenta de nuevo.');
@@ -187,6 +189,15 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, context: 'conference' }),
     }).catch((err) => console.error('Error enviando correo de bienvenida:', err));
+  };
+
+  const subscribeNewsletter = (email: string, name: string) => {
+    if (!email || email === 'sin-correo@reserva.local') return;
+    fetch('/api/subscribe-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, interest: 'conference' }),
+    }).catch((err) => console.error('Error al suscribir al newsletter:', err));
   };
 
   // ── WhatsApp link ─────────────────────────────────────────────────
@@ -1362,6 +1373,16 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
                         className="w-full bg-sepia-800 border border-sepia-700 rounded-xl px-4 py-3 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 transition-all"
                       />
                     </div>
+
+                    <label className="flex items-start gap-2 text-sepia-400 text-xs leading-relaxed cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={form.wants_promos}
+                        onChange={(e) => setForm({ ...form, wants_promos: e.target.checked })}
+                        className="mt-0.5 accent-sepia-500"
+                      />
+                      Quiero recibir promociones y avisos de próximas conferencias por correo.
+                    </label>
 
                     <div className="space-y-1">
                       <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500">
