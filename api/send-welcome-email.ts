@@ -38,6 +38,9 @@ function buildHtml(name: string, context: 'conference' | 'course'): string {
       <p style="margin-top:24px; font-size:14px; color:#7a6a58;">
         — El equipo de Charlitron Viajero del Tiempo
       </p>
+      <p style="margin-top:16px; font-size:12px; color:#a08d78; border-top:1px solid #e6d7bd; padding-top:12px;">
+        Este es un correo automático, por favor no respondas a este mensaje. Si necesitas ayuda, contáctanos por WhatsApp.
+      </p>
     </div>
   `;
 }
