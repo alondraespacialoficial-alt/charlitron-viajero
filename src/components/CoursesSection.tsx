@@ -193,11 +193,22 @@ export const CoursesSection: React.FC = () => {
         .single();
       if (error) throw error;
       setRegisteredEnrollment(data);
+      sendWelcomeEmail(data.student_email, data.student_name);
     } catch {
       setRegError('Error al registrarse. Intenta de nuevo.');
     } finally {
       setIsRegistering(false);
     }
+  };
+
+  // Correo de bienvenida: no debe interrumpir el registro si falla
+  const sendWelcomeEmail = (email: string, name: string) => {
+    if (!email) return;
+    fetch('/api/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, context: 'course' }),
+    }).catch((err) => console.error('Error enviando correo de bienvenida:', err));
   };
 
   // ── Access with code ──────────────────────────────────────────────

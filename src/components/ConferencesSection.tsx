@@ -149,6 +149,7 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
       if (error) throw error;
       setSubmittedTicket(data);
       notifyTelegramRegistration(data, selectedConference, collaboratorName);
+      sendWelcomeEmail(data.attendee_email, data.attendee_name);
     } catch (err: any) {
       console.error('Error registering ticket:', err);
       setFormError('Ocurrió un error al registrar tu boleto. Intenta de nuevo.');
@@ -176,6 +177,16 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
         collaborator_name: collaboratorName,
       }),
     }).catch((err) => console.error('Error notificando a Telegram:', err));
+  };
+
+  // Correo de bienvenida: no debe interrumpir el registro si falla
+  const sendWelcomeEmail = (email: string, name: string) => {
+    if (!email || email === 'sin-correo@reserva.local') return;
+    fetch('/api/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, context: 'conference' }),
+    }).catch((err) => console.error('Error enviando correo de bienvenida:', err));
   };
 
   // ── WhatsApp link ─────────────────────────────────────────────────
