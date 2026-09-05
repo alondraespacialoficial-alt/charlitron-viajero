@@ -1774,6 +1774,7 @@ export default function App() {
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [jardinCoverUrl, setJardinCoverUrl] = useState('');
+  const [jardinIntroVideoUrl, setJardinIntroVideoUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [logoUrl, setLogoUrl] = useState('https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png');
   const [biographyPhotoUrl, setBiographyPhotoUrl] = useState('https://image2url.com/r2/default/images/1774207717060-c5974088-18bf-4a0f-956b-67625c091acb.png');
@@ -1835,6 +1836,13 @@ export default function App() {
         .eq('key', 'jardin_cover_url')
         .maybeSingle();
       if (jardinCoverData) setJardinCoverUrl(jardinCoverData.value);
+
+      const { data: jardinIntroVideoData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'jardin_intro_video_url')
+        .maybeSingle();
+      if (jardinIntroVideoData) setJardinIntroVideoUrl(jardinIntroVideoData.value);
 
       const { data: investigationData } = await supabase
         .from('site_settings')
@@ -2494,6 +2502,7 @@ export default function App() {
                 stories={stories}
                 onOpenStory={(story) => { window.scrollTo(0, 0); setShowJardin(false); setJardinSlug(undefined); setSelectedStory(story); }}
                 coverUrl={jardinCoverUrl}
+                introVideoUrl={jardinIntroVideoUrl}
               />
             </Suspense>
           </motion.div>

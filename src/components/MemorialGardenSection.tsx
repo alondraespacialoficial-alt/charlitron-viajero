@@ -39,9 +39,10 @@ interface MemorialGardenSectionProps {
   stories: Story[];
   onOpenStory: (story: Story) => void;
   coverUrl?: string;
+  introVideoUrl?: string;
 }
 
-export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory, coverUrl }) => {
+export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory, coverUrl, introVideoUrl }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Memorial[]>([]);
   const [searching, setSearching] = useState(false);
@@ -64,6 +65,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [messageSent, setMessageSent] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [linkedFamilyMember, setLinkedFamilyMember] = useState<{ name: string; relationship?: string; photo_url?: string; birth_date?: string; death_date?: string; bio?: string } | null>(null);
+  const [introVideoVertical, setIntroVideoVertical] = useState(false);
 
   useEffect(() => {
     if (!activeSlug) {
@@ -233,7 +235,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 {memorial.epitaph && <p className="text-sepia-300 italic font-serif text-lg">"{memorial.epitaph}"</p>}
                 {memorial.bio_short && <p className="text-sepia-400 text-sm max-w-xl mx-auto">{memorial.bio_short}</p>}
                 {memorial.tribute_video_url && (
-                  <video controls src={memorial.tribute_video_url} className="w-full max-w-md mx-auto rounded-2xl border border-sepia-700 shadow-xl" />
+                  <video controls src={memorial.tribute_video_url} className="w-full max-w-md max-h-[70vh] mx-auto rounded-2xl border border-sepia-700 shadow-xl" />
                 )}
               </div>
 
@@ -443,6 +445,24 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
             Un espacio tranquilo para conservar y visitar la memoria de quienes ya no están.
           </p>
         </div>
+
+        {introVideoUrl && (
+          <div
+            className={`mx-auto mb-10 bg-black rounded-2xl overflow-hidden border border-sepia-800 shadow-xl ${
+              introVideoVertical ? 'max-w-[280px] aspect-[9/16]' : 'max-w-2xl aspect-video'
+            }`}
+          >
+            <video
+              src={introVideoUrl}
+              controls
+              className="w-full h-full"
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                setIntroVideoVertical(v.videoHeight > v.videoWidth);
+              }}
+            />
+          </div>
+        )}
 
         <form onSubmit={runSearch} className="flex gap-2 mb-8">
           <input

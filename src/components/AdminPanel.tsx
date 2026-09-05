@@ -88,6 +88,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [avatarsBgUrl, setAvatarsBgUrl] = useState('');
   const [jardinCoverUrl, setJardinCoverUrl] = useState('');
+  const [jardinIntroVideoUrl, setJardinIntroVideoUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [chatbotUrl, setChatbotUrl] = useState('');
@@ -709,6 +710,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .maybeSingle();
       if (jardinCoverData) setJardinCoverUrl(jardinCoverData.value);
 
+      const { data: jardinIntroVideoData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'jardin_intro_video_url')
+        .maybeSingle();
+      if (jardinIntroVideoData) setJardinIntroVideoUrl(jardinIntroVideoData.value);
+
       const { data: investigationData } = await supabase
         .from('site_settings')
         .select('value')
@@ -795,6 +803,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .upsert({ key: 'jardin_cover_url', value: jardinCoverUrl });
       if (jardinCoverError) throw jardinCoverError;
 
+      const { error: jardinIntroVideoError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'jardin_intro_video_url', value: jardinIntroVideoUrl });
+      if (jardinIntroVideoError) throw jardinIntroVideoError;
+
       const { error: investigationError } = await supabase
         .from('site_settings')
         .upsert({ key: 'investigation_enabled', value: investigationEnabled.toString() });
@@ -875,6 +888,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setMessage({ type: 'success', text: 'Video subido y guardado correctamente' });
     } catch (err) {
       console.error('Error uploading video:', err);
+      setMessage({ type: 'error', text: 'Error al subir el video' });
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  const handleJardinVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `jardin-intro-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('video')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('video')
+        .getPublicUrl(fileName);
+
+      setJardinIntroVideoUrl(publicUrl);
+
+      await supabase
+        .from('site_settings')
+        .upsert({ key: 'jardin_intro_video_url', value: publicUrl });
+
+      setMessage({ type: 'success', text: 'Video subido y guardado correctamente' });
+    } catch (err) {
+      console.error('Error uploading jardin video:', err);
       setMessage({ type: 'error', text: 'Error al subir el video' });
     } finally {
       setIsUploading(false);
@@ -1630,6 +1678,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         )}
                       </div>
                     )}
+
+                    <div className="space-y-4 pt-6 border-t border-sepia-800">
+                      <label className="text-sepia-100 font-serif text-xl block">Video del Jardín de la Memoria</label>
+                      <p className="text-sepia-400 text-sm">Video explicativo (¿de qué trata esta sección?) que aparece en la portada del Jardín. El formato vertical u horizontal se detecta solo, no hace falta indicarlo.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Enlace del video</label>
+                          <input
+                            type="text"
+                            value={jardinIntroVideoUrl}
+                            onChange={e => setJardinIntroVideoUrl(e.target.value)}
+                            className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-4 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                            placeholder="https://..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">O subir desde PC</label>
+                          <div className="relative">
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={handleJardinVideoUpload}
+                              className="hidden"
+                              id="jardin-intro-video-upload"
+                              disabled={isUploading}
+                            />
+                            <label
+                              htmlFor="jardin-intro-video-upload"
+                              className={`w-full bg-sepia-950 border border-sepia-800 border-dashed rounded-xl p-4 text-sepia-400 flex items-center justify-center gap-3 cursor-pointer hover:border-sepia-500 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                              {isUploading ? 'Subiendo...' : 'Seleccionar Video'}
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      {jardinIntroVideoUrl && (
+                        <video src={jardinIntroVideoUrl} controls className="mt-4 max-w-xs max-h-72 mx-auto rounded-2xl border border-sepia-800 bg-sepia-950" />
+                      )}
+                    </div>
 
                     <div className="space-y-4 pt-6 border-t border-sepia-800">
                       <label className="text-sepia-100 font-serif text-xl block">Imagen de Portada (Hero)</label>
