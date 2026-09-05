@@ -262,6 +262,11 @@ const SECTION_META: Record<string, { title: string; description: string; path: s
     description: 'Servicio de investigación genealógica y rescate de historia familiar. Descubre tus raíces con Charlitron® Viajero del Tiempo.',
     path: 'investiga',
   },
+  jardin: {
+    title: 'Jardín de la Memoria | Charlitron®',
+    description: 'Un espacio digital de homenaje para conservar y visitar la memoria de un ser querido: fotos, historia, música y recuerdos de familia.',
+    path: 'jardin',
+  },
 };
 
 export const setSectionMetaTags = (section: string) => {
@@ -297,4 +302,36 @@ export const resetMetaTags = () => {
   updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png');
   updateOrCreateMetaTag('og:url', baseUrl);
   updateOrCreateMetaTag('og:type', 'website');
+};
+
+/**
+ * Meta tags para un memorial individual del Jardín de la Memoria
+ */
+export const updateMemorialMetaTags = (
+  fullName: string,
+  epitaph: string | null | undefined,
+  photoUrl: string | null | undefined,
+  slug: string
+) => {
+  const url = `https://charlitronviajerodeltiempo.com/jardin/${slug}`;
+  const title = `${fullName} | Jardín de la Memoria · Charlitron®`;
+  const description = epitaph || `Visita el espacio de memoria de ${fullName} en el Jardín de la Memoria.`;
+  document.title = title;
+  updateOrCreateMetaTag('description', description);
+  updateOrCreateMetaTag('og:title', title);
+  updateOrCreateMetaTag('og:description', description);
+  if (photoUrl) updateOrCreateMetaTag('og:image', photoUrl);
+  updateOrCreateMetaTag('og:url', url);
+  updateOrCreateMetaTag('og:type', 'profile');
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', url);
+};
+
+/**
+ * URL de WhatsApp para compartir un memorial
+ */
+export const generateMemorialShareUrl = (fullName: string, slug: string): string => {
+  const url = `https://charlitronviajerodeltiempo.com/jardin/${slug}`;
+  const text = encodeURIComponent(`🌷 En memoria de *${fullName}*\n\nVisita su espacio en el Jardín de la Memoria:\n\n${url}`);
+  return `https://wa.me/?text=${text}`;
 };

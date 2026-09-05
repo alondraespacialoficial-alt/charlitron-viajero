@@ -209,6 +209,54 @@ export interface Avatar {
 }
 
 // ==========================================
+// TIPOS PARA JARDÍN DE LA MEMORIA
+// ==========================================
+export type MemorialVisibility = 'public' | 'shareable' | 'private';
+
+export interface Memorial {
+  id: string;
+  slug: string;
+  full_name: string;
+  family_label?: string | null;
+  photo_url?: string | null;
+  birth_date?: string | null;
+  death_date?: string | null;
+  epitaph?: string | null;
+  bio_short?: string | null;
+  visibility: MemorialVisibility;
+  access_code?: string | null;
+  story_id?: string | null;
+  family_member_id?: string | null;
+  tribute_song_url?: string | null;
+  spotify_link?: string | null;
+  requires_approval: boolean;
+  client_name?: string | null;
+  client_contact?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type MemorialGestureType = 'flower_rose' | 'flower_lily' | 'flower_sunflower' | 'flower_daisy' | 'candle';
+
+export interface MemorialGesture {
+  id: string;
+  memorial_id: string;
+  gesture_type: MemorialGestureType;
+  visitor_name?: string | null;
+  created_at?: string;
+}
+
+export interface MemorialGuestbookEntry {
+  id: string;
+  memorial_id: string;
+  visitor_name: string;
+  message: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at?: string;
+}
+
+
+// ==========================================
 // TIPOS PARA CONFERENCIAS Y BOLETOS
 // ==========================================
 export interface Conference {
