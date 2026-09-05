@@ -62,6 +62,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [linkedFamilyMember, setLinkedFamilyMember] = useState<{ name: string; relationship?: string; photo_url?: string; birth_date?: string; death_date?: string; bio?: string } | null>(null);
 
   useEffect(() => {
     if (!activeSlug) {
@@ -105,6 +106,18 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       ]);
       setGestures((gestureData as MemorialGesture[]) || []);
       setGuestbook((guestbookData as MemorialGuestbookEntry[]) || []);
+      if (m.family_member_id) {
+        // Solo se muestra una tarjeta de vista previa; el Árbol completo
+        // sigue protegido por su propia clave de acceso familiar.
+        const { data: memberData } = await supabase
+          .from('family_members')
+          .select('name, relationship, photo_url, birth_date, death_date, bio')
+          .eq('id', m.family_member_id)
+          .maybeSingle();
+        setLinkedFamilyMember(memberData as typeof linkedFamilyMember);
+      } else {
+        setLinkedFamilyMember(null);
+      }
     }
     setLoadingMemorial(false);
   };
@@ -221,6 +234,27 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 >
                   <ExternalLink className="w-4 h-4" /> Conocer su historia
                 </button>
+              )}
+
+              {linkedFamilyMember && (
+                <div className="bg-sepia-900/40 border border-sepia-800 rounded-2xl p-5">
+                  <h3 className="text-sepia-300 text-xs font-bold uppercase tracking-widest mb-3">Su lugar en el Árbol de Linaje</h3>
+                  <div className="flex items-center gap-4">
+                    {linkedFamilyMember.photo_url
+                      ? <img src={linkedFamilyMember.photo_url} alt={linkedFamilyMember.name} className="w-14 h-14 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
+                      : <span className="text-3xl flex-shrink-0">🌳</span>
+                    }
+                    <div className="min-w-0">
+                      <p className="text-sepia-100 font-serif">{linkedFamilyMember.name}</p>
+                      {linkedFamilyMember.relationship && <p className="text-sepia-500 text-xs">{linkedFamilyMember.relationship}</p>}
+                      {(linkedFamilyMember.birth_date || linkedFamilyMember.death_date) && (
+                        <p className="text-sepia-600 text-xs">{linkedFamilyMember.birth_date || '—'} · {linkedFamilyMember.death_date || '—'}</p>
+                      )}
+                    </div>
+                  </div>
+                  {linkedFamilyMember.bio && <p className="text-sepia-400 text-sm mt-3">{linkedFamilyMember.bio}</p>}
+                  <p className="text-sepia-600 text-xs mt-3">El Árbol de Linaje completo es privado; solo la familia con su clave de acceso puede recorrerlo.</p>
+                </div>
               )}
 
               {/* Música */}
