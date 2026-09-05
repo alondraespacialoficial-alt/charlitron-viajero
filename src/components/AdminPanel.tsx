@@ -100,7 +100,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [extBook2Url, setExtBook2Url] = useState('');
   const [extAmazonAuthorUrl, setExtAmazonAuthorUrl] = useState('');
   const [investigationCodes, setInvestigationCodes] = useState<{ id: string, code: string, is_used: boolean, created_at: string }[]>([]);
-  const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string, expires_at?: string }[]>([]);
+  const [familyKeys, setFamilyKeys] = useState<{ id: string, key_code: string, duration_days: number, is_used: boolean, created_at: string, expires_at?: string, client_name?: string, client_contact?: string }[]>([]);
+  const [newKeyClientName, setNewKeyClientName] = useState('');
+  const [newKeyClientContact, setNewKeyClientContact] = useState('');
+  const [familyKeySearch, setFamilyKeySearch] = useState('');
+  const [editingKeyClientId, setEditingKeyClientId] = useState<string | null>(null);
+  const [editingKeyClientName, setEditingKeyClientName] = useState('');
+  const [editingKeyClientContact, setEditingKeyClientContact] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -432,18 +438,58 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const generateFamilyKey = async (days: number) => {
+    if (!newKeyClientName.trim()) {
+      setMessage({ type: 'error', text: 'Escribe el nombre del cliente antes de generar la clave' });
+      setTimeout(() => setMessage(null), 3000);
+      return;
+    }
     const newKey = Math.random().toString(36).substring(2, 12).toUpperCase();
     try {
       const { data, error } = await supabase
         .from('access_keys')
-        .insert([{ key_code: newKey, duration_days: days }])
+        .insert([{
+          key_code: newKey,
+          duration_days: days,
+          client_name: newKeyClientName.trim(),
+          client_contact: newKeyClientContact.trim() || null,
+        }])
         .select();
       if (error) throw error;
       if (data) setFamilyKeys([data[0], ...familyKeys]);
-      setMessage({ type: 'success', text: `Clave de ${days} días generada` });
+      const clientName = newKeyClientName.trim();
+      setNewKeyClientName('');
+      setNewKeyClientContact('');
+      setMessage({ type: 'success', text: `Clave de ${days} días generada para ${clientName}` });
     } catch (err) {
       console.error('Error generating family key:', err);
       setMessage({ type: 'error', text: 'Error al generar clave' });
+    } finally {
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  const startEditingKeyClient = (k: { id: string, client_name?: string, client_contact?: string }) => {
+    setEditingKeyClientId(k.id);
+    setEditingKeyClientName(k.client_name || '');
+    setEditingKeyClientContact(k.client_contact || '');
+  };
+
+  const saveKeyClient = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('access_keys')
+        .update({
+          client_name: editingKeyClientName.trim() || null,
+          client_contact: editingKeyClientContact.trim() || null,
+        })
+        .eq('id', id);
+      if (error) throw error;
+      setFamilyKeys(familyKeys.map(k => k.id === id ? { ...k, client_name: editingKeyClientName.trim(), client_contact: editingKeyClientContact.trim() } : k));
+      setEditingKeyClientId(null);
+      setMessage({ type: 'success', text: 'Cliente actualizado' });
+    } catch (err) {
+      console.error('Error actualizando cliente de la clave:', err);
+      setMessage({ type: 'error', text: 'Error al actualizar cliente' });
     } finally {
       setTimeout(() => setMessage(null), 3000);
     }
@@ -1425,7 +1471,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className={`p-4 rounded-xl transition-all flex items-center justify-between ${k.is_used ? 'bg-sepia-950/30 opacity-60' : 'bg-sepia-900/20 hover:bg-sepia-900/50 border border-transparent'}`}
                     >
                       <div className="overflow-hidden">
-                        <h4 className="text-sepia-100 font-mono text-sm tracking-wider">{k.key_code}</h4>
+                        <h4 className="text-sepia-100 font-medium text-sm truncate">{k.client_name || 'Sin nombre de cliente'}</h4>
+                        <p className="text-sepia-500 font-mono text-[10px] tracking-wider truncate">{k.key_code}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${k.is_used ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
                             {k.is_used ? 'USADA' : 'DISPONIBLE'}
@@ -1804,6 +1851,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <div className="bg-sepia-950/50 border border-sepia-800 rounded-3xl p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="space-y-2">
+                      <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Nombre del cliente *</label>
+                      <input
+                        type="text"
+                        value={newKeyClientName}
+                        onChange={e => setNewKeyClientName(e.target.value)}
+                        placeholder="Ej. María Pérez"
+                        className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Teléfono / contacto (opcional)</label>
+                      <input
+                        type="text"
+                        value={newKeyClientContact}
+                        onChange={e => setNewKeyClientContact(e.target.value)}
+                        placeholder="Ej. WhatsApp 55 1234 5678"
+                        className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     {[7, 15, 30].map(days => (
                       <button
@@ -1823,56 +1893,122 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-sepia-400 text-xs uppercase tracking-[0.2em] font-bold border-b border-sepia-800 pb-2">Claves Generadas Recientemente</h3>
+                    <div className="flex items-center justify-between border-b border-sepia-800 pb-2 gap-4">
+                      <h3 className="text-sepia-400 text-xs uppercase tracking-[0.2em] font-bold whitespace-nowrap">Claves Generadas Recientemente</h3>
+                      <input
+                        type="text"
+                        value={familyKeySearch}
+                        onChange={e => setFamilyKeySearch(e.target.value)}
+                        placeholder="Buscar por cliente o clave..."
+                        className="bg-sepia-950 border border-sepia-800 rounded-lg px-3 py-1.5 text-sepia-100 text-sm focus:border-sepia-500 outline-none transition-all w-full max-w-xs"
+                      />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {familyKeys.map(k => (
-                        <div key={k.id} className={`p-4 rounded-xl border flex items-center justify-between ${k.expires_at ? (new Date(k.expires_at) < new Date() ? 'bg-red-950/20 border-red-900/30 opacity-60' : 'bg-sepia-950/20 border-sepia-900 opacity-80') : 'bg-sepia-900/40 border-sepia-800'}`}>
-                          <div>
-                            <span className="block font-mono text-lg text-sepia-100 tracking-widest">{k.key_code}</span>
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className="text-sepia-500 text-[10px] uppercase tracking-widest">{k.duration_days} Días</span>
-                              <span className={`text-[10px] font-bold ${!k.expires_at ? 'text-green-500' : (new Date(k.expires_at) < new Date() ? 'text-red-500' : 'text-orange-500')}`}>
-                                {!k.expires_at ? 'DISPONIBLE' : (new Date(k.expires_at) < new Date() ? 'VENCIDA' : 'ACTIVA')}
-                              </span>
-                              {k.expires_at && (
-                                <span className="text-sepia-500 text-[10px]">
-                                  {new Date(k.expires_at) < new Date() ? 'Venció: ' : 'Expira: '}
-                                  {new Date(k.expires_at).toLocaleDateString()}
+                      {familyKeys
+                        .filter(k => {
+                          const q = familyKeySearch.trim().toLowerCase();
+                          if (!q) return true;
+                          return k.key_code.toLowerCase().includes(q) || (k.client_name || '').toLowerCase().includes(q);
+                        })
+                        .map(k => (
+                        <div key={k.id} className={`p-4 rounded-xl border ${k.expires_at ? (new Date(k.expires_at) < new Date() ? 'bg-red-950/20 border-red-900/30 opacity-60' : 'bg-sepia-950/20 border-sepia-900 opacity-80') : 'bg-sepia-900/40 border-sepia-800'}`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="block font-mono text-lg text-sepia-100 tracking-widest">{k.key_code}</span>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-sepia-500 text-[10px] uppercase tracking-widest">{k.duration_days} Días</span>
+                                <span className={`text-[10px] font-bold ${!k.expires_at ? 'text-green-500' : (new Date(k.expires_at) < new Date() ? 'text-red-500' : 'text-orange-500')}`}>
+                                  {!k.expires_at ? 'DISPONIBLE' : (new Date(k.expires_at) < new Date() ? 'VENCIDA' : 'ACTIVA')}
                                 </span>
+                                {k.expires_at && (
+                                  <span className="text-sepia-500 text-[10px]">
+                                    {new Date(k.expires_at) < new Date() ? 'Venció: ' : 'Expira: '}
+                                    {new Date(k.expires_at).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(k.key_code);
+                                  setMessage({ type: 'success', text: 'Copiado al portapapeles' });
+                                  setTimeout(() => setMessage(null), 2000);
+                                }}
+                                className="p-2 text-sepia-400 hover:text-sepia-100 hover:bg-sepia-800 rounded-lg transition-all"
+                                title="Copiar Clave"
+                              >
+                                <Share2 className="w-4 h-4" />
+                              </button>
+                              {k.expires_at && new Date(k.expires_at) < new Date() && (
+                                <button 
+                                  onClick={() => renewFamilyKey(k.id, k.duration_days)}
+                                  className="p-2 text-green-400 hover:text-green-100 hover:bg-green-900/20 rounded-lg transition-all"
+                                  title={`Renovar ${k.duration_days} días más`}
+                                >
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
                               )}
+                              <button 
+                                onClick={() => deleteFamilyKey(k.id)}
+                                className="p-2 text-red-400 hover:text-red-100 hover:bg-red-900/20 rounded-lg transition-all"
+                                title="Eliminar Clave"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(k.key_code);
-                                setMessage({ type: 'success', text: 'Copiado al portapapeles' });
-                                setTimeout(() => setMessage(null), 2000);
-                              }}
-                              className="p-2 text-sepia-400 hover:text-sepia-100 hover:bg-sepia-800 rounded-lg transition-all"
-                              title="Copiar Clave"
+
+                          {editingKeyClientId === k.id ? (
+                            <div className="mt-3 pt-3 border-t border-sepia-800 space-y-2">
+                              <input
+                                type="text"
+                                value={editingKeyClientName}
+                                onChange={e => setEditingKeyClientName(e.target.value)}
+                                placeholder="Nombre del cliente"
+                                className="w-full bg-sepia-950 border border-sepia-800 rounded-lg px-3 py-1.5 text-sepia-100 text-sm focus:border-sepia-500 outline-none"
+                              />
+                              <input
+                                type="text"
+                                value={editingKeyClientContact}
+                                onChange={e => setEditingKeyClientContact(e.target.value)}
+                                placeholder="Teléfono / contacto"
+                                className="w-full bg-sepia-950 border border-sepia-800 rounded-lg px-3 py-1.5 text-sepia-100 text-sm focus:border-sepia-500 outline-none"
+                              />
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => saveKeyClient(k.id)}
+                                  className="flex-1 flex items-center justify-center gap-1 bg-sepia-500 hover:bg-sepia-400 text-sepia-950 text-xs font-bold py-1.5 rounded-lg transition-all"
+                                >
+                                  <Save className="w-3.5 h-3.5" /> Guardar
+                                </button>
+                                <button
+                                  onClick={() => setEditingKeyClientId(null)}
+                                  className="p-1.5 text-sepia-400 hover:text-sepia-100 hover:bg-sepia-800 rounded-lg transition-all"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditingKeyClient(k)}
+                              className="mt-3 pt-3 border-t border-sepia-800 w-full flex items-center justify-between gap-2 text-left group/client"
                             >
-                              <Share2 className="w-4 h-4" />
+                              <span className="overflow-hidden">
+                                <span className="block text-sepia-200 text-sm font-medium truncate">
+                                  {k.client_name || 'Sin nombre de cliente'}
+                                </span>
+                                {k.client_contact && (
+                                  <span className="block text-sepia-500 text-[10px] truncate">{k.client_contact}</span>
+                                )}
+                              </span>
+                              <Edit2 className="w-3.5 h-3.5 text-sepia-500 group-hover/client:text-sepia-200 transition-colors shrink-0" />
                             </button>
-                            {k.expires_at && new Date(k.expires_at) < new Date() && (
-                              <button 
-                                onClick={() => renewFamilyKey(k.id, k.duration_days)}
-                                className="p-2 text-green-400 hover:text-green-100 hover:bg-green-900/20 rounded-lg transition-all"
-                                title={`Renovar ${k.duration_days} días más`}
-                              >
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => deleteFamilyKey(k.id)}
-                              className="p-2 text-red-400 hover:text-red-100 hover:bg-red-900/20 rounded-lg transition-all"
-                              title="Eliminar Clave"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          )}
                         </div>
                       ))}
+
                     </div>
                   </div>
                 </div>
