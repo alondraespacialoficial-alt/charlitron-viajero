@@ -36,6 +36,7 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [avatarSearch, setAvatarSearch] = useState('');
 
   // ─── Códigos privados (avatar_private_codes) ───────────────────────────────
   type PrivateCode = {
@@ -285,6 +286,18 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
     await supabase.from('avatars').update({ order_index: a.order_index }).eq('id', b.id);
     fetchAvatars();
   };
+
+  // Filtro global por nombre, cliente asignado o slug (útil con muchos avatares privados)
+  const filteredAvatars = (() => {
+    const q = avatarSearch.trim().toLowerCase();
+    if (!q) return avatars;
+    return avatars.filter(a =>
+      a.label.toLowerCase().includes(q) ||
+      a.slug.toLowerCase().includes(q) ||
+      (a.private_client_label ?? '').toLowerCase().includes(q) ||
+      (a.access_code ?? '').toLowerCase().includes(q)
+    );
+  })();
 
   return (
     <div className="space-y-6">
@@ -746,7 +759,7 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
       {/* ── Lista de avatares ─────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h3 className="text-sepia-300 font-bold uppercase tracking-widest text-xs">
-          Avatares ({avatars.length})
+          Avatares ({filteredAvatars.length}{avatarSearch.trim() ? ` de ${avatars.length}` : ''})
         </h3>
         <button
           onClick={() => { setEditing({ is_active: false, is_private: false, order_index: avatars.length, emoji: '🎭' }); setSlugEdited(false); }}
@@ -757,13 +770,40 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
         </button>
       </div>
 
+      {/* Buscador global: útil cuando un cliente pide su código y hay muchos avatares */}
+      <div className="relative">
+        <input
+          type="text"
+          value={avatarSearch}
+          onChange={(e) => setAvatarSearch(e.target.value)}
+          placeholder="Buscar por nombre, cliente o slug (ej: Familia Pérez)…"
+          className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+        />
+        {avatarSearch.trim() && (
+          <button
+            type="button"
+            onClick={() => setAvatarSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-sepia-500 hover:text-sepia-200"
+            title="Limpiar búsqueda"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {avatars.length === 0 ? (
         <div className="bg-sepia-800/20 border border-dashed border-sepia-700 rounded-xl p-10 text-center text-sepia-600 text-sm">
           Sin avatares. Crea el primero o ejecuta el SQL de setup.
         </div>
+      ) : filteredAvatars.length === 0 ? (
+        <div className="bg-sepia-800/20 border border-dashed border-sepia-700 rounded-xl p-10 text-center text-sepia-600 text-sm">
+          Ningún avatar coincide con "{avatarSearch}".
+        </div>
       ) : (
         <div className="space-y-3">
-          {avatars.map((avatar, idx) => (
+          {filteredAvatars.map((avatar) => {
+            const idx = avatars.indexOf(avatar);
+            return (
             <div
               key={avatar.id}
               className="bg-sepia-800/30 border border-sepia-800 rounded-xl p-4 flex items-center gap-4"
@@ -803,6 +843,12 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
                   }`}>
                     {avatar.is_private ? 'Privado' : 'Público'}
                   </span>
+                  {avatar.is_private && avatar.private_client_label && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border text-purple-300 border-purple-700 bg-purple-900/20">
+                      <Users className="w-2.5 h-2.5" />
+                      {avatar.private_client_label}
+                    </span>
+                  )}
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                     avatar.is_active
                       ? 'text-green-400 border-green-700 bg-green-900/30'
@@ -872,7 +918,8 @@ export const AvatarsAdmin: React.FC<{ adminToken?: string }> = ({ adminToken = '
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {/* ── Consentimientos ───────────────────────────────────── */}
