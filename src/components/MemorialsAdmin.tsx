@@ -216,6 +216,24 @@ export const MemorialsAdmin: React.FC = () => {
     }
   };
 
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editing) return;
+    setIsUploadingVideo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `memorial-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('video').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('video').getPublicUrl(fileName);
+      setEditing({ ...editing, tribute_video_url: urlData.publicUrl });
+    } catch {
+      showMsg('error', 'Error al subir el video');
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!editing?.full_name?.trim()) { showMsg('error', 'El nombre completo es obligatorio'); return; }
     if (!editing?.slug?.trim()) { showMsg('error', 'El slug es obligatorio'); return; }
