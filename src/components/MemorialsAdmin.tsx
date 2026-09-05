@@ -36,6 +36,7 @@ export const MemorialsAdmin: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -238,6 +239,7 @@ export const MemorialsAdmin: React.FC = () => {
         family_member_id: editing.family_member_id || null,
         tribute_song_url: editing.tribute_song_url?.trim() || null,
         spotify_link: editing.spotify_link?.trim() || null,
+        tribute_video_url: editing.tribute_video_url?.trim() || null,
         requires_approval: editing.requires_approval ?? true,
         client_name: editing.client_name?.trim() || null,
         client_contact: editing.client_contact?.trim() || null,
@@ -506,6 +508,24 @@ export const MemorialsAdmin: React.FC = () => {
                   placeholder="https://open.spotify.com/track/…"
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
                 />
+              </div>
+
+              {/* Video homenaje */}
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Video homenaje <span className="normal-case text-sepia-600">(se muestra debajo de la foto)</span></label>
+                {editing.tribute_video_url && (
+                  <video controls src={editing.tribute_video_url} className="w-full max-w-xs rounded-xl border border-sepia-700" />
+                )}
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-2.5 hover:border-sepia-500 transition-all w-fit">
+                    {isUploadingVideo ? <Loader2 className="w-4 h-4 text-sepia-400 animate-spin" /> : <Upload className="w-4 h-4 text-sepia-400" />}
+                    <span className="text-sepia-400 text-xs">{isUploadingVideo ? 'Subiendo…' : 'Subir video (bucket: video)'}</span>
+                    <input type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} disabled={isUploadingVideo} />
+                  </label>
+                  {editing.tribute_video_url && (
+                    <button type="button" onClick={() => setEditing({ ...editing, tribute_video_url: '' })} className="text-sepia-500 hover:text-red-400 p-1.5"><X className="w-4 h-4" /></button>
+                  )}
+                </div>
               </div>
 
               {/* Vincular Historia */}

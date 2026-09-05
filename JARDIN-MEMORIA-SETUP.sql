@@ -129,6 +129,13 @@ CREATE POLICY "memorial_guestbook_delete" ON public.memorial_guestbook FOR DELET
 COMMIT;
 
 -- ============================================================
+-- MIGRACIÓN (fase 2): video homenaje — ejecutar una sola vez
+-- ============================================================
+-- Video subido al bucket "video" (ya existente), se muestra debajo
+-- de la foto principal en la página pública del memorial.
+ALTER TABLE public.memorials ADD COLUMN IF NOT EXISTS tribute_video_url TEXT;
+
+-- ============================================================
 -- EJEMPLOS DE USO (SQL Editor)
 -- ============================================================
 -- 1) Crear un memorial privado

@@ -229,6 +229,7 @@ export interface Memorial {
   family_member_id?: string | null;
   tribute_song_url?: string | null;
   spotify_link?: string | null;
+  tribute_video_url?: string | null;
   requires_approval: boolean;
   client_name?: string | null;
   client_contact?: string | null;

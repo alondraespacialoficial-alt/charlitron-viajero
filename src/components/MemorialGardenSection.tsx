@@ -38,9 +38,10 @@ interface MemorialGardenSectionProps {
   initialSlug?: string;
   stories: Story[];
   onOpenStory: (story: Story) => void;
+  coverUrl?: string;
 }
 
-export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory }) => {
+export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory, coverUrl }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Memorial[]>([]);
   const [searching, setSearching] = useState(false);
@@ -68,6 +69,13 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
     if (!activeSlug) {
       setSectionMetaTags('jardin');
     }
+  }, [activeSlug]);
+
+  // Al entrar o salir de un memorial el contenido cambia de largo；
+  // sin esto el "Volver al Jardín" parece no hacer nada si quedaste
+  // scrolleado abajo, porque la nueva vista es más corta.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [activeSlug]);
 
   const runSearch = async (e?: React.FormEvent) => {
@@ -224,6 +232,9 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 )}
                 {memorial.epitaph && <p className="text-sepia-300 italic font-serif text-lg">"{memorial.epitaph}"</p>}
                 {memorial.bio_short && <p className="text-sepia-400 text-sm max-w-xl mx-auto">{memorial.bio_short}</p>}
+                {memorial.tribute_video_url && (
+                  <video controls src={memorial.tribute_video_url} className="w-full max-w-md mx-auto rounded-2xl border border-sepia-700 shadow-xl" />
+                )}
               </div>
 
               {/* Conexiones */}
@@ -404,8 +415,20 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
 
   // ── Portada / buscador ────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-sepia-950 pt-20 pb-16">
-      <div className="max-w-3xl mx-auto px-6">
+    <div className="min-h-screen bg-sepia-950 pt-20 pb-16 relative overflow-hidden">
+      {coverUrl && (
+        <div className="absolute inset-0 z-0">
+          <img
+            src={coverUrl}
+            alt="Portada Jardín de la Memoria"
+            className="w-full h-full object-cover object-center"
+            referrerPolicy="no-referrer"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-sepia-950/50 via-sepia-950/70 to-sepia-950" />
+        </div>
+      )}
+      <div className="max-w-3xl mx-auto px-6 relative z-10">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors text-sm uppercase tracking-widest mb-8"

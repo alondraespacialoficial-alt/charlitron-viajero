@@ -87,6 +87,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [avatarsBgUrl, setAvatarsBgUrl] = useState('');
+  const [jardinCoverUrl, setJardinCoverUrl] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [chatbotUrl, setChatbotUrl] = useState('');
@@ -701,6 +702,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .maybeSingle();
       if (avatarsBgData) setAvatarsBgUrl(avatarsBgData.value);
 
+      const { data: jardinCoverData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'jardin_cover_url')
+        .maybeSingle();
+      if (jardinCoverData) setJardinCoverUrl(jardinCoverData.value);
+
       const { data: investigationData } = await supabase
         .from('site_settings')
         .select('value')
@@ -781,6 +789,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .from('site_settings')
         .upsert({ key: 'avatars_bg_url', value: avatarsBgUrl });
       if (avatarsBgError) throw avatarsBgError;
+
+      const { error: jardinCoverError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'jardin_cover_url', value: jardinCoverUrl });
+      if (jardinCoverError) throw jardinCoverError;
 
       const { error: investigationError } = await supabase
         .from('site_settings')
@@ -1783,6 +1796,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         { label: 'Banner plataformas digitales (entre About y Biografía)', state: extPlatformsBannerUrl, setter: setExtPlatformsBannerUrl, uploadId: 'ext-banner' },
                         { label: 'Portada Libro 1', state: extBook1CoverUrl, setter: setExtBook1CoverUrl, uploadId: 'ext-book1-cover' },
                         { label: 'Portada Libro 2', state: extBook2CoverUrl, setter: setExtBook2CoverUrl, uploadId: 'ext-book2-cover' },
+                        { label: 'Imagen de portada — Jardín de la Memoria', state: jardinCoverUrl, setter: setJardinCoverUrl, uploadId: 'ext-jardin-cover' },
                       ].map(({ label, state, setter, uploadId }) => (
                         <div key={uploadId} className="space-y-2">
                           <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">{label}</label>
