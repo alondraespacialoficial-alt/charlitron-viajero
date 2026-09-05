@@ -20,6 +20,19 @@ const FLOWER_OPTIONS: { type: 'flower_rose' | 'flower_lily' | 'flower_sunflower'
 
 const unlockKey = (slug: string) => `jardin_unlock_${slug}`;
 
+// Convierte un link normal de Spotify en la URL del reproductor embebido
+// (play/pausa dentro de la misma app, sin abrir Spotify en otra pestaña).
+function spotifyEmbedUrl(link: string): string | null {
+  try {
+    const url = new URL(link);
+    if (!url.hostname.includes('spotify.com')) return null;
+    const path = url.pathname.replace(/^\/intl-[a-z]{2}\//, '/').replace(/^\/embed\//, '/');
+    return `https://open.spotify.com/embed${path}?utm_source=generator&theme=0`;
+  } catch {
+    return null;
+  }
+}
+
 interface MemorialGardenSectionProps {
   onBack: () => void;
   initialSlug?: string;
@@ -216,9 +229,21 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   <h3 className="text-sepia-300 text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Music className="w-4 h-4" /> Música</h3>
                   {memorial.tribute_song_url && <audio controls src={memorial.tribute_song_url} className="w-full" />}
                   {memorial.spotify_link && (
-                    <a href={memorial.spotify_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 text-sm">
-                      <ExternalLink className="w-4 h-4" /> Escuchar en Spotify
-                    </a>
+                    spotifyEmbedUrl(memorial.spotify_link) ? (
+                      <iframe
+                        src={spotifyEmbedUrl(memorial.spotify_link)!}
+                        width="100%"
+                        height="152"
+                        style={{ borderRadius: 12, border: 0 }}
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                        title="Reproductor de Spotify"
+                      />
+                    ) : (
+                      <a href={memorial.spotify_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 text-sm">
+                        <ExternalLink className="w-4 h-4" /> Escuchar en Spotify
+                      </a>
+                    )
                   )}
                 </div>
               )}

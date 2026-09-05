@@ -45,9 +45,10 @@ export const MemorialsAdmin: React.FC = () => {
 
   // Vínculo con Árbol de Linaje (family_members)
   const [memberSearch, setMemberSearch] = useState('');
-  const [memberResults, setMemberResults] = useState<{ id: string; name: string }[]>([]);
+  const [memberResults, setMemberResults] = useState<{ id: string; name: string; treeName?: string; clientName?: string }[]>([]);
   const [memberSearching, setMemberSearching] = useState(false);
   const [linkedMemberName, setLinkedMemberName] = useState('');
+  const [linkedMemberContext, setLinkedMemberContext] = useState('');
 
   // Libro de visitas
   const [guestbook, setGuestbook] = useState<MemorialGuestbookEntry[]>([]);
@@ -90,16 +91,31 @@ export const MemorialsAdmin: React.FC = () => {
 
   const searchFamilyMembers = async () => {
     const q = memberSearch.trim();
-    if (q.length < 2) return;
+    if (q.length < 2) { setMemberResults([]); return; }
     setMemberSearching(true);
+    // Se incluye el árbol y el cliente dueño de la clave para poder ubicar
+    // al familiar correcto cuando hay nombres repetidos entre árboles.
     const { data } = await supabase
       .from('family_members')
-      .select('id, name')
+      .select('id, name, family_trees(name, access_keys(client_name))')
       .ilike('name', `%${q}%`)
       .limit(15);
-    setMemberResults((data as { id: string; name: string }[]) || []);
+    const mapped = (data || []).map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      treeName: m.family_trees?.name,
+      clientName: m.family_trees?.access_keys?.client_name,
+    }));
+    setMemberResults(mapped);
     setMemberSearching(false);
   };
+
+  // Búsqueda automática mientras se escribe (con debounce), además del botón/Enter
+  useEffect(() => {
+    if (memberSearch.trim().length < 2) { setMemberResults([]); return; }
+    const t = setTimeout(() => { searchFamilyMembers(); }, 400);
+    return () => clearTimeout(t);
+  }, [memberSearch]); // eslint-disable-line
 
   const loadGuestbook = async (memorialId: string) => {
     setGuestbookLoading(true);
@@ -127,10 +143,17 @@ export const MemorialsAdmin: React.FC = () => {
       loadGuestbook(editing.id);
       loadGestures(editing.id);
       if (editing.family_member_id) {
-        supabase.from('family_members').select('name').eq('id', editing.family_member_id).maybeSingle()
-          .then(({ data }) => setLinkedMemberName((data as { name: string } | null)?.name || ''));
+        supabase.from('family_members').select('name, family_trees(name, access_keys(client_name))').eq('id', editing.family_member_id).maybeSingle()
+          .then(({ data }) => {
+            const m = data as any;
+            setLinkedMemberName(m?.name || '');
+            const treeName = m?.family_trees?.name;
+            const clientName = m?.family_trees?.access_keys?.client_name;
+            setLinkedMemberContext([treeName, clientName].filter(Boolean).join(' · '));
+          });
       } else {
         setLinkedMemberName('');
+        setLinkedMemberContext('');
       }
     } else {
       setGuestbook([]);
@@ -524,8 +547,11 @@ export const MemorialsAdmin: React.FC = () => {
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Vincular con el Árbol de Linaje</label>
                 {linkedMemberName ? (
                   <div className="flex items-center gap-2 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5">
-                    <span className="text-sepia-100 text-sm flex-1">{linkedMemberName}</span>
-                    <button type="button" onClick={() => { setEditing({ ...editing, family_member_id: null }); setLinkedMemberName(''); }} className="text-sepia-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sepia-100 text-sm">{linkedMemberName}</span>
+                      {linkedMemberContext && <p className="text-sepia-600 text-xs truncate">{linkedMemberContext}</p>}
+                    </div>
+                    <button type="button" onClick={() => { setEditing({ ...editing, family_member_id: null }); setLinkedMemberName(''); setLinkedMemberContext(''); }} className="text-sepia-500 hover:text-red-400"><X className="w-4 h-4" /></button>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -535,22 +561,31 @@ export const MemorialsAdmin: React.FC = () => {
                         value={memberSearch}
                         onChange={(e) => setMemberSearch(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); searchFamilyMembers(); } }}
-                        placeholder="Buscar familiar por nombre…"
+                        placeholder="Buscar familiar por nombre… (mín. 2 letras)"
                         className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
                       />
                       <button type="button" onClick={searchFamilyMembers} disabled={memberSearching} className="bg-sepia-700 hover:bg-sepia-600 text-sepia-200 px-3 rounded-xl shrink-0">
                         {memberSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                       </button>
                     </div>
+                    <p className="text-sepia-600 text-xs">
+                      Solo aparecen familiares que ya fueron agregados a un Árbol de Linaje (creado con una clave familiar). Se busca por el nombre exacto que se usó al crearlo ahí.
+                    </p>
+                    {memberSearch.trim().length >= 2 && !memberSearching && memberResults.length === 0 && (
+                      <p className="text-sepia-600 text-xs italic">Sin coincidencias para "{memberSearch.trim()}".</p>
+                    )}
                     {memberResults.length > 0 && (
-                      <div className="bg-sepia-900 border border-sepia-700 rounded-xl max-h-48 overflow-y-auto">
+                      <div className="bg-sepia-900 border border-sepia-700 rounded-xl max-h-56 overflow-y-auto divide-y divide-sepia-800">
                         {memberResults.map(m => (
                           <button
                             key={m.id} type="button"
-                            onClick={() => { setEditing({ ...editing, family_member_id: m.id }); setLinkedMemberName(m.name); setMemberResults([]); }}
-                            className="block w-full text-left px-4 py-2 text-sepia-200 text-sm hover:bg-sepia-800"
+                            onClick={() => { setEditing({ ...editing, family_member_id: m.id }); setLinkedMemberName(m.name); setLinkedMemberContext([m.treeName, m.clientName].filter(Boolean).join(' · ')); setMemberResults([]); setMemberSearch(''); }}
+                            className="block w-full text-left px-4 py-2 hover:bg-sepia-800"
                           >
-                            {m.name}
+                            <span className="text-sepia-200 text-sm block">{m.name}</span>
+                            {(m.treeName || m.clientName) && (
+                              <span className="text-sepia-600 text-xs">{[m.treeName, m.clientName].filter(Boolean).join(' · ')}</span>
+                            )}
                           </button>
                         ))}
                       </div>
