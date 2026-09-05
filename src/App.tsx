@@ -2243,7 +2243,7 @@ export default function App() {
         onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onAvatars={() => { setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onJardin={() => { setShowJardin(true); setJardinSlug(undefined); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onJardin={() => { window.scrollTo(0, 0); setShowJardin(true); setJardinSlug(undefined); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
         investigationEnabled={investigationEnabled}
         logoUrl={logoUrl}
@@ -2489,10 +2489,10 @@ export default function App() {
           >
             <Suspense fallback={<SectionLoader />}>
               <MemorialGardenSection
-                onBack={() => { setShowJardin(false); setJardinSlug(undefined); }}
+                onBack={() => { window.scrollTo(0, 0); setShowJardin(false); setJardinSlug(undefined); }}
                 initialSlug={jardinSlug}
                 stories={stories}
-                onOpenStory={(story) => { setShowJardin(false); setJardinSlug(undefined); setSelectedStory(story); }}
+                onOpenStory={(story) => { window.scrollTo(0, 0); setShowJardin(false); setJardinSlug(undefined); setSelectedStory(story); }}
                 coverUrl={jardinCoverUrl}
               />
             </Suspense>

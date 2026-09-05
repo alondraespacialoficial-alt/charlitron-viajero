@@ -182,11 +182,11 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   // ── Vista de un memorial ──────────────────────────────────────
   if (activeSlug) {
     return (
-      <div className="min-h-screen bg-sepia-950 pt-20 pb-16">
+      <div className="min-h-screen bg-sepia-950 pt-28 pb-16">
         <div className="max-w-3xl mx-auto px-6">
           <button
             onClick={() => { setActiveSlug(null); window.history.pushState(null, '', '/jardin'); }}
-            className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors text-sm uppercase tracking-widest mb-6"
+            className="relative z-10 flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors text-sm uppercase tracking-widest mb-6"
           >
             <ArrowLeft className="w-4 h-4" /> Volver al Jardín
           </button>
@@ -415,7 +415,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
 
   // ── Portada / buscador ────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-sepia-950 pt-20 pb-16 relative overflow-hidden">
+    <div className="min-h-screen bg-sepia-950 pt-28 pb-16 relative overflow-hidden">
       {coverUrl && (
         <div className="absolute inset-0 z-0">
           <img
