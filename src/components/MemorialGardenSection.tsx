@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import QRCode from 'qrcode';
 import {
   Search, ArrowLeft, Loader2, Lock, KeyRound, Flower2, Flame, MessageCircle,
-  Share2, Facebook, Copy, Check, Music, ExternalLink, Send,
+  Share2, Facebook, Copy, Check, Music, ExternalLink, Send, QrCode, Download,
 } from 'lucide-react';
 import { Memorial, MemorialGesture, MemorialGuestbookEntry, Story } from '../types';
 import { supabase } from '../supabase';
@@ -86,6 +87,8 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [linkedFamilyMember, setLinkedFamilyMember] = useState<{ name: string; relationship?: string; photo_url?: string; birth_date?: string; death_date?: string; bio?: string } | null>(null);
   const [introVideoVertical, setIntroVideoVertical] = useState(false);
   const [tributeVideoError, setTributeVideoError] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     if (!activeSlug) {
@@ -200,6 +203,14 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
 
   const linkedStory = memorial?.story_id ? stories.find(s => s.id === memorial.story_id) : undefined;
   const shareUrl = memorial ? `https://charlitronviajerodeltiempo.com/jardin/${memorial.slug}` : '';
+
+  useEffect(() => {
+    setShowQr(false);
+    if (!shareUrl) { setQrDataUrl(null); return; }
+    QRCode.toDataURL(shareUrl, { width: 320, margin: 1, color: { dark: '#dab064', light: '#14100c' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [shareUrl]);
 
   // ── Vista de un memorial ──────────────────────────────────────
   if (activeSlug) {
@@ -460,6 +471,29 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   </button>
                 </div>
               )}
+
+              {/* Código QR: útil sobre todo para memoriales privados/compartibles que se imprimen en marco o placa */}
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  onClick={() => setShowQr(v => !v)}
+                  className="flex items-center gap-2 bg-sepia-800 hover:bg-sepia-700 text-sepia-200 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+                >
+                  <QrCode className="w-4 h-4" /> {showQr ? 'Ocultar código QR' : 'Código QR para imprimir'}
+                </button>
+                {showQr && qrDataUrl && (
+                  <div className="flex flex-col items-center gap-3 bg-sepia-900/40 border border-sepia-800 rounded-2xl p-5">
+                    <img src={qrDataUrl} alt={`Código QR del memorial de ${memorial.full_name}`} className="w-40 h-40 rounded-lg" />
+                    <p className="text-sepia-500 text-xs text-center max-w-xs">Escanéalo para llegar directo a este memorial. Ideal para imprimir en un marco, álbum o placa.</p>
+                    <a
+                      href={qrDataUrl}
+                      download={`jardin-${memorial.slug}-qr.png`}
+                      className="flex items-center gap-2 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+                    >
+                      <Download className="w-4 h-4" /> Descargar QR
+                    </a>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </div>
