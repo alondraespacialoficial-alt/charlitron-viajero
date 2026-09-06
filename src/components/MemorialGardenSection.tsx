@@ -33,6 +33,13 @@ function spotifyEmbedUrl(link: string): string | null {
   }
 }
 
+// Detecta enlaces de YouTube pegados donde se espera un archivo de video directo
+// (si no se convierten a embed, el <video> queda en negro porque nunca puede reproducirlos).
+function youtubeEmbedUrl(link: string): string | null {
+  if (!link.includes('youtube.com') && !link.includes('youtu.be')) return null;
+  return link.replace('watch?v=', 'embed/').replace('shorts/', 'embed/').replace('youtu.be/', 'youtube.com/embed/');
+}
+
 interface MemorialGardenSectionProps {
   onBack: () => void;
   initialSlug?: string;
@@ -66,6 +73,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [copiedLink, setCopiedLink] = useState(false);
   const [linkedFamilyMember, setLinkedFamilyMember] = useState<{ name: string; relationship?: string; photo_url?: string; birth_date?: string; death_date?: string; bio?: string } | null>(null);
   const [introVideoVertical, setIntroVideoVertical] = useState(false);
+  const [tributeVideoError, setTributeVideoError] = useState(false);
 
   useEffect(() => {
     if (!activeSlug) {
@@ -234,8 +242,28 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 )}
                 {memorial.epitaph && <p className="text-sepia-300 italic font-serif text-lg">"{memorial.epitaph}"</p>}
                 {memorial.bio_short && <p className="text-sepia-400 text-sm max-w-xl mx-auto">{memorial.bio_short}</p>}
-                {memorial.tribute_video_url && (
-                  <video controls src={memorial.tribute_video_url} className="w-full max-w-md max-h-[70vh] mx-auto rounded-2xl border border-sepia-700 shadow-xl" />
+                {memorial.tribute_video_url && !tributeVideoError && (() => {
+                  const ytEmbed = youtubeEmbedUrl(memorial.tribute_video_url);
+                  return ytEmbed ? (
+                    <iframe
+                      src={ytEmbed}
+                      allowFullScreen
+                      className="w-full max-w-md aspect-video mx-auto rounded-2xl border border-sepia-700 shadow-xl"
+                    />
+                  ) : (
+                    <video
+                      controls
+                      playsInline
+                      preload="metadata"
+                      poster={memorial.photo_url || undefined}
+                      src={memorial.tribute_video_url}
+                      className="w-full max-w-md max-h-[70vh] mx-auto rounded-2xl border border-sepia-700 shadow-xl"
+                      onError={() => setTributeVideoError(true)}
+                    />
+                  );
+                })()}
+                {tributeVideoError && (
+                  <p className="text-sepia-500 text-xs">No se pudo cargar el video homenaje. Verifica que el enlace apunte directo a un archivo de video (no a YouTube ni a Google Drive/Dropbox).</p>
                 )}
               </div>
 
@@ -452,15 +480,21 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
               introVideoVertical ? 'max-w-[280px] aspect-[9/16]' : 'max-w-2xl aspect-video'
             }`}
           >
-            <video
-              src={introVideoUrl}
-              controls
-              className="w-full h-full"
-              onLoadedMetadata={(e) => {
-                const v = e.currentTarget;
-                setIntroVideoVertical(v.videoHeight > v.videoWidth);
-              }}
-            />
+            {youtubeEmbedUrl(introVideoUrl) ? (
+              <iframe src={youtubeEmbedUrl(introVideoUrl)!} allowFullScreen className="w-full h-full" />
+            ) : (
+              <video
+                src={introVideoUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full h-full"
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  setIntroVideoVertical(v.videoHeight > v.videoWidth);
+                }}
+              />
+            )}
           </div>
         )}
 

@@ -1673,6 +1673,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <video 
                             src={introVideoUrl} 
                             controls 
+                            playsInline
+                            preload="metadata"
                             className="w-full h-full"
                           />
                         )}
@@ -1715,7 +1717,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                       </div>
                       {jardinIntroVideoUrl && (
-                        <video src={jardinIntroVideoUrl} controls className="mt-4 max-w-xs max-h-72 mx-auto rounded-2xl border border-sepia-800 bg-sepia-950" />
+                        jardinIntroVideoUrl.includes('youtube.com') || jardinIntroVideoUrl.includes('youtu.be') ? (
+                          <iframe
+                            src={jardinIntroVideoUrl.replace('watch?v=', 'embed/').replace('shorts/', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                            className="mt-4 max-w-xs aspect-video mx-auto rounded-2xl border border-sepia-800 bg-sepia-950 block"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video src={jardinIntroVideoUrl} controls playsInline preload="metadata" className="mt-4 max-w-xs max-h-72 mx-auto rounded-2xl border border-sepia-800 bg-sepia-950" />
+                        )
                       )}
                     </div>
 

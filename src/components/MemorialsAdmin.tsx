@@ -532,7 +532,7 @@ export const MemorialsAdmin: React.FC = () => {
               <div className="md:col-span-2 space-y-2">
                 <label className="text-xs text-sepia-400 uppercase tracking-widest">Video homenaje <span className="normal-case text-sepia-600">(se muestra debajo de la foto)</span></label>
                 {editing.tribute_video_url && (
-                  <video controls src={editing.tribute_video_url} className="w-full max-w-xs rounded-xl border border-sepia-700" />
+                  <video controls playsInline preload="metadata" src={editing.tribute_video_url} className="w-full max-w-xs rounded-xl border border-sepia-700" />
                 )}
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-3 cursor-pointer bg-sepia-900 border border-dashed border-sepia-700 rounded-xl px-4 py-2.5 hover:border-sepia-500 transition-all w-fit">
