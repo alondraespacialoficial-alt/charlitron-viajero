@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search, ArrowLeft, Loader2, Lock, KeyRound, Flower2, Flame, MessageCircle,
@@ -65,6 +65,18 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [codeError, setCodeError] = useState('');
 
   const [gestures, setGestures] = useState<MemorialGesture[]>([]);
+  // Conteo por tipo (icono + total) en vez de listar cada homenaje uno por uno
+  const gestureCounts = useMemo(() => {
+    const icons: Record<MemorialGesture['gesture_type'], string> = {
+      flower_rose: '🌹', flower_lily: '⚜️', flower_sunflower: '🌻', flower_daisy: '🌼', candle: '🕯️',
+    };
+    const order: MemorialGesture['gesture_type'][] = ['flower_rose', 'flower_lily', 'flower_sunflower', 'flower_daisy', 'candle'];
+    const counts = new Map<MemorialGesture['gesture_type'], number>();
+    gestures.forEach(g => counts.set(g.gesture_type, (counts.get(g.gesture_type) || 0) + 1));
+    return order.filter(t => (counts.get(t) || 0) > 0).map(t => ({ type: t, emoji: icons[t], count: counts.get(t)! }));
+  }, [gestures]);
+  // Solo quienes dejaron su nombre se listan (acotado con scroll); los anónimos ya están en el conteo de arriba
+  const namedGestures = useMemo(() => gestures.filter(g => g.visitor_name).slice(0, 20), [gestures]);
   const [guestbook, setGuestbook] = useState<MemorialGuestbookEntry[]>([]);
   const [visitorName, setVisitorName] = useState('');
   const [visitorMessage, setVisitorMessage] = useState('');
@@ -119,7 +131,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       setMemorial(m);
       updateMemorialMetaTags(m.full_name, m.epitaph, m.photo_url, m.slug);
       const [{ data: gestureData }, { data: guestbookData }] = await Promise.all([
-        supabase.from('memorial_gestures').select('*').eq('memorial_id', m.id).order('created_at', { ascending: false }).limit(24),
+        supabase.from('memorial_gestures').select('*').eq('memorial_id', m.id).order('created_at', { ascending: false }).limit(500),
         supabase.from('memorial_guestbook').select('*').eq('memorial_id', m.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(30),
       ]);
       setGestures((gestureData as MemorialGesture[]) || []);
@@ -351,12 +363,24 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   </button>
                 </div>
                 {gestures.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-sepia-800">
-                    {gestures.map(g => (
-                      <span key={g.id} className="flex items-center gap-1 text-xs text-sepia-500">
-                        {g.gesture_type === 'candle' ? '🕯️' : '🌸'} {g.visitor_name ? `${g.visitor_name} dejó ${g.gesture_type === 'candle' ? 'una vela' : 'una flor'}` : `Alguien dejó ${g.gesture_type === 'candle' ? 'una vela' : 'una flor'}`}
-                      </span>
-                    ))}
+                  <div className="space-y-3 pt-2 border-t border-sepia-800">
+                    {/* Contador por tipo en vez de repetir cada gesto: evita que la lista se sature con muchos homenajes */}
+                    <div className="flex flex-wrap gap-2">
+                      {gestureCounts.map(gc => (
+                        <span key={gc.type} className="flex items-center gap-1.5 bg-sepia-950/60 border border-sepia-800 rounded-full px-3 py-1 text-xs text-sepia-300">
+                          <span className="text-sm">{gc.emoji}</span> {gc.count}
+                        </span>
+                      ))}
+                    </div>
+                    {namedGestures.length > 0 && (
+                      <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                        {namedGestures.map(g => (
+                          <p key={g.id} className="text-xs text-sepia-500">
+                            {g.gesture_type === 'candle' ? '🕯️' : '🌸'} {g.visitor_name} dejó {g.gesture_type === 'candle' ? 'una vela' : 'una flor'}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
