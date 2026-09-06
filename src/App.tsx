@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2 } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import QRCode from 'qrcode';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
 import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
 import { supabase } from './supabase';
@@ -955,12 +956,22 @@ const StoryCard = ({ story, onClick }: { story: Story, onClick: () => void }) =>
   </motion.div>
 );
 
-const FeaturedStories = ({ stories, onSelectStory, selectedCategory, onCategoryChange }: { stories: Story[], onSelectStory: (story: Story) => void, selectedCategory: string, onCategoryChange: (cat: string) => void }) => {
+const FeaturedStories = ({ stories, onSelectStory, selectedCategory, onCategoryChange, qrStory }: { stories: Story[], onSelectStory: (story: Story) => void, selectedCategory: string, onCategoryChange: (cat: string) => void, qrStory?: Story }) => {
   const categories = ['Todos', 'Familia', 'Negocio', 'Lugar', 'Evento', 'Monumentos', 'Personajes'];
-  
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
   const filteredStories = selectedCategory === 'Todos' 
     ? stories 
     : stories.filter(s => s.category === selectedCategory);
+
+  useEffect(() => {
+    if (!qrStory) { setQrDataUrl(null); return; }
+    const slug = qrStory.slug || generateSlug(qrStory.title, qrStory.id);
+    const url = `https://charlitronviajerodeltiempo.com/historia/${slug}`;
+    QRCode.toDataURL(url, { width: 320, margin: 1, color: { dark: '#1c140c', light: '#f5ead8' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [qrStory]);
 
   return (
     <section id="historias" className="py-24 bg-sepia-100">
@@ -972,6 +983,31 @@ const FeaturedStories = ({ stories, onSelectStory, selectedCategory, onCategoryC
           </div>
           <div className="h-[1px] flex-grow bg-sepia-300 mx-8 hidden md:block mb-4"></div>
         </div>
+
+        {qrStory && qrDataUrl && (
+          <div className="flex flex-col sm:flex-row items-center gap-6 bg-sepia-50 border border-sepia-200 rounded-3xl p-6 mb-12">
+            <img src={qrDataUrl} alt={`Código QR de la historia ${qrStory.title}`} className="w-32 h-32 rounded-xl flex-shrink-0" />
+            <div className="flex-1 text-center sm:text-left">
+              <span className="text-sepia-600 uppercase tracking-widest text-xs font-bold flex items-center justify-center sm:justify-start gap-2 mb-2"><QrCode className="w-4 h-4" /> Escanea y lee</span>
+              <p className="text-xl font-serif mb-3">{qrStory.title}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <button
+                  onClick={() => onSelectStory(qrStory)}
+                  className="text-sepia-900 font-bold uppercase tracking-widest text-xs hover:text-sepia-600 transition-colors"
+                >
+                  Ver historia
+                </button>
+                <a
+                  href={qrDataUrl}
+                  download={`historia-${qrStory.slug || generateSlug(qrStory.title, qrStory.id)}-qr.png`}
+                  className="flex items-center gap-1.5 bg-sepia-950 hover:bg-sepia-800 text-sepia-100 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" /> Descargar QR
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Category Filters */}
         <div className="flex flex-wrap gap-3 mb-12">
@@ -1775,6 +1811,7 @@ export default function App() {
   const [heroBgUrl, setHeroBgUrl] = useState('');
   const [jardinCoverUrl, setJardinCoverUrl] = useState('');
   const [jardinIntroVideoUrl, setJardinIntroVideoUrl] = useState('');
+  const [historiasQrStorySlug, setHistoriasQrStorySlug] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [logoUrl, setLogoUrl] = useState('https://image2url.com/r2/default/images/1774244334117-f0974987-8590-4271-a1af-4957fc21a8cc.png');
   const [biographyPhotoUrl, setBiographyPhotoUrl] = useState('https://image2url.com/r2/default/images/1774207717060-c5974088-18bf-4a0f-956b-67625c091acb.png');
@@ -1860,6 +1897,7 @@ export default function App() {
         { key: 'book2_cover_url',     setter: setBook2CoverUrl },
         { key: 'book2_url',           setter: setBook2Url },
         { key: 'amazon_author_url',   setter: setAmazonAuthorUrl },
+        { key: 'historias_qr_story_slug', setter: setHistoriasQrStorySlug },
       ];
       await Promise.all(settingsKeys.map(async ({ key, setter }) => {
         const { data } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle();
@@ -2577,6 +2615,7 @@ export default function App() {
                 onSelectStory={handleSelectStory} 
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
+                qrStory={publicStories.find(s => !s.password && (s.slug || generateSlug(s.title, s.id)) === historiasQrStorySlug)}
               />
             )}
 

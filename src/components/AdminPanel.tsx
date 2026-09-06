@@ -89,6 +89,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [avatarsBgUrl, setAvatarsBgUrl] = useState('');
   const [jardinCoverUrl, setJardinCoverUrl] = useState('');
   const [jardinIntroVideoUrl, setJardinIntroVideoUrl] = useState('');
+  const [historiasQrStorySlug, setHistoriasQrStorySlug] = useState('');
   const [investigationEnabled, setInvestigationEnabled] = useState(false);
   const [radioNarrativeEnabled, setRadioNarrativeEnabled] = useState(false);
   const [chatbotUrl, setChatbotUrl] = useState('');
@@ -717,6 +718,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .maybeSingle();
       if (jardinIntroVideoData) setJardinIntroVideoUrl(jardinIntroVideoData.value);
 
+      const { data: historiasQrData } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'historias_qr_story_slug')
+        .maybeSingle();
+      if (historiasQrData) setHistoriasQrStorySlug(historiasQrData.value);
+
       const { data: investigationData } = await supabase
         .from('site_settings')
         .select('value')
@@ -807,6 +815,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         .from('site_settings')
         .upsert({ key: 'jardin_intro_video_url', value: jardinIntroVideoUrl });
       if (jardinIntroVideoError) throw jardinIntroVideoError;
+
+      const { error: historiasQrError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'historias_qr_story_slug', value: historiasQrStorySlug.trim() });
+      if (historiasQrError) throw historiasQrError;
 
       const { error: investigationError } = await supabase
         .from('site_settings')
@@ -1953,6 +1966,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           />
                         </div>
                       ))}
+
+                      <div className="space-y-2">
+                        <label className="text-sepia-400 text-xs uppercase tracking-widest font-bold">Slug de la historia destacada para el QR (sección Historias)</label>
+                        <input
+                          type="text"
+                          value={historiasQrStorySlug}
+                          onChange={e => setHistoriasQrStorySlug(e.target.value)}
+                          placeholder="ej. la-bodega-el-pasado-1920"
+                          className="w-full bg-sepia-950 border border-sepia-800 rounded-xl p-3 text-sepia-100 focus:border-sepia-500 outline-none transition-all font-mono text-xs"
+                        />
+                        <p className="text-sepia-600 text-xs">Copia el slug de una historia pública (no privada ni vencida) desde su URL. Se muestra un QR en la sección "Historias destacadas" que lleva directo a ella.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
