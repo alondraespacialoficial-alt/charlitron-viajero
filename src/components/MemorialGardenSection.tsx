@@ -304,9 +304,13 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
               {onOpenAvatarPrivate && (
                 <button
                   onClick={onOpenAvatarPrivate}
-                  className="w-full flex items-center justify-center gap-2 bg-sepia-800/50 hover:bg-sepia-800 border border-sepia-700 rounded-xl py-3 text-sepia-200 text-sm font-semibold transition-all"
+                  className="w-full text-center bg-sepia-800/50 hover:bg-sepia-800 border border-sepia-700 rounded-2xl py-5 px-6 transition-all"
                 >
-                  <Lock className="w-4 h-4" /> ¿Contrataste su Avatar? Actívalo con tu código
+                  <p className="text-sepia-100 font-serif text-lg">Conversa en tiempo real con su recuerdo digital</p>
+                  <p className="text-sepia-500 text-xs mt-1 mb-4">Una experiencia interactiva creada a partir de su voz, fotografías, recuerdos e historia.</p>
+                  <span className="inline-flex items-center gap-2 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
+                    <Lock className="w-4 h-4" /> Activar con código
+                  </span>
                 </button>
               )}
 
