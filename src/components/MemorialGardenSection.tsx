@@ -583,6 +583,15 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
           </button>
         </form>
 
+        <div className="text-center mb-10 -mt-2">
+          <p className="text-sepia-500 text-sm max-w-xl mx-auto">
+            Cada familia decide cómo conservar su memoria. Algunos memoriales son públicos y otros permanecen privados, accesibles únicamente para quienes cuentan con autorización familiar.
+          </p>
+          <p className="text-sepia-600 text-xs mt-2">
+            ¿Tienes un acceso privado? Ingresa desde el enlace que te compartió tu familia.
+          </p>
+        </div>
+
         {searching ? (
           <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 text-sepia-500 animate-spin" /></div>
         ) : results.length === 0 && searched ? (
