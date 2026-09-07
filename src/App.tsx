@@ -1066,6 +1066,8 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [isFav, setIsFav] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -1144,6 +1146,15 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
     const shareUrl = generateShareUrl(story.title, slug, story.description);
     window.open(shareUrl, '_blank');
   };
+
+  useEffect(() => {
+    setShowQr(false);
+    const slug = story.slug || generateSlug(story.title, story.id);
+    const url = `https://charlitronviajerodeltiempo.com/historia/${slug}`;
+    QRCode.toDataURL(url, { width: 320, margin: 1, color: { dark: '#1c140c', light: '#f5ead8' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [story.id, story.slug, story.title]);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;
@@ -1243,6 +1254,14 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
               <span className="text-xs font-bold uppercase tracking-widest">Compartir</span>
             </button>
 
+            <button
+              onClick={() => setShowQr(v => !v)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-sepia-200 text-sepia-700 hover:bg-sepia-300 transition-all"
+            >
+              <QrCode className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-widest">QR</span>
+            </button>
+
             {story.audioUrl && (
               <div className="flex items-center gap-4">
                 {isSpotifyLink(story.audioUrl) ? (
@@ -1270,6 +1289,22 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
             )}
           </div>
         </div>
+
+        {showQr && qrDataUrl && (
+          <div className="flex flex-col sm:flex-row items-center gap-6 bg-sepia-100 border border-sepia-200 rounded-3xl p-6 mb-12">
+            <img src={qrDataUrl} alt={`Código QR de la historia ${story.title}`} className="w-32 h-32 rounded-xl flex-shrink-0" />
+            <div className="flex-1 text-center sm:text-left">
+              <p className="text-sepia-600 text-sm mb-3">Escanéalo para llegar directo a esta historia. Ideal para imprimir en un cartel, tarjeta o folleto.</p>
+              <a
+                href={qrDataUrl}
+                download={`historia-${story.slug || generateSlug(story.title, story.id)}-qr.png`}
+                className="inline-flex items-center gap-1.5 bg-sepia-950 hover:bg-sepia-800 text-sepia-100 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all"
+              >
+                <Download className="w-3.5 h-3.5" /> Descargar QR
+              </a>
+            </div>
+          </div>
+        )}
 
         <header className="mb-12 md:mb-16">
           <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-6">
