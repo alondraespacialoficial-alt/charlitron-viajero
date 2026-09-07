@@ -252,6 +252,8 @@ export interface MemorialGuestbookEntry {
   memorial_id: string;
   visitor_name: string;
   message: string;
+  photo_url?: string | null;
+  likes?: number;
   status: 'pending' | 'approved' | 'rejected';
   created_at?: string;
 }

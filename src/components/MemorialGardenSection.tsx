@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import {
   Search, ArrowLeft, Loader2, Lock, KeyRound, Flower2, Flame, MessageCircle,
   Share2, Facebook, Copy, Check, Music, ExternalLink, Send, QrCode, Download,
+  Heart, Image as ImageIcon, X,
 } from 'lucide-react';
 import { Memorial, MemorialGesture, MemorialGuestbookEntry, Story } from '../types';
 import { supabase } from '../supabase';
@@ -20,6 +21,7 @@ const FLOWER_OPTIONS: { type: 'flower_rose' | 'flower_lily' | 'flower_sunflower'
 ];
 
 const unlockKey = (slug: string) => `jardin_unlock_${slug}`;
+const likedEntryKey = (id: string) => `jardin_liked_${id}`;
 
 // Convierte un link normal de Spotify en la URL del reproductor embebido
 // (play/pausa dentro de la misma app, sin abrir Spotify en otra pestaña).
@@ -82,6 +84,10 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [guestbook, setGuestbook] = useState<MemorialGuestbookEntry[]>([]);
   const [visitorName, setVisitorName] = useState('');
   const [visitorMessage, setVisitorMessage] = useState('');
+  const [visitorPhotoFile, setVisitorPhotoFile] = useState<File | null>(null);
+  const [visitorPhotoPreview, setVisitorPhotoPreview] = useState<string | null>(null);
+  const [uploadingGuestbookPhoto, setUploadingGuestbookPhoto] = useState(false);
+  const [likedEntryIds, setLikedEntryIds] = useState<Set<string>>(new Set());
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -139,7 +145,9 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
         supabase.from('memorial_guestbook').select('*').eq('memorial_id', m.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(30),
       ]);
       setGestures((gestureData as MemorialGesture[]) || []);
-      setGuestbook((guestbookData as MemorialGuestbookEntry[]) || []);
+      const entries = (guestbookData as MemorialGuestbookEntry[]) || [];
+      setGuestbook(entries);
+      setLikedEntryIds(new Set(entries.filter(e => localStorage.getItem(likedEntryKey(e.id)) === 'true').map(e => e.id)));
       if (m.family_member_id) {
         // Solo se muestra una tarjeta de vista previa; el Árbol completo
         // sigue protegido por su propia clave de acceso familiar.
@@ -184,22 +192,52 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
     if (data) setGestures(prev => [data as MemorialGesture, ...prev]);
   };
 
+  const handleGuestbookPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVisitorPhotoFile(file);
+    setVisitorPhotoPreview(URL.createObjectURL(file));
+  };
+
   const submitGuestbookEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!memorial || !visitorName.trim() || !visitorMessage.trim()) return;
     setSendingMessage(true);
+    let photo_url: string | null = null;
+    if (visitorPhotoFile) {
+      setUploadingGuestbookPhoto(true);
+      const fileExt = visitorPhotoFile.name.split('.').pop();
+      const fileName = `guestbook/${memorial.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('family-photos').upload(fileName, visitorPhotoFile);
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('family-photos').getPublicUrl(fileName);
+        photo_url = urlData.publicUrl;
+      }
+      setUploadingGuestbookPhoto(false);
+    }
     const status = memorial.requires_approval ? 'pending' : 'approved';
     const { data, error } = await supabase
       .from('memorial_guestbook')
-      .insert([{ memorial_id: memorial.id, visitor_name: visitorName.trim(), message: visitorMessage.trim(), status }])
+      .insert([{ memorial_id: memorial.id, visitor_name: visitorName.trim(), message: visitorMessage.trim(), photo_url, status }])
       .select()
       .single();
     if (!error) {
       if (status === 'approved' && data) setGuestbook(prev => [data as MemorialGuestbookEntry, ...prev]);
       setVisitorMessage('');
+      setVisitorPhotoFile(null);
+      setVisitorPhotoPreview(null);
       setMessageSent(true);
     }
     setSendingMessage(false);
+  };
+
+  const likeGuestbookEntry = async (entry: MemorialGuestbookEntry) => {
+    if (likedEntryIds.has(entry.id)) return;
+    const newLikes = (entry.likes || 0) + 1;
+    setGuestbook(prev => prev.map(g => (g.id === entry.id ? { ...g, likes: newLikes } : g)));
+    setLikedEntryIds(prev => new Set(prev).add(entry.id));
+    localStorage.setItem(likedEntryKey(entry.id), 'true');
+    await supabase.from('memorial_guestbook').update({ likes: newLikes }).eq('id', entry.id);
   };
 
   const linkedStory = memorial?.story_id ? stories.find(s => s.id === memorial.story_id) : undefined;
@@ -418,9 +456,19 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 ) : (
                   <div className="space-y-3 max-h-72 overflow-y-auto">
                     {guestbook.map(g => (
-                      <div key={g.id} className="border-b border-sepia-800 pb-2">
+                      <div key={g.id} className="border-b border-sepia-800 pb-3">
                         <p className="text-sepia-200 text-sm font-semibold">{g.visitor_name}</p>
                         <p className="text-sepia-400 text-sm">{g.message}</p>
+                        {g.photo_url && (
+                          <img src={g.photo_url} alt={`Foto compartida por ${g.visitor_name}`} className="mt-2 max-h-48 rounded-lg border border-sepia-800 object-cover" />
+                        )}
+                        <button
+                          onClick={() => likeGuestbookEntry(g)}
+                          disabled={likedEntryIds.has(g.id)}
+                          className={`mt-1.5 flex items-center gap-1 text-xs transition-colors ${likedEntryIds.has(g.id) ? 'text-red-400' : 'text-sepia-600 hover:text-red-400'}`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${likedEntryIds.has(g.id) ? 'fill-current' : ''}`} /> {g.likes || 0}
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -447,13 +495,31 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                       rows={2}
                       className="w-full bg-sepia-950 border border-sepia-700 rounded-xl px-4 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm resize-none"
                     />
+                    {visitorPhotoPreview ? (
+                      <div className="relative inline-block">
+                        <img src={visitorPhotoPreview} alt="Foto a compartir" className="max-h-32 rounded-lg border border-sepia-700" />
+                        <button
+                          type="button"
+                          onClick={() => { setVisitorPhotoFile(null); setVisitorPhotoPreview(null); }}
+                          className="absolute -top-2 -right-2 bg-red-900/80 text-red-300 rounded-full p-1"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 bg-sepia-950 border border-dashed border-sepia-700 rounded-xl px-4 py-2 cursor-pointer w-fit">
+                        <ImageIcon className="w-4 h-4 text-sepia-400" />
+                        <span className="text-sepia-400 text-xs">Agregar una foto (opcional)</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleGuestbookPhotoSelect} />
+                      </label>
+                    )}
                     <button
                       type="submit"
                       disabled={sendingMessage}
                       className="flex items-center gap-2 bg-sepia-600 hover:bg-sepia-500 disabled:opacity-50 text-sepia-100 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
                     >
                       {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Enviar recuerdo
+                      {uploadingGuestbookPhoto ? 'Subiendo foto…' : 'Enviar recuerdo'}
                     </button>
                   </form>
                 )}
