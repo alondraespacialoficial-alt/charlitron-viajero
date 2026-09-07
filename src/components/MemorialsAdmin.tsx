@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, Trash2, Edit2, X, Loader2, Check, AlertCircle, Upload, RefreshCw,
@@ -63,6 +63,18 @@ export const MemorialsAdmin: React.FC = () => {
 
   // Gestos (flores/velas)
   const [gestures, setGestures] = useState<MemorialGesture[]>([]);
+  // Conteo por tipo (igual que en la vista pública) en vez de listar cada gesto uno por uno
+  const gestureCounts = useMemo(() => {
+    const icons: Record<MemorialGesture['gesture_type'], string> = {
+      flower_rose: '🌹', flower_lily: '⚜️', flower_sunflower: '🌻', flower_daisy: '🌼', candle: '🕯️',
+    };
+    const order: MemorialGesture['gesture_type'][] = ['flower_rose', 'flower_lily', 'flower_sunflower', 'flower_daisy', 'candle'];
+    const counts = new Map<MemorialGesture['gesture_type'], number>();
+    gestures.forEach(g => counts.set(g.gesture_type, (counts.get(g.gesture_type) || 0) + 1));
+    return order.filter(t => (counts.get(t) || 0) > 0).map(t => ({ type: t, emoji: icons[t], count: counts.get(t)! }));
+  }, [gestures]);
+  // Solo quienes dejaron su nombre se listan individualmente (con opción de eliminar); los anónimos ya están en el conteo
+  const namedGestures = useMemo(() => gestures.filter(g => g.visitor_name), [gestures]);
 
   const showMsg = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -821,13 +833,24 @@ export const MemorialsAdmin: React.FC = () => {
                   {gestures.length === 0 ? (
                     <p className="text-sepia-600 text-xs">Nadie ha dejado un gesto todavía.</p>
                   ) : (
-                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                      {gestures.map(g => (
-                        <span key={g.id} className="flex items-center gap-1.5 bg-sepia-900/40 border border-sepia-800 rounded-full px-3 py-1 text-xs text-sepia-300">
-                          {g.gesture_type === 'candle' ? '🕯️' : '🌸'} {g.visitor_name || 'Anónimo'}
-                          <button onClick={() => deleteGesture(g.id)} className="text-sepia-600 hover:text-red-400"><X className="w-3 h-3" /></button>
-                        </span>
-                      ))}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {gestureCounts.map(gc => (
+                          <span key={gc.type} className="flex items-center gap-1.5 bg-sepia-900/40 border border-sepia-800 rounded-full px-3 py-1 text-xs text-sepia-300">
+                            <span>{gc.emoji}</span> {gc.count}
+                          </span>
+                        ))}
+                      </div>
+                      {namedGestures.length > 0 && (
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                          {namedGestures.map(g => (
+                            <span key={g.id} className="flex items-center gap-1.5 bg-sepia-900/40 border border-sepia-800 rounded-full px-3 py-1 text-xs text-sepia-300">
+                              {g.gesture_type === 'candle' ? '🕯️' : '🌸'} {g.visitor_name}
+                              <button onClick={() => deleteGesture(g.id)} className="text-sepia-600 hover:text-red-400"><X className="w-3 h-3" /></button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
