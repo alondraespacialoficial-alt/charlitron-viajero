@@ -10,6 +10,7 @@ import { Memorial, MemorialGesture, MemorialGuestbookEntry, Story } from '../typ
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
 import { updateMemorialMetaTags, generateMemorialShareUrl, setSectionMetaTags } from '../seoUtils';
+import { MemorialFamilyPanel } from './MemorialFamilyPanel';
 
 const REQUEST_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me gustaría solicitar un memorial en el Jardín de la Memoria para un ser querido.')}`;
 
@@ -302,6 +303,12 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
             </div>
           ) : (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+              {memorial.banner_active && memorial.banner_message && (
+                <div className="bg-red-900/30 border border-red-700 text-red-200 rounded-2xl p-4 text-center text-sm">
+                  {memorial.banner_message}
+                </div>
+              )}
+
               {/* Encabezado */}
               <div className="text-center space-y-3">
                 {memorial.photo_url && (
@@ -598,6 +605,12 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   </div>
                 )}
               </div>
+
+              {/* Panel de familia: acceso limitado para que el cliente edite lo esencial */}
+              <MemorialFamilyPanel
+                memorial={memorial}
+                onMemorialUpdated={(patch) => setMemorial(prev => (prev ? { ...prev, ...patch } : prev))}
+              />
 
               {/* Servicios adicionales: no invasivo, solo un enlace discreto al pie */}
               <div className="text-center border-t border-sepia-800 pt-6">

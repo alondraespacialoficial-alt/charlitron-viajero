@@ -297,6 +297,8 @@ export const MemorialsAdmin: React.FC = () => {
         requires_approval: editing.requires_approval ?? true,
         client_name: editing.client_name?.trim() || null,
         client_contact: editing.client_contact?.trim() || null,
+        editor_email: editing.editor_email?.trim() || null,
+        editor_password: editing.editor_password?.trim() || null,
       };
 
       if (editing.id) {
@@ -539,6 +541,47 @@ export const MemorialsAdmin: React.FC = () => {
                   placeholder="Teléfono o correo"
                   className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
                 />
+              </div>
+
+              {/* Acceso al Panel de familia */}
+              <div className="md:col-span-2 space-y-2 bg-sepia-900/50 border border-sepia-700 rounded-xl p-4">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Acceso para que la familia edite este memorial</label>
+                <p className="text-sepia-600 text-xs">
+                  Con este correo y contraseña, la familia puede cambiar la foto, el nombre, las fechas, el epitafio, moderar sus recuerdos y publicar un aviso destacado — sin tocar video, música, privacidad ni el resto de la configuración.
+                </p>
+                <input
+                  type="email"
+                  value={editing.editor_email || ''}
+                  onChange={(e) => setEditing({ ...editing, editor_email: e.target.value })}
+                  placeholder="Correo que te dio la familia"
+                  className="w-full bg-sepia-950 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editing.editor_password || ''}
+                    onChange={(e) => setEditing({ ...editing, editor_password: e.target.value })}
+                    placeholder="Contraseña de acceso"
+                    className="flex-1 bg-sepia-950 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 font-mono tracking-widest text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, editor_password: generateCode() })}
+                    className="flex items-center gap-1.5 bg-sepia-700 hover:bg-sepia-600 text-sepia-200 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Generar
+                  </button>
+                  {editing.editor_password && (
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(editing.editor_password!)}
+                      className="flex items-center gap-1.5 bg-sepia-800 hover:bg-sepia-700 text-sepia-300 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all shrink-0"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copiar
+                    </button>
+                  )}
+                </div>
+                <p className="text-sepia-600 text-xs">Comparte ambos datos por WhatsApp o correo; el memorial no muestra el enlace de edición públicamente.</p>
               </div>
 
               {/* Música */}

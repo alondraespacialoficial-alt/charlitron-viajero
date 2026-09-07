@@ -234,6 +234,10 @@ export interface Memorial {
   requires_approval: boolean;
   client_name?: string | null;
   client_contact?: string | null;
+  editor_email?: string | null;
+  editor_password?: string | null;
+  banner_message?: string | null;
+  banner_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
