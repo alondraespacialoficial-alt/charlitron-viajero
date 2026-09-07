@@ -508,6 +508,18 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   </div>
                 )}
               </div>
+
+              {/* Servicios adicionales: no invasivo, solo un enlace discreto al pie */}
+              <div className="text-center border-t border-sepia-800 pt-6">
+                <p className="text-sepia-500 text-xs mb-2">¿Quieres conservar más de su historia?</p>
+                <a
+                  href={`https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola Charlitron! Vi el memorial de ${memorial.full_name} en el Jardín de la Memoria y me gustaría conservar más de su historia.`)}`}
+                  target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sepia-400 hover:text-sepia-200 text-xs underline underline-offset-2 transition-colors"
+                >
+                  Restaurar fotografías · Crear canción · Producir video · Historia familiar · Avatar · Voz interactiva
+                </a>
+              </div>
             </motion.div>
           )}
         </div>
