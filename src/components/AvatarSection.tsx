@@ -172,12 +172,14 @@ const HistoricalTimeline: React.FC<TimelineProps> = ({ activePeriod, onSelect })
 
 interface AvatarSectionProps {
   accessPassword?: string;
+  autoStartPrivate?: boolean;
 }
 
 
 
 export const AvatarSection: React.FC<AvatarSectionProps> = ({
   accessPassword = '',
+  autoStartPrivate = false,
 }) => {
   const [avatarsBgUrl, setAvatarsBgUrl] = React.useState('');
 
@@ -352,6 +354,11 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
       setStep('private_intake');
     }
   };
+
+  // Llega desde el Jardín de la Memoria u otra sección: salta directo al acceso privado
+  useEffect(() => {
+    if (autoStartPrivate) handleStartPrivate();
+  }, [autoStartPrivate]); // eslint-disable-line
 
   // ── Guardar consentimiento en BD y avanzar al código ────────
   const saveConsent = async (name: string, isReturn: boolean) => {

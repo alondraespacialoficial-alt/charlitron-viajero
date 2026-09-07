@@ -48,9 +48,10 @@ interface MemorialGardenSectionProps {
   onOpenStory: (story: Story) => void;
   coverUrl?: string;
   introVideoUrl?: string;
+  onOpenAvatarPrivate?: () => void;
 }
 
-export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory, coverUrl, introVideoUrl }) => {
+export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ onBack, initialSlug, stories, onOpenStory, coverUrl, introVideoUrl, onOpenAvatarPrivate }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Memorial[]>([]);
   const [searching, setSearching] = useState(false);
@@ -297,6 +298,15 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   className="w-full flex items-center justify-center gap-2 bg-sepia-800/50 hover:bg-sepia-800 border border-sepia-700 rounded-xl py-3 text-sepia-200 text-sm font-semibold transition-all"
                 >
                   <ExternalLink className="w-4 h-4" /> Conocer su historia
+                </button>
+              )}
+
+              {onOpenAvatarPrivate && (
+                <button
+                  onClick={onOpenAvatarPrivate}
+                  className="w-full flex items-center justify-center gap-2 bg-sepia-800/50 hover:bg-sepia-800 border border-sepia-700 rounded-xl py-3 text-sepia-200 text-sm font-semibold transition-all"
+                >
+                  <Lock className="w-4 h-4" /> ¿Contrataste su Avatar? Actívalo con tu código
                 </button>
               )}
 

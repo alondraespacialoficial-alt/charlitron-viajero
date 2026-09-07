@@ -1828,6 +1828,7 @@ export default function App() {
   const [showMural,         setShowMural]         = useState(() => INITIAL_PATH === 'mural');
   const [showCollaborators, setShowCollaborators] = useState(() => INITIAL_PATH === 'colaboradores');
   const [showAvatars,       setShowAvatars]       = useState(() => INITIAL_PATH === 'avatares');
+  const [avatarsAutoPrivate, setAvatarsAutoPrivate] = useState(false);
   const [showJardin,        setShowJardin]        = useState(() => INITIAL_PATH === 'jardin' || !!INITIAL_JARDIN_SLUG);
   const [jardinSlug,        setJardinSlug]        = useState<string | undefined>(() => INITIAL_JARDIN_SLUG);
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
@@ -2323,7 +2324,7 @@ export default function App() {
         onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onAvatars={() => { setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onAvatars={() => { setAvatarsAutoPrivate(false); setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onJardin={() => { window.scrollTo(0, 0); setShowJardin(true); setJardinSlug(undefined); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
         investigationEnabled={investigationEnabled}
@@ -2556,7 +2557,7 @@ export default function App() {
               </div>
               {/* Contraseña de acceso público a los avatares */}
               <Suspense fallback={<SectionLoader />}>
-                <AvatarSection accessPassword="2003" />
+                <AvatarSection accessPassword="2003" autoStartPrivate={avatarsAutoPrivate} />
               </Suspense>
             </div>
           </motion.div>
@@ -2576,6 +2577,7 @@ export default function App() {
                 onOpenStory={(story) => { window.scrollTo(0, 0); setShowJardin(false); setJardinSlug(undefined); setSelectedStory(story); }}
                 coverUrl={jardinCoverUrl}
                 introVideoUrl={jardinIntroVideoUrl}
+                onOpenAvatarPrivate={() => { window.scrollTo(0, 0); setShowJardin(false); setJardinSlug(undefined); setAvatarsAutoPrivate(true); setShowAvatars(true); }}
               />
             </Suspense>
           </motion.div>
