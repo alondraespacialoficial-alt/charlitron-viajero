@@ -92,6 +92,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [messageSent, setMessageSent] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [linkedFamilyMember, setLinkedFamilyMember] = useState<{ name: string; relationship?: string; photo_url?: string; birth_date?: string; death_date?: string; bio?: string } | null>(null);
+  const [linkedMemorial, setLinkedMemorial] = useState<{ slug: string; full_name: string; photo_url?: string | null } | null>(null);
   const [introVideoVertical, setIntroVideoVertical] = useState(false);
   const [tributeVideoError, setTributeVideoError] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -160,13 +161,23 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       } else {
         setLinkedFamilyMember(null);
       }
+      // El vínculo puede estar configurado desde este memorial o desde el otro lado (ej. su pareja)
+      const linkOrParts = [`linked_memorial_id.eq.${m.id}`];
+      if (m.linked_memorial_id) linkOrParts.push(`id.eq.${m.linked_memorial_id}`);
+      const { data: linkedData } = await supabase
+        .from('memorials')
+        .select('slug, full_name, photo_url')
+        .or(linkOrParts.join(','))
+        .neq('id', m.id)
+        .maybeSingle();
+      setLinkedMemorial(linkedData as typeof linkedMemorial);
     }
     setLoadingMemorial(false);
   };
 
   useEffect(() => {
     if (activeSlug) loadMemorial(activeSlug);
-    else { setMemorial(null); setGestures([]); setGuestbook([]); }
+    else { setMemorial(null); setGestures([]); setGuestbook([]); setLinkedMemorial(null); }
   }, [activeSlug]); // eslint-disable-line
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -349,6 +360,19 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   <span className="inline-flex items-center gap-2 bg-sepia-600 hover:bg-sepia-500 text-sepia-100 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">
                     <Lock className="w-4 h-4" /> Activar con código
                   </span>
+                </button>
+              )}
+
+              {linkedMemorial && (
+                <button
+                  onClick={() => { setActiveSlug(linkedMemorial.slug); window.history.pushState(null, '', `/jardin/${linkedMemorial.slug}`); }}
+                  className="w-full flex items-center gap-4 bg-sepia-900/40 hover:bg-sepia-900/70 border border-sepia-800 rounded-2xl p-4 text-left transition-all"
+                >
+                  {linkedMemorial.photo_url
+                    ? <img src={linkedMemorial.photo_url} alt={linkedMemorial.full_name} className="w-12 h-12 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
+                    : <span className="text-2xl flex-shrink-0">💞</span>
+                  }
+                  <p className="text-sepia-200 text-sm">Visita el memorial de <span className="text-sepia-100 font-serif">{linkedMemorial.full_name}</span></p>
                 </button>
               )}
 

@@ -51,6 +51,12 @@ export const MemorialsAdmin: React.FC = () => {
   const [linkedMemberName, setLinkedMemberName] = useState('');
   const [linkedMemberContext, setLinkedMemberContext] = useState('');
 
+  // Vínculo con otro memorial (ej. pareja/esposo(a))
+  const [memorialLinkSearch, setMemorialLinkSearch] = useState('');
+  const [memorialLinkResults, setMemorialLinkResults] = useState<{ id: string; full_name: string }[]>([]);
+  const [memorialLinkSearching, setMemorialLinkSearching] = useState(false);
+  const [linkedMemorialName, setLinkedMemorialName] = useState('');
+
   // Libro de visitas
   const [guestbook, setGuestbook] = useState<MemorialGuestbookEntry[]>([]);
   const [guestbookLoading, setGuestbookLoading] = useState(false);
@@ -118,6 +124,26 @@ export const MemorialsAdmin: React.FC = () => {
     return () => clearTimeout(t);
   }, [memberSearch]); // eslint-disable-line
 
+  const searchLinkableMemorials = async () => {
+    const q = memorialLinkSearch.trim();
+    if (q.length < 2) { setMemorialLinkResults([]); return; }
+    setMemorialLinkSearching(true);
+    const { data } = await supabase
+      .from('memorials')
+      .select('id, full_name')
+      .ilike('full_name', `%${q}%`)
+      .neq('id', editing?.id || '')
+      .limit(15);
+    setMemorialLinkResults((data as { id: string; full_name: string }[]) || []);
+    setMemorialLinkSearching(false);
+  };
+
+  useEffect(() => {
+    if (memorialLinkSearch.trim().length < 2) { setMemorialLinkResults([]); return; }
+    const t = setTimeout(() => { searchLinkableMemorials(); }, 400);
+    return () => clearTimeout(t);
+  }, [memorialLinkSearch]); // eslint-disable-line
+
   const loadGuestbook = async (memorialId: string) => {
     setGuestbookLoading(true);
     const { data } = await supabase
@@ -156,13 +182,22 @@ export const MemorialsAdmin: React.FC = () => {
         setLinkedMemberName('');
         setLinkedMemberContext('');
       }
+      if (editing.linked_memorial_id) {
+        supabase.from('memorials').select('full_name').eq('id', editing.linked_memorial_id).maybeSingle()
+          .then(({ data }) => setLinkedMemorialName((data as any)?.full_name || ''));
+      } else {
+        setLinkedMemorialName('');
+      }
     } else {
       setGuestbook([]);
       setGestures([]);
       setLinkedMemberName('');
+      setLinkedMemorialName('');
     }
     setMemberSearch('');
     setMemberResults([]);
+    setMemorialLinkSearch('');
+    setMemorialLinkResults([]);
   }, [editing?.id]); // eslint-disable-line
 
   const moderateGuestbook = async (entryId: string, status: 'approved' | 'rejected') => {
@@ -255,6 +290,7 @@ export const MemorialsAdmin: React.FC = () => {
         access_code: editing.visibility === 'public' ? null : (editing.access_code?.trim().toUpperCase() || null),
         story_id: editing.story_id || null,
         family_member_id: editing.family_member_id || null,
+        linked_memorial_id: editing.linked_memorial_id || null,
         tribute_song_url: editing.tribute_song_url?.trim() || null,
         spotify_link: editing.spotify_link?.trim() || null,
         tribute_video_url: editing.tribute_video_url?.trim() || null,
@@ -624,6 +660,54 @@ export const MemorialsAdmin: React.FC = () => {
                             {(m.treeName || m.clientName) && (
                               <span className="text-sepia-600 text-xs">{[m.treeName, m.clientName].filter(Boolean).join(' · ')}</span>
                             )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Vincular con otro memorial (ej. esposo/esposa) */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs text-sepia-400 uppercase tracking-widest">Vincular con otro memorial (ej. su pareja)</label>
+                {linkedMemorialName ? (
+                  <div className="flex items-center gap-2 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sepia-100 text-sm">{linkedMemorialName}</span>
+                    </div>
+                    <button type="button" onClick={() => { setEditing({ ...editing, linked_memorial_id: null }); setLinkedMemorialName(''); }} className="text-sepia-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={memorialLinkSearch}
+                        onChange={(e) => setMemorialLinkSearch(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); searchLinkableMemorials(); } }}
+                        placeholder="Buscar memorial por nombre… (mín. 2 letras)"
+                        className="flex-1 bg-sepia-900 border border-sepia-700 rounded-xl px-4 py-2.5 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500 text-sm"
+                      />
+                      <button type="button" onClick={searchLinkableMemorials} disabled={memorialLinkSearching} className="bg-sepia-700 hover:bg-sepia-600 text-sepia-200 px-3 rounded-xl shrink-0">
+                        {memorialLinkSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p className="text-sepia-600 text-xs">
+                      En ambos memoriales aparecerá una pequeña tarjeta para ir del uno al otro; solo hace falta configurarlo de un lado.
+                    </p>
+                    {memorialLinkSearch.trim().length >= 2 && !memorialLinkSearching && memorialLinkResults.length === 0 && (
+                      <p className="text-sepia-600 text-xs italic">Sin coincidencias para "{memorialLinkSearch.trim()}".</p>
+                    )}
+                    {memorialLinkResults.length > 0 && (
+                      <div className="bg-sepia-900 border border-sepia-700 rounded-xl max-h-56 overflow-y-auto divide-y divide-sepia-800">
+                        {memorialLinkResults.map(m => (
+                          <button
+                            key={m.id} type="button"
+                            onClick={() => { setEditing({ ...editing, linked_memorial_id: m.id }); setLinkedMemorialName(m.full_name); setMemorialLinkResults([]); setMemorialLinkSearch(''); }}
+                            className="block w-full text-left px-4 py-2 hover:bg-sepia-800"
+                          >
+                            <span className="text-sepia-200 text-sm block">{m.full_name}</span>
                           </button>
                         ))}
                       </div>

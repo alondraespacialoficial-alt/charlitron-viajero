@@ -227,6 +227,7 @@ export interface Memorial {
   access_code?: string | null;
   story_id?: string | null;
   family_member_id?: string | null;
+  linked_memorial_id?: string | null;
   tribute_song_url?: string | null;
   spotify_link?: string | null;
   tribute_video_url?: string | null;
