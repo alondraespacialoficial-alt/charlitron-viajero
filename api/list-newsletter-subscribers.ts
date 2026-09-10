@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { isAuthorizedAdmin } from './_auth.js';
 
 // Endpoint protegido (solo admin) para listar suscriptores del newsletter
 // y ver conteos por segmento de interés.
@@ -14,10 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const authHeader = req.headers['authorization'] ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  const adminPassword = process.env.ADMIN_PASSWORD ?? '';
-  if (!adminPassword || token !== adminPassword) {
+  if (!isAuthorizedAdmin(req)) {
     return res.status(401).json({ error: 'No autorizado.' });
   }
 
