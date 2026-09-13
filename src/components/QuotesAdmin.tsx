@@ -51,6 +51,17 @@ const formatDate = (value?: string) => {
   });
 };
 
+const TERMS_AND_CONDITIONS = [
+  'TÉRMINOS Y CONDICIONES',
+  '1. El anticipo no es reembolsable una vez iniciado el proyecto.',
+  '2. El saldo restante deberá liquidarse antes de la entrega del producto final.',
+  '3. Los plazos de entrega están sujetos a que el cliente proporcione el material solicitado en tiempo y forma.',
+  '4. El servicio incluye 2 revisiones sin costo. Cambios adicionales se cotizan por separado.',
+  '5. Charlitron Viajero del Tiempo se reserva el derecho de usar el producto como muestra de portafolio en redes sociales.',
+  'Al realizar el pago del anticipo, el cliente acepta los términos descritos en este documento.',
+  '— Charlitron Viajero del Tiempo · San Luis Potosí',
+];
+
 const getStatusLabel = (status?: Quote['status']) => {
   switch (status) {
     case 'advance_paid':
@@ -361,28 +372,53 @@ export const QuotesAdmin: React.FC = () => {
       doc.setTextColor(58, 39, 24);
       doc.text('Detalle formal', 18, baseTextY);
 
+      const formalText = quote.formal_text || buildFormalText(quote);
+      const formalLines = doc.splitTextToSize(formalText, 155) as string[];
+      const formalBoxY = 158;
+      const formalBoxHeight = Math.max(72, Math.min(110, formalLines.length * 4.8 + 16));
+
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(18, 158, 174, 96, 3, 3, 'F');
+      doc.roundedRect(18, formalBoxY, 174, formalBoxHeight, 3, 3, 'F');
       doc.setDrawColor(219, 199, 171);
       doc.setLineWidth(0.3);
-      doc.roundedRect(18, 158, 174, 96, 3, 3, 'S');
+      doc.roundedRect(18, formalBoxY, 174, formalBoxHeight, 3, 3, 'S');
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
       doc.setTextColor(48, 36, 24);
-      const formalLines = doc.splitTextToSize(quote.formal_text || buildFormalText(quote), 155) as string[];
-      doc.text(formalLines, 24, 170);
+      doc.text(formalLines, 24, formalBoxY + 12);
+
+      let currentY = formalBoxY + formalBoxHeight + 12;
 
       if (quote.notes?.trim()) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(83, 57, 34);
-        doc.text('Notas', 18, 265);
+        doc.text('Notas', 18, currentY);
+        currentY += 8;
+
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(48, 36, 24);
         const noteLines = doc.splitTextToSize(quote.notes, 150) as string[];
-        doc.text(noteLines, 40, 265);
+        doc.text(noteLines, 40, currentY);
+        currentY += noteLines.length * 4.2 + 8;
       }
+
+      const footerStartY = Math.max(248, Math.min(266, currentY + 8));
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(83, 57, 34);
+      doc.text(TERMS_AND_CONDITIONS[0], 18, footerStartY);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(48, 36, 24);
+
+      TERMS_AND_CONDITIONS.slice(1).forEach((line, index) => {
+        const lineY = footerStartY + 7 + (index * 4.3);
+        doc.text(line, 20, lineY);
+      });
 
       const safeName = (quote.client_name || 'cotizacion')
         .toLowerCase()
