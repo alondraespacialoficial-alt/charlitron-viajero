@@ -404,20 +404,26 @@ export const QuotesAdmin: React.FC = () => {
         currentY += noteLines.length * 4.2 + 8;
       }
 
-      const footerStartY = Math.max(248, Math.min(266, currentY + 8));
+      const footerStartY = Math.max(248, Math.min(260, currentY + 8));
+      const footerLeftX = 18;
+      const footerRightX = 190;
+      const footerWrapWidth = footerRightX - footerLeftX;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(83, 57, 34);
-      doc.text(TERMS_AND_CONDITIONS[0], 18, footerStartY);
+      doc.text(TERMS_AND_CONDITIONS[0], footerLeftX, footerStartY);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.8);
       doc.setTextColor(48, 36, 24);
 
       TERMS_AND_CONDITIONS.slice(1).forEach((line, index) => {
-        const lineY = footerStartY + 7 + (index * 4.3);
-        doc.text(line, 20, lineY);
+        const wrappedLines = doc.splitTextToSize(line, footerWrapWidth) as string[];
+        wrappedLines.forEach((wrappedLine, wrappedIndex) => {
+          const lineY = footerStartY + 7 + ((index + wrappedIndex) * 4.3);
+          doc.text(wrappedLine, footerLeftX + 2, lineY);
+        });
       });
 
       const safeName = (quote.client_name || 'cotizacion')
