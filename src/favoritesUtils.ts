@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 export interface UserFavorite {
   id: string;
-  favorite_type: 'story' | 'product';
+  favorite_type: 'story' | 'product' | 'photo';
   favorite_id: string;
   favorite_title?: string;
   favorite_image?: string;
@@ -24,7 +24,7 @@ const getSessionId = (): string => {
  * Agregar a favoritos
  */
 export const addToFavorites = async (
-  favoriteType: 'story' | 'product',
+  favoriteType: 'story' | 'product' | 'photo',
   favoriteId: string,
   title?: string,
   image?: string
@@ -73,7 +73,7 @@ export const addToFavorites = async (
  * Quitar de favoritos
  */
 export const removeFromFavorites = async (
-  favoriteType: 'story' | 'product',
+  favoriteType: 'story' | 'product' | 'photo',
   favoriteId: string
 ): Promise<boolean> => {
   try {
@@ -102,7 +102,7 @@ export const removeFromFavorites = async (
  * Verificar si está en favoritos
  */
 export const isFavorited = async (
-  favoriteType: 'story' | 'product',
+  favoriteType: 'story' | 'product' | 'photo',
   favoriteId: string
 ): Promise<boolean> => {
   try {
@@ -132,7 +132,7 @@ export const isFavorited = async (
  * Obtener todos los favoritos de un tipo
  */
 export const getFavoritesByType = async (
-  favoriteType: 'story' | 'product'
+  favoriteType: 'story' | 'product' | 'photo'
 ): Promise<UserFavorite[]> => {
   try {
     const sessionId = getSessionId();

@@ -46,6 +46,7 @@ import { CollaboratorsAdmin } from './CollaboratorsAdmin';
 import { AvatarsAdmin } from './AvatarsAdmin';
 import { MemorialsAdmin } from './MemorialsAdmin';
 import { MarketingAdmin } from './MarketingAdmin';
+import { QuotesAdmin } from './QuotesAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -78,7 +79,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators' | 'avatars' | 'marketing' | 'memorials'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators' | 'avatars' | 'marketing' | 'quotes' | 'memorials'>('stories');
   const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
   const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1236,6 +1237,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'marketing' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 📧 Marketing
+              </button>
+              <button 
+                onClick={() => setViewMode('quotes')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'quotes' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                📄 Cotizaciones
               </button>
               <button 
                 onClick={() => setViewMode('memorials')}
@@ -3466,7 +3473,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               multiple
                               className="hidden"
                               onChange={async (e) => {
-                                const files = Array.from(e.target.files || []);
+                                const files = Array.from(e.target.files || []) as File[];
                                 if (!files.length) return;
                                 const urls: string[] = [];
                                 for (const file of files) {
@@ -3694,6 +3701,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-5xl mx-auto"
               >
                 <MarketingAdmin adminToken={adminToken} />
+              </motion.div>
+            ) : viewMode === 'quotes' ? (
+              <motion.div 
+                key="quotes"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-6xl mx-auto"
+              >
+                <QuotesAdmin />
               </motion.div>
             ) : viewMode === 'analytics' ? (
               <motion.div 

@@ -57,6 +57,21 @@ export interface TravelPhoto {
   created_at?: string;
 }
 
+export interface Quote {
+  id: string;
+  client_name: string;
+  client_email?: string;
+  client_phone?: string;
+  description: string;
+  formal_text: string;
+  total_amount: number;
+  advance_amount: number;
+  status: 'pending' | 'accepted' | 'cancelled';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Product {
   id: string;
   title: string;
