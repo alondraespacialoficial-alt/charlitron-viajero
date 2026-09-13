@@ -375,7 +375,7 @@ export const QuotesAdmin: React.FC = () => {
       const formalText = quote.formal_text || buildFormalText(quote);
       const formalLines = doc.splitTextToSize(formalText, 155) as string[];
       const formalBoxY = 158;
-      const formalBoxHeight = Math.max(72, Math.min(110, formalLines.length * 4.8 + 16));
+      const formalBoxHeight = Math.max(72, formalLines.length * 4.8 + 16);
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(18, formalBoxY, 174, formalBoxHeight, 3, 3, 'F');
@@ -404,7 +404,15 @@ export const QuotesAdmin: React.FC = () => {
         currentY += noteLines.length * 4.2 + 8;
       }
 
-      const footerStartY = Math.max(248, Math.min(260, currentY + 8));
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const footerHeightEstimate = 7 + (TERMS_AND_CONDITIONS.length - 1) * 4.3 + 8;
+      let footerStartY = Math.max(24, currentY + 8);
+
+      if (footerStartY + footerHeightEstimate > pageHeight - 18) {
+        doc.addPage();
+        footerStartY = 24;
+      }
+
       const footerLeftX = 18;
       const footerRightX = 190;
       const footerWrapWidth = footerRightX - footerLeftX;
