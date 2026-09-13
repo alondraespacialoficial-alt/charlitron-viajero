@@ -15,6 +15,10 @@ const createEmptyDraft = (): Omit<Quote, 'id' | 'created_at'> & { id?: string } 
   total_amount: 0,
   advance_amount: 0,
   status: 'pending',
+  advance_paid_at: '',
+  advance_proof_url: '',
+  final_paid_at: '',
+  final_proof_url: '',
   notes: '',
 });
 
@@ -45,6 +49,22 @@ const formatDate = (value?: string) => {
     month: '2-digit',
     year: 'numeric',
   });
+};
+
+const getStatusLabel = (status?: Quote['status']) => {
+  switch (status) {
+    case 'advance_paid':
+      return 'Anticipo recibido';
+    case 'fully_paid':
+      return 'Liquidada';
+    case 'accepted':
+      return 'Aceptada';
+    case 'cancelled':
+      return 'Cancelada';
+    case 'pending':
+    default:
+      return 'Pendiente';
+  }
 };
 
 const blobToDataUrl = async (blob: Blob) => {
@@ -89,7 +109,18 @@ export const QuotesAdmin: React.FC = () => {
 
   const hasDraftContent = useMemo(() => {
     return Boolean(
-      draft.client_name || draft.client_email || draft.client_phone || draft.description || draft.formal_text || draft.notes || draft.total_amount || draft.advance_amount
+      draft.client_name ||
+      draft.client_email ||
+      draft.client_phone ||
+      draft.description ||
+      draft.formal_text ||
+      draft.notes ||
+      draft.total_amount ||
+      draft.advance_amount ||
+      draft.advance_paid_at ||
+      draft.advance_proof_url ||
+      draft.final_paid_at ||
+      draft.final_proof_url
     );
   }, [draft]);
 
@@ -106,6 +137,8 @@ export const QuotesAdmin: React.FC = () => {
       const normalizedDraft = {
         ...draft,
         client_name: draft.client_name.trim(),
+        client_email: draft.client_email.trim(),
+        client_phone: draft.client_phone.trim(),
         description: draft.description.trim(),
         formal_text: draft.formal_text.trim() || buildFormalText({
           client_name: draft.client_name,
@@ -116,6 +149,10 @@ export const QuotesAdmin: React.FC = () => {
         }),
         total_amount: safeNumber(draft.total_amount),
         advance_amount: safeNumber(draft.advance_amount),
+        advance_paid_at: draft.advance_paid_at || null,
+        advance_proof_url: draft.advance_proof_url?.trim() || null,
+        final_paid_at: draft.final_paid_at || null,
+        final_proof_url: draft.final_proof_url?.trim() || null,
         notes: draft.notes.trim(),
       };
 
@@ -167,6 +204,10 @@ export const QuotesAdmin: React.FC = () => {
       total_amount: quote.total_amount,
       advance_amount: quote.advance_amount,
       status: quote.status,
+      advance_paid_at: quote.advance_paid_at || '',
+      advance_proof_url: quote.advance_proof_url || '',
+      final_paid_at: quote.final_paid_at || '',
+      final_proof_url: quote.final_proof_url || '',
       notes: quote.notes || '',
     });
   };
@@ -240,11 +281,7 @@ export const QuotesAdmin: React.FC = () => {
       doc.setTextColor(100, 77, 52);
       doc.text(`Fecha: ${formatDate(quote.created_at)}`, 146, 27);
 
-      const statusText = quote.status === 'accepted'
-        ? 'Aceptada'
-        : quote.status === 'cancelled'
-          ? 'Cancelada'
-          : 'Pendiente';
+      const statusText = getStatusLabel(quote.status);
 
       doc.setFillColor(233, 224, 208);
       doc.roundedRect(150, 59, 42, 11, 2, 2, 'F');
@@ -289,6 +326,34 @@ export const QuotesAdmin: React.FC = () => {
       doc.text('Anticipo', 18, baseInfoY + 18);
       doc.setFont('helvetica', 'normal');
       doc.text(formatCurrency(quote.advance_amount), 58, baseInfoY + 18);
+
+      if (quote.advance_paid_at) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Anticipo pagado', 18, baseInfoY + 28);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatDate(quote.advance_paid_at), 58, baseInfoY + 28);
+      }
+
+      if (quote.advance_proof_url) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comprobante anticipo', 18, baseInfoY + 38);
+        doc.setFont('helvetica', 'normal');
+        doc.text(quote.advance_proof_url, 58, baseInfoY + 38);
+      }
+
+      if (quote.final_paid_at) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Liquidación final', 18, baseInfoY + 48);
+        doc.setFont('helvetica', 'normal');
+        doc.text(formatDate(quote.final_paid_at), 58, baseInfoY + 48);
+      }
+
+      if (quote.final_proof_url) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comprobante final', 18, baseInfoY + 58);
+        doc.setFont('helvetica', 'normal');
+        doc.text(quote.final_proof_url, 58, baseInfoY + 58);
+      }
 
       const baseTextY = 150;
       doc.setFont('helvetica', 'bold');
@@ -367,6 +432,8 @@ export const QuotesAdmin: React.FC = () => {
             >
               <option value="pending">Pendiente</option>
               <option value="accepted">Aceptada</option>
+              <option value="advance_paid">Anticipo recibido</option>
+              <option value="fully_paid">Liquidada</option>
               <option value="cancelled">Cancelada</option>
             </select>
           </div>
@@ -426,6 +493,50 @@ export const QuotesAdmin: React.FC = () => {
               value={draft.advance_amount}
               onChange={e => setDraft(d => ({ ...d, advance_amount: safeNumber(e.target.value) }))}
               className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 outline-none focus:border-sepia-500"
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.28em] text-sepia-500 font-bold mb-2">Fecha anticipo</label>
+            <input
+              type="date"
+              value={draft.advance_paid_at}
+              onChange={e => setDraft(d => ({ ...d, advance_paid_at: e.target.value }))}
+              className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 outline-none focus:border-sepia-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.28em] text-sepia-500 font-bold mb-2">Comprobante anticipo</label>
+            <input
+              value={draft.advance_proof_url}
+              onChange={e => setDraft(d => ({ ...d, advance_proof_url: e.target.value }))}
+              className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+              placeholder="URL del comprobante"
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.28em] text-sepia-500 font-bold mb-2">Fecha liquidación final</label>
+            <input
+              type="date"
+              value={draft.final_paid_at}
+              onChange={e => setDraft(d => ({ ...d, final_paid_at: e.target.value }))}
+              className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 outline-none focus:border-sepia-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] uppercase tracking-[0.28em] text-sepia-500 font-bold mb-2">Comprobante final</label>
+            <input
+              value={draft.final_proof_url}
+              onChange={e => setDraft(d => ({ ...d, final_proof_url: e.target.value }))}
+              className="w-full bg-sepia-900 border border-sepia-700 rounded-xl px-3 py-2 text-sepia-100 placeholder-sepia-600 outline-none focus:border-sepia-500"
+              placeholder="URL del comprobante"
             />
           </div>
         </div>
@@ -498,11 +609,15 @@ export const QuotesAdmin: React.FC = () => {
                     <span className={`px-2 py-1 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold ${
                       quote.status === 'accepted'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : quote.status === 'cancelled'
-                          ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : quote.status === 'fully_paid'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : quote.status === 'advance_paid'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : quote.status === 'cancelled'
+                              ? 'bg-red-500/20 text-red-300 border border-red-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                     }`}>
-                      {quote.status === 'accepted' ? 'Aceptada' : quote.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+                      {getStatusLabel(quote.status)}
                     </span>
                   </div>
                   <p className="text-sm text-sepia-400 mt-1">{quote.description}</p>
@@ -555,6 +670,39 @@ export const QuotesAdmin: React.FC = () => {
                   <p className="text-base font-bold text-sepia-100">{quote.client_phone || '—'}</p>
                 </div>
               </div>
+
+              {(quote.advance_paid_at || quote.advance_proof_url || quote.final_paid_at || quote.final_proof_url) && (
+                <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm text-sepia-300">
+                  {quote.advance_paid_at && (
+                    <div className="rounded-xl border border-sepia-800 bg-sepia-900/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-sepia-500 mb-1">Fecha anticipo</p>
+                      <p className="text-base font-bold text-sepia-100">{formatDate(quote.advance_paid_at)}</p>
+                    </div>
+                  )}
+                  {quote.advance_proof_url && (
+                    <div className="rounded-xl border border-sepia-800 bg-sepia-900/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-sepia-500 mb-1">Comprobante anticipo</p>
+                      <a href={quote.advance_proof_url} target="_blank" rel="noreferrer" className="text-base font-bold text-sepia-100 underline break-all">
+                        {quote.advance_proof_url}
+                      </a>
+                    </div>
+                  )}
+                  {quote.final_paid_at && (
+                    <div className="rounded-xl border border-sepia-800 bg-sepia-900/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-sepia-500 mb-1">Fecha liquidación</p>
+                      <p className="text-base font-bold text-sepia-100">{formatDate(quote.final_paid_at)}</p>
+                    </div>
+                  )}
+                  {quote.final_proof_url && (
+                    <div className="rounded-xl border border-sepia-800 bg-sepia-900/40 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-sepia-500 mb-1">Comprobante final</p>
+                      <a href={quote.final_proof_url} target="_blank" rel="noreferrer" className="text-base font-bold text-sepia-100 underline break-all">
+                        {quote.final_proof_url}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

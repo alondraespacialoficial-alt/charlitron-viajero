@@ -66,7 +66,11 @@ export interface Quote {
   formal_text: string;
   total_amount: number;
   advance_amount: number;
-  status: 'pending' | 'accepted' | 'cancelled';
+  status: 'pending' | 'accepted' | 'advance_paid' | 'fully_paid' | 'cancelled';
+  advance_paid_at?: string;
+  advance_proof_url?: string;
+  final_paid_at?: string;
+  final_proof_url?: string;
   notes?: string;
   created_at?: string;
   updated_at?: string;
