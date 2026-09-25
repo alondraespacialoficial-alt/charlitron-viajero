@@ -1097,7 +1097,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-sepia-950 flex flex-col">
+    <div className="fixed inset-0 z-[10000] bg-sepia-950 flex flex-col">
       {/* Header */}
       <header className="border-b border-sepia-800 p-6 flex justify-between items-center bg-sepia-950/50 backdrop-blur-md">
         <div className="flex items-center gap-4">
