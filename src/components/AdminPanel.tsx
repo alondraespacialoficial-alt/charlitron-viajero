@@ -47,6 +47,7 @@ import { AvatarsAdmin } from './AvatarsAdmin';
 import { MemorialsAdmin } from './MemorialsAdmin';
 import { MarketingAdmin } from './MarketingAdmin';
 import { QuotesAdmin } from './QuotesAdmin';
+import { TravelerMapAdmin } from './TravelerMapAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -79,7 +80,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingTravelPhoto, setEditingTravelPhoto] = useState<Partial<TravelPhoto> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
-  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators' | 'avatars' | 'marketing' | 'quotes' | 'memorials'>('stories');
+  const [viewMode, setViewMode] = useState<'stories' | 'historians' | 'restored' | 'travels' | 'settings' | 'family_keys' | 'shop' | 'sponsors' | 'contests' | 'conferences' | 'courses' | 'analytics' | 'install_prompt' | 'mural' | 'collaborators' | 'avatars' | 'marketing' | 'quotes' | 'memorials' | 'traveler_map'>('stories');
   const [muralPhotos, setMuralPhotos] = useState<MuralPhoto[]>([]);
   const [editingMuralPhoto, setEditingMuralPhoto] = useState<Partial<MuralPhoto> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1249,6 +1250,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'memorials' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
               >
                 🌷 Jardín
+              </button>
+              <button 
+                onClick={() => setViewMode('traveler_map')}
+                className={`py-2 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${viewMode === 'traveler_map' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400 hover:text-sepia-200'}`}
+              >
+                Mapa Viajero
               </button>
             </div>
 
@@ -3681,6 +3688,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="max-w-3xl mx-auto"
               >
                 <MemorialsAdmin />
+              </motion.div>
+            ) : viewMode === 'traveler_map' ? (
+              <motion.div
+                key="traveler_map"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-5xl mx-auto"
+              >
+                <TravelerMapAdmin stories={stories} />
               </motion.div>
             ) : viewMode === 'courses' ? (
               <motion.div 

@@ -21,6 +21,29 @@ export interface Story {
   historian_photo?: string;
 }
 
+export type TravelerMapCategory = 'Lugar' | 'Personaje' | 'Comercio' | 'Barrio' | 'Suceso' | 'Recuerdo';
+
+export interface TravelerMapPoint {
+  id: string;
+  name: string;
+  slug: string;
+  category: TravelerMapCategory;
+  description?: string;
+  era?: string;
+  address?: string;
+  neighborhood?: string;
+  latitude: number;
+  longitude: number;
+  image_url?: string;
+  story_id?: string;
+  external_url?: string;
+  tags?: string[];
+  featured: boolean;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Historian {
   id: string;
   name: string;

@@ -15,6 +15,7 @@ import { SearchResults } from './components/SearchResults';
 import { FavoritesPanel } from './components/FavoritesPanel';
 import { InstallPrompt } from './components/InstallPrompt';
 import { AIChatBubble } from './components/AIChatBubble';
+import { TravelerMapSection } from './components/TravelerMapSection';
 
 // Secciones cargadas bajo demanda (mejora rendimiento inicial)
 const AdminPanel        = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -196,7 +197,7 @@ const Guestbook = ({ storyId }: { storyId: string }) => {
   );
 };
 
-const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, onJardin, onHistorias, investigationEnabled, logoUrl }: { 
+const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFamilyTree, onFavorites, onContests, onConferences, onCourses, onMural, onCollaborators, onAvatars, onJardin, onMap, onHistorias, investigationEnabled, logoUrl }: { 
   onHome: () => void, 
   onLogoClick: () => void, 
   onGallery: () => void,
@@ -211,6 +212,7 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
   onCollaborators: () => void,
   onAvatars: () => void,
   onJardin: () => void,
+  onMap: () => void,
   onHistorias: () => void,
   investigationEnabled: boolean,
   logoUrl: string
@@ -317,6 +319,10 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
               <button onClick={onJardin} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
                 <Flower2 className="w-4 h-4" />
                 Jardín
+              </button>
+              <button onClick={onMap} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Mapa del Viajero
               </button>
               <button onClick={onHistorias} className="text-sepia-100 hover:text-sepia-400 transition-colors text-sm uppercase tracking-widest font-medium">Historias</button>
               <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-all">Contacto</a>
@@ -441,6 +447,13 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             >
               <Flower2 className="w-6 h-6" />
               Jardín
+            </button>
+            <button
+              onClick={() => { onMap(); setIsMenuOpen(false); }}
+              className="text-sepia-100 text-2xl font-serif uppercase tracking-widest flex items-center gap-3"
+            >
+              <MapPin className="w-6 h-6" />
+              Mapa del Viajero
             </button>
             <button
               onClick={() => { onHistorias(); setIsMenuOpen(false); }}
@@ -1830,6 +1843,7 @@ export default function App() {
   const [showAvatars,       setShowAvatars]       = useState(() => INITIAL_PATH === 'avatares');
   const [avatarsAutoPrivate, setAvatarsAutoPrivate] = useState(false);
   const [showJardin,        setShowJardin]        = useState(() => INITIAL_PATH === 'jardin' || !!INITIAL_JARDIN_SLUG);
+  const [showTravelerMap,  setShowTravelerMap]  = useState(() => INITIAL_PATH === 'mapa');
   const [jardinSlug,        setJardinSlug]        = useState<string | undefined>(() => INITIAL_JARDIN_SLUG);
   const [showFamilyTree,    setShowFamilyTree]    = useState(() => INITIAL_PATH === 'arbol');
   const [legalView, setLegalView] = useState<'privacy' | 'terms' | 'avatars' | null>(
@@ -2073,6 +2087,7 @@ export default function App() {
       setShowCollaborators(false);
       setShowAvatars(false);
       setShowJardin(false);
+      setShowTravelerMap(false);
       setJardinSlug(undefined);
       setSelectedStory(null);
       setLegalView(null);
@@ -2097,6 +2112,8 @@ export default function App() {
       } else if (path === 'jardin' || path.startsWith('jardin/')) {
         setShowJardin(true);
         setJardinSlug(path.startsWith('jardin/') ? path.replace('jardin/', '') : undefined);
+      } else if (path === 'mapa') {
+        setShowTravelerMap(true);
       } else if (path === 'arbol') {
         setShowFamilyTree(true);
       } else if (path === 'terminos') {
@@ -2207,6 +2224,8 @@ export default function App() {
       newPath = '/avatares';
     } else if (showJardin) {
       newPath = jardinSlug ? `/jardin/${jardinSlug}` : '/jardin';
+    } else if (showTravelerMap) {
+      newPath = '/mapa';
     }
 
     if (window.location.pathname !== newPath) {
@@ -2234,7 +2253,7 @@ export default function App() {
     }
 
     isFirstUrlUpdate.current = false;
-  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars, showJardin, jardinSlug]);
+  }, [legalView, selectedStory?.id, showGallery, showShop, showInvestigation, showContests, showConferences, showCourses, showFamilyTree, showMural, showCollaborators, showAvatars, showJardin, showTravelerMap, jardinSlug]);
 
   const togglePresentationMode = () => {
     const newMode = !isPresentationMode;
@@ -2312,21 +2331,22 @@ export default function App() {
       <InstallPrompt />
       <AIChatBubble />
       <Navbar 
-        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setIsPresentationMode(false); }} 
+        onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setIsPresentationMode(false); }} 
         onLogoClick={handleLogoClick}
-        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onGallery={() => { setShowGallery(true); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onShop={() => { setShowShop(true); setShowGallery(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onInvestigation={() => { setShowInvestigation(true); setShowGallery(false); setShowShop(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onFamilyTree={() => { setShowFamilyTree(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
         onFavorites={() => setShowFavorites(true)}
-        onContests={() => { setShowContests(true); setShowConferences(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onConferences={() => { setShowConferences(true); setShowContests(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowAvatars(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onAvatars={() => { setAvatarsAutoPrivate(false); setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowJardin(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onJardin={() => { window.scrollTo(0, 0); setShowJardin(true); setJardinSlug(undefined); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
-        onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
+        onContests={() => { setShowContests(true); setShowConferences(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onConferences={() => { setShowConferences(true); setShowContests(false); setShowCourses(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCourses={() => { setShowCourses(true); setShowConferences(false); setShowContests(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onMural={() => { setShowMural(true); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onCollaborators={() => { setShowCollaborators(true); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onAvatars={() => { setAvatarsAutoPrivate(false); setShowAvatars(true); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowJardin(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onJardin={() => { window.scrollTo(0, 0); setShowJardin(true); setJardinSlug(undefined); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowTravelerMap(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onMap={() => { window.scrollTo(0, 0); setShowTravelerMap(true); setShowJardin(false); setShowAvatars(false); setShowCollaborators(false); setShowMural(false); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setSelectedStory(null); setIsPresentationMode(false); }}
+        onHistorias={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setIsPresentationMode(false); setTimeout(() => { document.getElementById('historias')?.scrollIntoView({ behavior: 'smooth' }); }, 50); }}
         investigationEnabled={investigationEnabled}
         logoUrl={logoUrl}
       />
@@ -2560,6 +2580,14 @@ export default function App() {
                 <AvatarSection accessPassword="2003" autoStartPrivate={avatarsAutoPrivate} />
               </Suspense>
             </div>
+          </motion.div>
+        ) : showTravelerMap ? (
+          <motion.div key="traveler-map" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
+            <TravelerMapSection
+              stories={publicStories}
+              onBack={() => { window.scrollTo(0, 0); setShowTravelerMap(false); }}
+              onOpenStory={(story) => { window.scrollTo(0, 0); setShowTravelerMap(false); setSelectedStory(story); }}
+            />
           </motion.div>
         ) : showJardin ? (
           <motion.div
