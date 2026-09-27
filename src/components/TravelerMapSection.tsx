@@ -37,10 +37,16 @@ const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[];
     if (!mapElement.current || mapRef.current) return;
     const map = L.map(mapElement.current, { zoomControl: false, attributionControl: true }).setView(MAP_CENTER, 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd', maxZoom: 20,
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
     }).addTo(map);
+    const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 20,
+    });
+    cartoTiles.on('tileerror', event => { event.tile.style.display = 'none'; });
+    cartoTiles.addTo(map);
     markerLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     const resizeTimer = window.setTimeout(() => map.invalidateSize(), 250);
