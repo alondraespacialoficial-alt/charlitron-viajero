@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ArrowLeft, ExternalLink, List, Map as MapIcon, MapPin, Search, X } from 'lucide-react';
+import { ArrowLeft, Bookmark, ExternalLink, Heart, List, Map as MapIcon, MapPin, Search, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import { Story, TravelerMapCategory, TravelerMapPoint } from '../types';
 
@@ -15,6 +15,31 @@ const categoryIcons: Record<TravelerMapCategory, string> = {
 const categoryColors: Record<TravelerMapCategory, string> = {
   Lugar: '#c19251', Personaje: '#8e6136', Comercio: '#557a70', Barrio: '#936b91', Suceso: '#b15d4a', Recuerdo: '#b84f63',
 };
+
+const MAP_FAVORITES_KEY = 'charlitron_traveler_map_favorites';
+const MAP_VISITOR_KEY = 'charlitron_traveler_map_visitor';
+
+const getMapFavorites = (): string[] => {
+  try {
+    const value = JSON.parse(localStorage.getItem(MAP_FAVORITES_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+const getMapVisitorId = (): string => {
+  const savedId = localStorage.getItem(MAP_VISITOR_KEY);
+  if (savedId) return savedId;
+  const visitorId = crypto.randomUUID();
+  localStorage.setItem(MAP_VISITOR_KEY, visitorId);
+  return visitorId;
+};
+
+interface PointEngagement {
+  likes: number;
+  isLiked: boolean;
+}
 
 interface TravelerMapSectionProps {
   stories: Story[];
@@ -92,9 +117,20 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
   const [category, setCategory] = useState<'Todos' | TravelerMapCategory>('Todos');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'map' | 'list'>('map');
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [visitorId, setVisitorId] = useState('');
+  const [engagement, setEngagement] = useState<Record<string, PointEngagement>>({});
+  const [pendingLikeId, setPendingLikeId] = useState<string | null>(null);
+  const [interactionMessage, setInteractionMessage] = useState('');
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    setFavoriteIds(getMapFavorites());
+    setVisitorId(getMapVisitorId());
+  }, []);
 
   useEffect(() => {
     const loadPoints = async () => {
@@ -105,6 +141,29 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
     };
     loadPoints();
   }, []);
+
+  useEffect(() => {
+    if (!visitorId || points.length === 0) return;
+    let isActive = true;
+    const loadEngagement = async () => {
+      const { data, error: engagementError } = await supabase.rpc('get_traveler_map_engagement', {
+        p_point_ids: points.map(point => point.id),
+        p_visitor_id: visitorId,
+      });
+      if (!isActive) return;
+      if (engagementError) {
+        setInteractionMessage('Ejecuta el SQL actualizado de TRAVELER-MAP-SETUP.sql para activar los me gusta.');
+        return;
+      }
+      const nextEngagement: Record<string, PointEngagement> = {};
+      (data || []).forEach((row: { point_id: string; likes: number; is_liked: boolean }) => {
+        nextEngagement[row.point_id] = { likes: Number(row.likes), isLiked: row.is_liked };
+      });
+      setEngagement(nextEngagement);
+    };
+    loadEngagement();
+    return () => { isActive = false; };
+  }, [points, visitorId]);
 
   useEffect(() => {
     if (!isDetailOpen) return;
@@ -118,12 +177,13 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
   const filteredPoints = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase();
     return points.filter(point => {
+      if (favoritesOnly && !favoriteIds.includes(point.id)) return false;
       if (category !== 'Todos' && point.category !== category) return false;
       if (!normalized) return true;
       const haystack = [point.name, point.description, point.era, point.address, point.neighborhood, ...(point.tags || [])].filter(Boolean).join(' ').toLocaleLowerCase();
       return haystack.includes(normalized);
     });
-  }, [category, points, search]);
+  }, [category, favoriteIds, favoritesOnly, points, search]);
 
   const selectedPoint = points.find(point => point.id === selectedId) || null;
   const selectedStory = selectedPoint?.story_id ? stories.find(story => story.id === selectedPoint.story_id) : undefined;
@@ -131,6 +191,43 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
     setSelectedId(point.id);
     setView('list');
     setIsDetailOpen(true);
+  };
+
+  const toggleFavorite = (point: TravelerMapPoint) => {
+    const nextFavorites = favoriteIds.includes(point.id)
+      ? favoriteIds.filter(id => id !== point.id)
+      : [...favoriteIds, point.id];
+    try {
+      localStorage.setItem(MAP_FAVORITES_KEY, JSON.stringify(nextFavorites));
+      setFavoriteIds(nextFavorites);
+    } catch {
+      setInteractionMessage('No se pudo guardar el favorito en este navegador.');
+    }
+  };
+
+  const toggleLike = async (point: TravelerMapPoint) => {
+    if (!visitorId || pendingLikeId) return;
+    const isLiked = engagement[point.id]?.isLiked || false;
+    setPendingLikeId(point.id);
+    setInteractionMessage('');
+    try {
+      const { data, error: likeError } = await supabase.rpc('set_traveler_map_point_like', {
+        p_point_id: point.id,
+        p_visitor_id: visitorId,
+        p_is_liked: !isLiked,
+      });
+      if (likeError) throw likeError;
+      const result = data?.[0] as { likes: number; is_liked: boolean } | undefined;
+      if (!result) throw new Error('No se recibió la actualización del me gusta.');
+      setEngagement(current => ({
+        ...current,
+        [point.id]: { likes: Number(result.likes), isLiked: result.is_liked },
+      }));
+    } catch (likeError: any) {
+      setInteractionMessage(`No se pudo actualizar el me gusta: ${likeError?.message || 'intenta de nuevo.'}`);
+    } finally {
+      setPendingLikeId(null);
+    }
   };
 
   return (
@@ -150,6 +247,7 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {CATEGORIES.map(item => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap px-3 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold ${category === item ? 'bg-sepia-500 text-sepia-950' : 'bg-sepia-950 text-sepia-400 hover:text-sepia-100'}`}>{item}</button>)}
+              <button onClick={() => setFavoritesOnly(value => !value)} aria-pressed={favoritesOnly} className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-3 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold ${favoritesOnly ? 'bg-sepia-500 text-sepia-950' : 'bg-sepia-950 text-sepia-400 hover:text-sepia-100'}`}><Bookmark className="h-3 w-3" /> Guardados ({favoriteIds.length})</button>
             </div>
           </div>
           {isLoading ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center text-sepia-400">Cargando puntos...</div> : error ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center p-8 text-center text-sepia-400">{error}</div> : view === 'map' ? <MapView points={filteredPoints} selectedId={selectedId} onSelect={handleMapPointSelect} /> : (
@@ -188,6 +286,15 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
                   <div className="space-y-5 p-5 md:p-8">
                     {selectedPoint.era && <p className="text-sepia-400 italic">{selectedPoint.era}</p>}
                     <p className="whitespace-pre-line text-sepia-200 leading-relaxed">{selectedPoint.description || 'Cada punto del mapa guarda una historia.'}</p>
+                    <div className="flex flex-wrap items-center gap-3 border-t border-sepia-800 pt-4">
+                      <button type="button" onClick={() => toggleLike(selectedPoint)} disabled={pendingLikeId === selectedPoint.id || !visitorId} aria-pressed={Boolean(engagement[selectedPoint.id]?.isLiked)} className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50 ${engagement[selectedPoint.id]?.isLiked ? 'border-red-400/50 bg-red-900/30 text-red-300' : 'border-sepia-700 text-sepia-300 hover:border-red-400 hover:text-red-300'}`}>
+                        <Heart className="h-4 w-4" fill={engagement[selectedPoint.id]?.isLiked ? 'currentColor' : 'none'} /> Me gusta ({engagement[selectedPoint.id]?.likes || 0})
+                      </button>
+                      <button type="button" onClick={() => toggleFavorite(selectedPoint)} aria-pressed={favoriteIds.includes(selectedPoint.id)} className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${favoriteIds.includes(selectedPoint.id) ? 'border-sepia-500 bg-sepia-800 text-sepia-100' : 'border-sepia-700 text-sepia-300 hover:border-sepia-400'}`}>
+                        <Bookmark className="h-4 w-4" fill={favoriteIds.includes(selectedPoint.id) ? 'currentColor' : 'none'} /> {favoriteIds.includes(selectedPoint.id) ? 'Guardado' : 'Guardar'}
+                      </button>
+                    </div>
+                    {interactionMessage && <p role="status" className="text-sm text-amber-400">{interactionMessage}</p>}
                     {selectedPoint.address && <p className="text-sepia-400 text-sm"><MapPin className="inline w-4 h-4 mr-1" />{selectedPoint.address}</p>}
                     <div className="flex flex-wrap gap-3 border-t border-sepia-800 pt-5">
                       {selectedStory && <button onClick={() => { setIsDetailOpen(false); onOpenStory(selectedStory); }} className="inline-flex items-center gap-2 bg-sepia-500 text-sepia-950 px-4 py-3 rounded-lg uppercase tracking-widest text-xs font-bold hover:bg-sepia-400">Viajar a esta historia <ExternalLink className="w-4 h-4" /></button>}
