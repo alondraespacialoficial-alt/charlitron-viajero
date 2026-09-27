@@ -37,12 +37,14 @@ const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[];
     if (!mapElement.current || mapRef.current) return;
     const map = L.map(mapElement.current, { zoomControl: false, attributionControl: true }).setView(MAP_CENTER, 13);
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 19 }).addTo(map);
-    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution: 'Labels &copy; Esri', maxZoom: 19 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 20,
+    }).addTo(map);
     markerLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
-    setTimeout(() => map.invalidateSize(), 0);
-    return () => { map.remove(); mapRef.current = null; markerLayerRef.current = null; };
+    const resizeTimer = window.setTimeout(() => map.invalidateSize(), 250);
+    return () => { window.clearTimeout(resizeTimer); map.remove(); mapRef.current = null; markerLayerRef.current = null; };
   }, []);
 
   useEffect(() => {
