@@ -3,8 +3,8 @@
  * Permite que la app se descargue y funcione offline
  */
 
-const CACHE_NAME = 'charlitron-v4';
-const IMAGE_CACHE_NAME = 'charlitron-images-v4';
+const CACHE_NAME = 'charlitron-v5';
+const IMAGE_CACHE_NAME = 'charlitron-images-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -78,6 +78,13 @@ self.addEventListener('fetch', event => {
   }
 
   const url = new URL(event.request.url);
+  const isMapTile = url.hostname === 'tile.openstreetmap.org'
+    || url.hostname.endsWith('.basemaps.cartocdn.com')
+    || url.hostname.endsWith('.arcgisonline.com');
+  if (isMapTile) {
+    return;
+  }
+
   const isImage = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url.pathname);
   const isExternalImage = isImage && url.hostname !== self.location.hostname;
 
