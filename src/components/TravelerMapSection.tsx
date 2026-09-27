@@ -172,9 +172,9 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
                 <button onClick={() => setIsDetailOpen(false)} aria-label="Cerrar detalle del viaje" className="shrink-0 rounded-full p-2 text-sepia-400 hover:bg-sepia-800 hover:text-sepia-100"><X className="w-5 h-5" /></button>
               </div>
               <div className="max-h-[calc(90vh-110px)] overflow-y-auto">
-                <div className="grid md:grid-cols-2">
-                  <div className="min-h-64 bg-sepia-950">
-                    {selectedPoint.image_url ? <img src={selectedPoint.image_url} alt={selectedPoint.name} className="h-full min-h-64 max-h-[60vh] w-full object-cover" /> : <div className="flex min-h-64 h-full items-center justify-center"><MapPin className="w-12 h-12 text-sepia-600" /></div>}
+                <div>
+                  <div className="flex min-h-48 max-h-[58vh] w-full items-center justify-center overflow-hidden bg-sepia-950 px-3 py-2">
+                    {selectedPoint.image_url ? <img src={selectedPoint.image_url} alt={selectedPoint.name} className="max-h-[56vh] max-w-full object-contain" /> : <div className="flex min-h-48 items-center justify-center"><MapPin className="w-12 h-12 text-sepia-600" /></div>}
                   </div>
                   <div className="space-y-5 p-5 md:p-8">
                     {selectedPoint.era && <p className="text-sepia-400 italic">{selectedPoint.era}</p>}
