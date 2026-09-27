@@ -47,7 +47,7 @@ import { AvatarsAdmin } from './AvatarsAdmin';
 import { MemorialsAdmin } from './MemorialsAdmin';
 import { MarketingAdmin } from './MarketingAdmin';
 import { QuotesAdmin } from './QuotesAdmin';
-import { TravelerMapAdmin } from './TravelerMapAdmin';
+import { TravelerMapAdmin, TravelerMapMarkerIconAdmin } from './TravelerMapAdmin';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -3697,7 +3697,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-5xl mx-auto"
               >
-                <TravelerMapAdmin stories={stories} />
+                <TravelerMapMarkerIconAdmin />
+                <div className="mt-6">
+                  <TravelerMapAdmin stories={stories} />
+                </div>
               </motion.div>
             ) : viewMode === 'courses' ? (
               <motion.div 

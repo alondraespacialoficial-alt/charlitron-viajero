@@ -22,16 +22,31 @@ interface TravelerMapSectionProps {
   onOpenStory: (story: Story) => void;
 }
 
-const makeMarkerIcon = (point: TravelerMapPoint, selected: boolean) => L.divIcon({
-  className: 'traveler-map-marker-wrapper',
-  html: `<span class="traveler-map-marker ${selected ? 'is-selected' : ''}" style="--marker-color: ${categoryColors[point.category] || categoryColors.Lugar}">${categoryIcons[point.category] || categoryIcons.Lugar}</span>`,
-  iconSize: [38, 38], iconAnchor: [19, 19],
-});
+const makeMarkerIcon = (point: TravelerMapPoint, selected: boolean, customIconUrl: string) => customIconUrl
+  ? L.icon({
+    iconUrl: customIconUrl,
+    className: `traveler-map-marker-image ${selected ? 'is-selected' : ''}`,
+    iconSize: [44, 44], iconAnchor: [22, 22],
+  })
+  : L.divIcon({
+    className: 'traveler-map-marker-wrapper',
+    html: `<span class="traveler-map-marker ${selected ? 'is-selected' : ''}" style="--marker-color: ${categoryColors[point.category] || categoryColors.Lugar}">${categoryIcons[point.category] || categoryIcons.Lugar}</span>`,
+    iconSize: [38, 38], iconAnchor: [19, 19],
+  });
 
 const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[]; selectedId: string | null; onSelect: (point: TravelerMapPoint) => void }) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerLayerRef = useRef<L.LayerGroup | null>(null);
+  const [customIconUrl, setCustomIconUrl] = useState('');
+
+  useEffect(() => {
+    const loadIcon = async () => {
+      const { data } = await supabase.from('traveler_map_settings').select('marker_icon_url').eq('id', 'default').maybeSingle();
+      setCustomIconUrl(data?.marker_icon_url || '');
+    };
+    loadIcon();
+  }, []);
 
   useEffect(() => {
     if (!mapElement.current || mapRef.current) return;
@@ -59,7 +74,7 @@ const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[];
     if (!map || !markerLayer) return;
     markerLayer.clearLayers();
     const markers = points.map(point => {
-      const marker = L.marker([point.latitude, point.longitude], { icon: makeMarkerIcon(point, point.id === selectedId), title: point.name });
+      const marker = L.marker([point.latitude, point.longitude], { icon: makeMarkerIcon(point, point.id === selectedId, customIconUrl), title: point.name });
       marker.on('click', () => onSelect(point));
       marker.addTo(markerLayer);
       return marker;
@@ -72,7 +87,7 @@ const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[];
     } else if (markers.length === 1) {
       map.flyTo(markers[0].getLatLng(), 15, { duration: 0.6 });
     }
-  }, [points, selectedId, onSelect]);
+  }, [points, selectedId, customIconUrl, onSelect]);
 
   return <div ref={mapElement} className="h-[62vh] min-h-[420px] w-full" />;
 };

@@ -3,6 +3,74 @@ import { Edit2, Eye, EyeOff, MapPin, Plus, Save, Trash2, X } from 'lucide-react'
 import { supabase } from '../supabase';
 import { Story, TravelerMapCategory, TravelerMapPoint } from '../types';
 
+export const TravelerMapMarkerIconAdmin: React.FC = () => {
+  const [iconUrl, setIconUrl] = useState('');
+  const [message, setMessage] = useState('');
+  const [isBusy, setIsBusy] = useState(false);
+
+  useEffect(() => {
+    const loadIcon = async () => {
+      const { data, error } = await supabase.from('traveler_map_settings').select('marker_icon_url').eq('id', 'default').maybeSingle();
+      if (error) setMessage('Ejecuta TRAVELER-MAP-SETUP.sql actualizado para habilitar el icono personalizado.');
+      else setIconUrl(data?.marker_icon_url || '');
+    };
+    loadIcon();
+  }, []);
+
+  const uploadIcon = async (file: File) => {
+    if (file.type !== 'image/png') {
+      setMessage('El icono debe ser un archivo PNG.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage('El PNG no debe superar 2 MB.');
+      return;
+    }
+    setIsBusy(true);
+    try {
+      const filePath = `traveler-map-marker-${Date.now()}.png`;
+      const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file, { contentType: 'image/png' });
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+      const { error: saveError } = await supabase.from('traveler_map_settings').upsert({ id: 'default', marker_icon_url: data.publicUrl });
+      if (saveError) throw saveError;
+      setIconUrl(data.publicUrl);
+      setMessage('Icono actualizado en el mapa.');
+    } catch (error: any) {
+      setMessage(`Error al guardar el icono: ${error?.message || 'revisa el bucket público images y TRAVELER-MAP-SETUP.sql'}`);
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const removeIcon = async () => {
+    setIsBusy(true);
+    const { error } = await supabase.from('traveler_map_settings').upsert({ id: 'default', marker_icon_url: null });
+    if (error) setMessage(`Error al quitar el icono: ${error.message}`);
+    else {
+      setIconUrl('');
+      setMessage('Se restauraron los iconos predeterminados.');
+    }
+    setIsBusy(false);
+  };
+
+  return <section className="flex flex-wrap items-center gap-4 border border-sepia-800 rounded-xl bg-sepia-950/50 p-4">
+    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sepia-900">
+      {iconUrl ? <img src={iconUrl} alt="Icono personalizado del mapa" className="h-full w-full object-contain" /> : <MapPin className="text-sepia-500" />}
+    </div>
+    <div className="min-w-[200px] flex-1">
+      <h3 className="font-bold text-sepia-100">Icono de los marcadores</h3>
+      <p className="text-xs text-sepia-500">Sube un PNG de hasta 2 MB. Se aplicará a todos los puntos publicados.</p>
+      {message && <p className="mt-1 text-xs text-sepia-400">{message}</p>}
+    </div>
+    <label className={`cursor-pointer rounded-lg border border-sepia-700 bg-sepia-800 px-3 py-2 text-xs font-bold text-sepia-200 ${isBusy ? 'pointer-events-none opacity-50' : 'hover:bg-sepia-700'}`}>
+      <span>{isBusy ? 'Subiendo...' : 'Subir PNG'}</span>
+      <input type="file" accept="image/png,.png" className="hidden" disabled={isBusy} onChange={event => { const file = event.currentTarget.files?.[0]; if (file) uploadIcon(file); event.currentTarget.value = ''; }} />
+    </label>
+    {iconUrl && <button type="button" onClick={removeIcon} disabled={isBusy} title="Restaurar iconos predeterminados" className="p-2 text-sepia-400 hover:text-sepia-100 disabled:opacity-50"><X className="h-4 w-4" /></button>}
+  </section>;
+};
+
 const categories: TravelerMapCategory[] = ['Lugar', 'Personaje', 'Comercio', 'Barrio', 'Suceso', 'Recuerdo'];
 const emptyPoint: Partial<TravelerMapPoint> = {
   name: '', slug: '', category: 'Lugar', description: '', era: '', address: '', neighborhood: '',
