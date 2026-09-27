@@ -3,8 +3,8 @@
  * Permite que la app se descargue y funcione offline
  */
 
-const CACHE_NAME = 'charlitron-v5';
-const IMAGE_CACHE_NAME = 'charlitron-images-v5';
+const CACHE_NAME = 'charlitron-v6';
+const IMAGE_CACHE_NAME = 'charlitron-images-v6';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -80,6 +80,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const isMapTile = url.pathname === '/api/traveler-map-tile'
     || url.hostname === 'tile.openstreetmap.org'
+    || url.hostname.endsWith('.tile.openstreetmap.org')
     || url.hostname.endsWith('.basemaps.cartocdn.com')
     || url.hostname.endsWith('.arcgisonline.com');
   if (isMapTile) {
