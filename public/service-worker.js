@@ -78,7 +78,8 @@ self.addEventListener('fetch', event => {
   }
 
   const url = new URL(event.request.url);
-  const isMapTile = url.hostname === 'tile.openstreetmap.org'
+  const isMapTile = url.pathname === '/api/traveler-map-tile'
+    || url.hostname === 'tile.openstreetmap.org'
     || url.hostname.endsWith('.basemaps.cartocdn.com')
     || url.hostname.endsWith('.arcgisonline.com');
   if (isMapTile) {

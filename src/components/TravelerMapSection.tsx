@@ -39,11 +39,11 @@ const MapView = ({ points, selectedId, onSelect }: { points: TravelerMapPoint[];
     L.control.zoom({ position: 'topright' }).addTo(map);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
+      maxZoom: 20, maxNativeZoom: 19,
     }).addTo(map);
-    const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    const cartoTiles = L.tileLayer('/api/traveler-map-tile?z={z}&x={x}&y={y}', {
       attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd', maxZoom: 20,
+      maxZoom: 20,
     });
     cartoTiles.on('tileerror', event => { event.tile.style.display = 'none'; });
     cartoTiles.addTo(map);
