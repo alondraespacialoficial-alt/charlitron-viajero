@@ -2,13 +2,28 @@ import { supabase } from './supabase';
 
 export interface UserFavorite {
   id: string;
-  favorite_type: 'story' | 'product' | 'photo';
+  favorite_type: 'story' | 'product' | 'photo' | 'traveler_map';
   favorite_id: string;
   favorite_title?: string;
   favorite_image?: string;
   session_id?: string;
   created_at: string;
 }
+
+const TRAVELER_MAP_FAVORITES_KEY = 'charlitron_traveler_map_favorites';
+
+export const getTravelerMapFavoriteIds = (): string[] => {
+  try {
+    const value = JSON.parse(localStorage.getItem(TRAVELER_MAP_FAVORITES_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveTravelerMapFavoriteIds = (favoriteIds: string[]): void => {
+  localStorage.setItem(TRAVELER_MAP_FAVORITES_KEY, JSON.stringify(favoriteIds));
+};
 
 // Generar ID de sesión único para usuario anónimo
 const getSessionId = (): string => {
@@ -73,10 +88,15 @@ export const addToFavorites = async (
  * Quitar de favoritos
  */
 export const removeFromFavorites = async (
-  favoriteType: 'story' | 'product' | 'photo',
+  favoriteType: 'story' | 'product' | 'photo' | 'traveler_map',
   favoriteId: string
 ): Promise<boolean> => {
   try {
+    if (favoriteType === 'traveler_map') {
+      saveTravelerMapFavoriteIds(getTravelerMapFavoriteIds().filter(id => id !== favoriteId));
+      return true;
+    }
+
     const sessionId = getSessionId();
 
     const { error } = await supabase
@@ -160,6 +180,7 @@ export const getFavoritesByType = async (
  * Obtener todos los favoritos
  */
 export const getAllFavorites = async (): Promise<UserFavorite[]> => {
+  let favorites: UserFavorite[] = [];
   try {
     const sessionId = getSessionId();
 
@@ -169,15 +190,37 @@ export const getAllFavorites = async (): Promise<UserFavorite[]> => {
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching all favorites:', error);
-      return [];
-    }
-
-    return data || [];
+    if (error) console.error('Error fetching all favorites:', error);
+    else favorites = data || [];
   } catch (err) {
     console.error('Error in getAllFavorites:', err);
-    return [];
+  }
+
+  const favoriteIds = getTravelerMapFavoriteIds();
+  if (favoriteIds.length === 0) return favorites;
+
+  try {
+    const { data, error } = await supabase
+      .from('traveler_map_points')
+      .select('id, name, image_url')
+      .in('id', favoriteIds);
+    if (error) {
+      console.error('Error fetching traveler map favorites:', error);
+      return favorites;
+    }
+
+    const mapFavorites: UserFavorite[] = (data || []).map(point => ({
+      id: `traveler_map_${point.id}`,
+      favorite_type: 'traveler_map',
+      favorite_id: point.id,
+      favorite_title: point.name,
+      favorite_image: point.image_url || undefined,
+      created_at: new Date().toISOString(),
+    }));
+    return [...favorites, ...mapFavorites];
+  } catch (err) {
+    console.error('Error loading traveler map favorites:', err);
+    return favorites;
   }
 };
 

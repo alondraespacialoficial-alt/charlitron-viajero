@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, ArrowLeft, Scroll, ShoppingBag, Trash2, ExternalLink, Camera } from 'lucide-react';
+import { X, Heart, ArrowLeft, Scroll, ShoppingBag, Trash2, ExternalLink, Camera, MapPin } from 'lucide-react';
 import { getAllFavorites, removeFromFavorites, UserFavorite } from '../favoritesUtils';
 
 interface FavoritesPanelProps {
@@ -9,6 +9,7 @@ interface FavoritesPanelProps {
   onSelectStory?: (storyId: string) => void;
   onViewShop?: () => void;
   onViewGallery?: () => void;
+  onViewMap?: () => void;
 }
 
 export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
@@ -17,10 +18,11 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
   onSelectStory,
   onViewShop,
   onViewGallery,
+  onViewMap,
 }) => {
   const [favorites, setFavorites] = useState<UserFavorite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'story' | 'product' | 'photo'>('all');
+  const [filter, setFilter] = useState<'all' | 'story' | 'product' | 'photo' | 'traveler_map'>('all');
 
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +48,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
   const storyCount = favorites.filter((f) => f.favorite_type === 'story').length;
   const productCount = favorites.filter((f) => f.favorite_type === 'product').length;
   const photoCount = favorites.filter((f) => f.favorite_type === 'photo').length;
+  const mapCount = favorites.filter((f) => f.favorite_type === 'traveler_map').length;
 
   return (
     <AnimatePresence>
@@ -72,7 +75,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
             </div>
 
             {/* Stats */}
-            <div className="flex gap-3 text-xs">
+            <div className="grid grid-cols-4 gap-2 text-xs">
               <div className="bg-sepia-800/50 rounded-lg px-3 py-2">
                 <p className="text-sepia-400">Historias</p>
                 <p className="text-lg font-bold text-sepia-100">{storyCount}</p>
@@ -85,11 +88,15 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                 <p className="text-sepia-400">Fotos</p>
                 <p className="text-lg font-bold text-sepia-100">{photoCount}</p>
               </div>
+              <div className="bg-sepia-800/50 rounded-lg px-3 py-2">
+                <p className="text-sepia-400">Viajes</p>
+                <p className="text-lg font-bold text-sepia-100">{mapCount}</p>
+              </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-4 gap-2 p-4 border-b border-sepia-800">
+          <div className="grid grid-cols-5 gap-2 p-4 border-b border-sepia-800">
             <button
               onClick={() => setFilter('all')}
               className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
@@ -133,6 +140,17 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
             >
               📷
             </button>
+            <button
+              onClick={() => setFilter('traveler_map')}
+              className={`py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all text-center ${
+                filter === 'traveler_map'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-sepia-800/30 text-sepia-400 hover:text-sepia-100'
+              }`}
+              title="Viajes"
+            >
+              <MapPin className="mx-auto h-4 w-4" />
+            </button>
           </div>
 
           {/* Content */}
@@ -149,11 +167,17 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                     ? 'Sin favoritos aún'
                     : filter === 'story'
                       ? 'Sin historias favoritas'
-                      : 'Sin productos favoritos'}
+                      : filter === 'product'
+                        ? 'Sin productos favoritos'
+                        : filter === 'photo'
+                          ? 'Sin fotos favoritas'
+                          : 'Sin viajes guardados'}
                 </h3>
                 <p className="text-sepia-500 text-sm">
                   {filter === 'all'
-                    ? 'Guarda historias y productos para verlos aquí'
+                    ? 'Guarda historias, productos, fotos y lugares para verlos aquí'
+                    : filter === 'traveler_map'
+                      ? 'Guarda lugares desde el Mapa del Viajero'
                     : 'Comienza a guardar para verlos aquí'}
                 </p>
               </div>
@@ -185,7 +209,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                               {favorite.favorite_title || 'Sin título'}
                             </p>
                             <p className="text-[10px] text-sepia-500 uppercase tracking-widest font-semibold">
-                              {favorite.favorite_type === 'story' ? '📜 Historia' : favorite.favorite_type === 'product' ? '🛍️ Producto' : '📷 Foto'}
+                              {favorite.favorite_type === 'story' ? '📜 Historia' : favorite.favorite_type === 'product' ? '🛍️ Producto' : favorite.favorite_type === 'photo' ? '📷 Foto' : '📍 Viaje'}
                             </p>
                           </div>
                           <button
@@ -223,7 +247,7 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                             <ShoppingBag className="w-3 h-3" />
                             Ver Tienda
                           </button>
-                        ) : (
+                        ) : favorite.favorite_type === 'photo' ? (
                           <button
                             onClick={() => {
                               if (onViewGallery) {
@@ -235,6 +259,19 @@ export const FavoritesPanel: React.FC<FavoritesPanelProps> = ({
                           >
                             <Camera className="w-3 h-3" />
                             Ver Galería
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (onViewMap) {
+                                onViewMap();
+                                onClose();
+                              }
+                            }}
+                            className="w-full mt-2 bg-sepia-700 hover:bg-sepia-600 text-sepia-100 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            Ver Mapa
                           </button>
                         )}
                       </div>

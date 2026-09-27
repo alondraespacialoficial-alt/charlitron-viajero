@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ArrowLeft, Bookmark, ExternalLink, Heart, List, Map as MapIcon, MapPin, Search, X } from 'lucide-react';
+import { getTravelerMapFavoriteIds, saveTravelerMapFavoriteIds } from '../favoritesUtils';
 import { supabase } from '../supabase';
 import { Story, TravelerMapCategory, TravelerMapPoint } from '../types';
 
@@ -16,17 +17,7 @@ const categoryColors: Record<TravelerMapCategory, string> = {
   Lugar: '#c19251', Personaje: '#8e6136', Comercio: '#557a70', Barrio: '#936b91', Suceso: '#b15d4a', Recuerdo: '#b84f63',
 };
 
-const MAP_FAVORITES_KEY = 'charlitron_traveler_map_favorites';
 const MAP_VISITOR_KEY = 'charlitron_traveler_map_visitor';
-
-const getMapFavorites = (): string[] => {
-  try {
-    const value = JSON.parse(localStorage.getItem(MAP_FAVORITES_KEY) || '[]');
-    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-};
 
 const getMapVisitorId = (): string => {
   const savedId = localStorage.getItem(MAP_VISITOR_KEY);
@@ -128,7 +119,7 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setFavoriteIds(getMapFavorites());
+    setFavoriteIds(getTravelerMapFavoriteIds());
     setVisitorId(getMapVisitorId());
   }, []);
 
@@ -198,7 +189,7 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
       ? favoriteIds.filter(id => id !== point.id)
       : [...favoriteIds, point.id];
     try {
-      localStorage.setItem(MAP_FAVORITES_KEY, JSON.stringify(nextFavorites));
+      saveTravelerMapFavoriteIds(nextFavorites);
       setFavoriteIds(nextFavorites);
     } catch {
       setInteractionMessage('No se pudo guardar el favorito en este navegador.');

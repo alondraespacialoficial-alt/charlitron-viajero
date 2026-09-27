@@ -2779,6 +2779,7 @@ export default function App() {
         }}
         onViewShop={() => setShowShop(true)}
         onViewGallery={() => setShowGallery(true)}
+        onViewMap={() => setShowTravelerMap(true)}
       />
 
       <Footer onLegalClick={setLegalView} logoUrl={logoUrl} />
