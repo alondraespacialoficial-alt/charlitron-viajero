@@ -83,6 +83,7 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
   const [category, setCategory] = useState<'Todos' | TravelerMapCategory>('Todos');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'map' | 'list'>('map');
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -95,6 +96,15 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
     };
     loadPoints();
   }, []);
+
+  useEffect(() => {
+    if (!isDetailOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsDetailOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDetailOpen]);
 
   const filteredPoints = useMemo(() => {
     const normalized = search.trim().toLocaleLowerCase();
@@ -111,6 +121,7 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
   const handleMapPointSelect = (point: TravelerMapPoint) => {
     setSelectedId(point.id);
     setView('list');
+    setIsDetailOpen(true);
   };
 
   return (
@@ -121,13 +132,64 @@ export const TravelerMapSection: React.FC<TravelerMapSectionProps> = ({ stories,
           <div className="flex items-center gap-2 rounded-full bg-sepia-900 p-1"><button onClick={() => setView('map')} className={`p-2 rounded-full ${view === 'map' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400'}`} title="Ver mapa"><MapIcon className="w-4 h-4" /></button><button onClick={() => setView('list')} className={`p-2 rounded-full ${view === 'list' ? 'bg-sepia-500 text-sepia-950' : 'text-sepia-400'}`} title="Ver lista"><List className="w-4 h-4" /></button></div>
         </div>
         <header className="mb-8"><p className="text-sepia-500 uppercase tracking-[0.3em] text-xs font-bold mb-3">Archivo geográfico de memoria</p><h1 className="text-4xl md:text-6xl font-serif mb-3">Mapa del Viajero</h1><p className="text-sepia-300 text-lg font-light">San Luis contado a través de sus lugares, historias y recuerdos.</p></header>
-        <div className="grid md:grid-cols-[minmax(0,1fr)_300px] gap-4 mb-4">
-          <section className="rounded-2xl overflow-hidden border border-sepia-800 bg-sepia-900/40 shadow-2xl">
-            <div className="p-3 md:p-4 border-b border-sepia-800 space-y-3"><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-sepia-500" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar lugar, personaje, barrio o recuerdo..." className="w-full bg-sepia-950 border border-sepia-800 rounded-xl py-3 pl-12 pr-10 text-sepia-100 outline-none focus:border-sepia-500" />{search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sepia-500" title="Limpiar búsqueda"><X className="w-4 h-4" /></button>}</div><div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">{CATEGORIES.map(item => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap px-3 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold ${category === item ? 'bg-sepia-500 text-sepia-950' : 'bg-sepia-950 text-sepia-400 hover:text-sepia-100'}`}>{item}</button>)}</div></div>
-            {isLoading ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center text-sepia-400">Cargando puntos...</div> : error ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center p-8 text-center text-sepia-400">{error}</div> : view === 'map' ? <MapView points={filteredPoints} selectedId={selectedId} onSelect={handleMapPointSelect} /> : <div className="h-[62vh] min-h-[420px] overflow-y-auto p-4 space-y-3">{filteredPoints.map(point => <button key={point.id} onClick={() => setSelectedId(point.id)} className={`w-full text-left flex gap-4 p-3 rounded-xl border ${selectedId === point.id ? 'border-sepia-500 bg-sepia-800' : 'border-sepia-800 bg-sepia-950/60 hover:border-sepia-600'}`}><div className="w-16 h-16 rounded-lg overflow-hidden bg-sepia-800 shrink-0">{point.image_url ? <img src={point.image_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center"><MapPin className="text-sepia-500" /></div>}</div><div><p className="text-sepia-100 font-serif text-xl">{point.name}</p><p className="text-sepia-500 text-xs uppercase tracking-widest">{point.category}{point.era ? ` · ${point.era}` : ''}</p><p className="text-sepia-400 text-sm line-clamp-2 mt-1">{point.description}</p></div></button>)}{filteredPoints.length === 0 && <p className="text-center text-sepia-500 py-16">No encontramos puntos con esa búsqueda.</p>}</div>}
-          </section>
-          <aside className="rounded-2xl border border-sepia-800 bg-sepia-900/70 p-5 min-h-[260px]">{selectedPoint ? <div className="space-y-4"><div className="flex justify-between items-start gap-3"><div><p className="text-sepia-500 text-xs uppercase tracking-widest">{selectedPoint.category}</p><h2 className="text-3xl font-serif text-sepia-100">{selectedPoint.name}</h2></div><button onClick={() => setSelectedId(null)} className="text-sepia-500 hover:text-sepia-100" title="Cerrar detalle"><X className="w-5 h-5" /></button></div>{selectedPoint.image_url && <img src={selectedPoint.image_url} alt={selectedPoint.name} className="w-full aspect-[4/3] object-cover rounded-xl" />}{selectedPoint.era && <p className="text-sepia-400 italic">{selectedPoint.era}</p>}<p className="text-sepia-300 leading-relaxed">{selectedPoint.description || 'Cada punto del mapa guarda una historia.'}</p>{selectedPoint.address && <p className="text-sepia-400 text-sm"><MapPin className="inline w-4 h-4 mr-1" />{selectedPoint.address}</p>}<div className="flex flex-wrap gap-2">{selectedStory && <button onClick={() => onOpenStory(selectedStory)} className="inline-flex items-center gap-2 bg-sepia-500 text-sepia-950 px-4 py-3 rounded-xl uppercase tracking-widest text-xs font-bold hover:bg-sepia-400">Viajar a esta historia <ExternalLink className="w-4 h-4" /></button>}{selectedPoint.external_url && <a href={selectedPoint.external_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-sepia-700 text-sepia-300 px-4 py-3 rounded-xl uppercase tracking-widest text-xs font-bold hover:border-sepia-400">Enlace externo <ExternalLink className="w-4 h-4" /></a>}</div></div> : <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center"><MapPin className="w-10 h-10 text-sepia-500 mb-4" /><h2 className="text-2xl font-serif text-sepia-100">Cada punto guarda una historia</h2><p className="text-sepia-400 text-sm mt-2">Selecciona un icono para comenzar a viajar.</p></div>}</aside>
-        </div>
+        <section className="mb-4 rounded-2xl overflow-hidden border border-sepia-800 bg-sepia-900/40 shadow-2xl">
+          <div className="p-3 md:p-4 border-b border-sepia-800 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-sepia-500" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar lugar, personaje, barrio o recuerdo..." className="w-full bg-sepia-950 border border-sepia-800 rounded-xl py-3 pl-12 pr-10 text-sepia-100 outline-none focus:border-sepia-500" />
+              {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sepia-500" title="Limpiar búsqueda"><X className="w-4 h-4" /></button>}
+            </div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {CATEGORIES.map(item => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap px-3 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold ${category === item ? 'bg-sepia-500 text-sepia-950' : 'bg-sepia-950 text-sepia-400 hover:text-sepia-100'}`}>{item}</button>)}
+            </div>
+          </div>
+          {isLoading ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center text-sepia-400">Cargando puntos...</div> : error ? <div className="h-[62vh] min-h-[420px] flex items-center justify-center p-8 text-center text-sepia-400">{error}</div> : view === 'map' ? <MapView points={filteredPoints} selectedId={selectedId} onSelect={handleMapPointSelect} /> : (
+            <div className="min-h-[62vh] max-h-[75vh] overflow-y-auto p-3 md:p-5 space-y-3">
+              {filteredPoints.map(point => (
+                <button key={point.id} onClick={() => { setSelectedId(point.id); setIsDetailOpen(true); }} className={`w-full text-left flex gap-4 p-3 md:p-4 rounded-xl border transition-colors ${selectedId === point.id ? 'border-sepia-500 bg-sepia-800' : 'border-sepia-800 bg-sepia-950/60 hover:border-sepia-600'}`}>
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden bg-sepia-800 shrink-0">
+                    {point.image_url ? <img src={point.image_url} alt="" className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center"><MapPin className="text-sepia-500" /></div>}
+                  </div>
+                  <div className="min-w-0 self-center">
+                    <p className="text-sepia-100 font-serif text-xl md:text-2xl">{point.name}</p>
+                    <p className="text-sepia-500 text-xs uppercase tracking-widest">{point.category}{point.era ? ` · ${point.era}` : ''}</p>
+                    <p className="text-sepia-400 text-sm line-clamp-2 mt-1">{point.description}</p>
+                  </div>
+                </button>
+              ))}
+              {filteredPoints.length === 0 && <p className="text-center text-sepia-500 py-16">No encontramos puntos con esa búsqueda.</p>}
+            </div>
+          )}
+        </section>
+        {selectedPoint && isDetailOpen && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center bg-sepia-950/80 backdrop-blur-sm p-3 md:p-8" onClick={() => setIsDetailOpen(false)}>
+            <div role="dialog" aria-modal="true" aria-labelledby="traveler-point-title" className="w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border border-sepia-700 bg-sepia-900 shadow-2xl" onClick={event => event.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4 border-b border-sepia-800 p-5 md:p-7">
+                <div className="min-w-0">
+                  <p className="text-sepia-500 text-xs uppercase tracking-[0.2em]">{selectedPoint.category}{selectedPoint.era ? ` · ${selectedPoint.era}` : ''}</p>
+                  <h2 id="traveler-point-title" className="mt-2 text-2xl md:text-4xl font-serif text-sepia-100">{selectedPoint.name}</h2>
+                </div>
+                <button onClick={() => setIsDetailOpen(false)} aria-label="Cerrar detalle del viaje" className="shrink-0 rounded-full p-2 text-sepia-400 hover:bg-sepia-800 hover:text-sepia-100"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="max-h-[calc(90vh-110px)] overflow-y-auto">
+                <div className="grid md:grid-cols-2">
+                  <div className="min-h-64 bg-sepia-950">
+                    {selectedPoint.image_url ? <img src={selectedPoint.image_url} alt={selectedPoint.name} className="h-full min-h-64 max-h-[60vh] w-full object-cover" /> : <div className="flex min-h-64 h-full items-center justify-center"><MapPin className="w-12 h-12 text-sepia-600" /></div>}
+                  </div>
+                  <div className="space-y-5 p-5 md:p-8">
+                    {selectedPoint.era && <p className="text-sepia-400 italic">{selectedPoint.era}</p>}
+                    <p className="whitespace-pre-line text-sepia-200 leading-relaxed">{selectedPoint.description || 'Cada punto del mapa guarda una historia.'}</p>
+                    {selectedPoint.address && <p className="text-sepia-400 text-sm"><MapPin className="inline w-4 h-4 mr-1" />{selectedPoint.address}</p>}
+                    <div className="flex flex-wrap gap-3 border-t border-sepia-800 pt-5">
+                      {selectedStory && <button onClick={() => { setIsDetailOpen(false); onOpenStory(selectedStory); }} className="inline-flex items-center gap-2 bg-sepia-500 text-sepia-950 px-4 py-3 rounded-lg uppercase tracking-widest text-xs font-bold hover:bg-sepia-400">Viajar a esta historia <ExternalLink className="w-4 h-4" /></button>}
+                      {selectedPoint.external_url && <a href={selectedPoint.external_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-sepia-700 text-sepia-300 px-4 py-3 rounded-lg uppercase tracking-widest text-xs font-bold hover:border-sepia-400">Enlace externo <ExternalLink className="w-4 h-4" /></a>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <p className="text-sepia-600 text-xs text-center">{filteredPoints.length} {filteredPoints.length === 1 ? 'punto publicado' : 'puntos publicados'}</p>
       </div>
     </main>
