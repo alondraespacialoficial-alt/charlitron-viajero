@@ -35,6 +35,9 @@ import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags, setSecti
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
 
+const MEMORIA_DORADA_URL = 'https://www.memoriadorada.app/#';
+const MEMORIA_DORADA_IMAGE = 'https://wfirzhgszrxszktmewgr.supabase.co/storage/v1/object/public/product-images/e5f32da0-afd2-49a2-93b4-109c0feea245.png';
+
 const SectionLoader = () => (
   <div className="min-h-screen bg-sepia-950 flex items-center justify-center">
     <div className="w-10 h-10 border-4 border-sepia-500 border-t-transparent rounded-full animate-spin" />
@@ -329,13 +332,22 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             </div>
 
             <div className="flex items-center gap-4">
-              <img 
-                src={logoUrl} 
-                alt="Logo Charlitron" 
-                className="h-10 md:h-12 w-auto object-contain"
-                referrerPolicy="no-referrer"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/images/charlitron-logo.svg'; }}
-              />
+              <a
+                href={MEMORIA_DORADA_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visitar Memoria Dorada: restauración y recreación de fotografías"
+                title="Restauración y recreación de fotografías"
+                className="h-10 w-10 md:h-12 md:w-12 shrink-0 overflow-hidden rounded-lg border border-sepia-700 shadow-lg transition-transform hover:scale-105"
+              >
+                <img
+                  src={MEMORIA_DORADA_IMAGE}
+                  alt="Memoria Dorada"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
               <button 
                 onClick={toggleMenu}
                 className="md:hidden text-sepia-100 p-2 z-50"
@@ -355,8 +367,24 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-40 bg-sepia-950 flex flex-col items-center justify-center gap-8 p-6 md:hidden"
+            className="fixed inset-0 z-40 bg-sepia-950 flex flex-col items-center justify-start gap-7 overflow-y-auto px-6 py-24 md:hidden"
           >
+            <a
+              href={MEMORIA_DORADA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-4 rounded-lg border border-sepia-700 bg-sepia-900/70 px-5 py-3 text-sepia-100 transition-colors hover:border-sepia-500"
+            >
+              <img
+                src={MEMORIA_DORADA_IMAGE}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+              <span className="max-w-56 text-left font-serif text-lg">Restauración y recreación de fotografías</span>
+            </a>
             <button 
               onClick={() => { onHome(); setIsMenuOpen(false); }}
               className="text-sepia-100 text-2xl font-serif uppercase tracking-widest"
