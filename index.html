@@ -224,6 +224,15 @@
 
     <!-- Referencia para agentes de IA / LLMs -->
     <link rel="llms-txt" href="/llms.txt" />
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8X981E1C7K"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8X981E1C7K');
+    </script>
   </head>
   <body>
     <div id="root"></div>
@@ -253,15 +262,6 @@
       </main>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Google Analytics (si lo necesitas después) -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script> -->
     
     <!-- Service Worker Registration -->
     <script>
