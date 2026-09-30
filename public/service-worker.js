@@ -90,6 +90,10 @@ self.addEventListener('fetch', event => {
   const isImage = /\.(jpg|jpeg|png|gif|webp|svg|avif)(\?.*)?$/i.test(url.pathname);
   const isExternalImage = isImage && url.hostname !== self.location.hostname;
 
+  if (url.origin !== self.location.origin && !isImage) {
+    return;
+  }
+
   // Cache-first para imágenes externas (evita 429 repetidos en image2url.com)
   if (isExternalImage) {
     event.respondWith(
