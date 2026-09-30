@@ -756,24 +756,36 @@ const Biography = ({ biographyPhotoUrl, book1CoverUrl, book1Url, book2CoverUrl, 
             <h2 className="text-2xl md:text-3xl font-serif text-sepia-100 mb-2">¿Quién es Charlitron el Viajero del Tiempo?</h2>
             <span className="text-sepia-500 uppercase tracking-[0.3em] text-[10px] md:text-xs font-bold mb-6 block border-b border-sepia-800 pb-4">Biografía del Fundador</span>
             <h3 className="text-4xl md:text-5xl lg:text-6xl font-serif mb-4 leading-tight">Adrián Álvarez Carlos</h3>
-            <h4 className="text-xl md:text-2xl text-sepia-400 font-light italic">Fundador de Charlitron, creador del Sistema A&A&A y del Método Zerlat.</h4>
+            <h4 className="text-xl md:text-2xl text-sepia-400 font-light italic">Fundador de Charlitron y creador de Charlitron El Viajero del Tiempo, un proyecto dedicado a preservar memoria, historia y legado mediante investigación, narrativa y tecnología.</h4>
           </div>
 
           <div className="space-y-6 text-sepia-200 font-light leading-relaxed text-lg">
             <p className="font-medium text-sepia-100 text-xl italic border-l-4 border-sepia-500 pl-6 py-2">
-              "Soy un viajero del tiempo. No de los que cambian la historia… sino de los que la recuerdan."
+              “Soy un viajero del tiempo. No de los que cambian la historia… sino de los que ayudan a que no se olvide.”
             </p>
             
             <p>
-              Durante más de 20 años he trabajado en estrategia, ventas reales y publicidad en campo. De esa experiencia nació <strong>Charlitron</strong>, una visión que une tecnología, emoción y propósito para crear campañas que no solo se ven… se sienten.
+              Durante más de 20 años he trabajado en estrategia, ventas, comunicación y proyectos que buscan conectar con las personas.
             </p>
 
             <p>
-              Entendí que las marcas, los negocios y las personas también tienen memoria. Así nació una nueva etapa: <strong>Charlitron Viajero del Tiempo</strong>.
+              Con el tiempo entendí que detrás de cada negocio, cada calle y cada familia existe algo que no aparece en los balances ni en los mapas: <strong>memoria.</strong>
             </p>
 
             <p>
-              Un proyecto que rescata historias, revive momentos y reconstruye recuerdos a través de <strong>inteligencia artificial</strong>, investigación histórica y narrativa emocional. Aquí no solo recreamos imágenes… <strong>Devolvemos vida.</strong>
+              Así nació <strong>Charlitron El Viajero del Tiempo</strong>, un proyecto dedicado a rescatar historias, reconstruir momentos y conservar recuerdos mediante investigación histórica, narrativa emocional y tecnología.
+            </p>
+
+            <p>
+              Lo que comenzó contando la memoria de <strong>San Luis Potosí</strong> terminó llevándome hacia algo todavía más íntimo: <strong>las historias de las familias.</strong>
+            </p>
+
+            <p>
+              De ahí nació <strong>El Baúl de los Recuerdos</strong>, un espacio donde fotografías, relatos, árboles familiares, memoriales digitales, voces y recreaciones tecnológicas pueden convertirse en un legado para las siguientes generaciones.
+            </p>
+
+            <p>
+              Aquí no buscamos vivir atrapados en el pasado. Buscamos comprenderlo, conservarlo y utilizarlo para recordar quiénes fuimos, quiénes somos y qué queremos dejar a quienes vienen después.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-6">
@@ -792,18 +804,26 @@ const Biography = ({ biographyPhotoUrl, book1CoverUrl, book1Url, book2CoverUrl, 
             </div>
 
             <p>
-              Desde calles antiguas de <strong>San Luis Potosí</strong>, negocios que ya no existen, tradiciones olvidadas… hasta homenajes a personas que dejaron huella. Además, he desarrollado el <strong>Sistema A&A&A</strong>, donde la IA y la emoción trabajan juntas, y el <strong>Método Zerlat</strong>, una vía de reconstrucción personal para reconectar con la esencia.
+              Desde calles antiguas de San Luis Potosí, negocios que ya no existen y tradiciones que sobreviven en la memoria, hasta historias familiares y homenajes a personas que dejaron huella.
+            </p>
+
+            <p>
+              El Viajero del Tiempo utiliza investigación, fotografías, testimonios, inteligencia artificial y narrativa para reconstruir contextos y ayudar a que los recuerdos vuelvan a tener <strong>voz, rostro y significado.</strong>
+            </p>
+
+            <p>
+              La tecnología es una herramienta. <strong>La memoria humana sigue siendo el corazón.</strong>
             </p>
 
             <div className="pt-8 border-t border-sepia-800">
-              <p className="text-sepia-400 text-sm uppercase tracking-[0.2em] mb-2">Misión Clara:</p>
+              <p className="text-sepia-400 text-sm uppercase tracking-[0.2em] mb-2">Misión</p>
               <p className="text-sepia-100 text-xl font-serif italic">
-                Activar recuerdos, personas y proyectos con alma. Demostrar que el pasado… no está muerto.
+                Preservar historias, recuerdos y legados para que las siguientes generaciones sepan de dónde vienen.
               </p>
             </div>
 
             <p className="text-sepia-100 font-serif text-2xl italic pt-4 text-center lg:text-left">
-              "No vinimos solo a avanzar… Vinimos a recordar."
+              “Conservar el pasado no significa vivir en él. Significa asegurarnos de que quienes vienen después sepan de dónde vienen.”
             </p>
 
             {/* Books Section */}
