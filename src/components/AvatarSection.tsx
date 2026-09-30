@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, ShieldCheck, Search } from 'lucide-react';
+import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, ShieldCheck, Search, Eye, EyeOff } from 'lucide-react';
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
@@ -198,6 +198,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const [searchQuery, setSearchQuery]       = useState('');
   const [activePeriod, setActivePeriod]     = useState<PeriodId | null>(null);
   const [password, setPassword]             = useState('');
+  const [showPassword, setShowPassword]     = useState(false);
   const [errorMsg, setErrorMsg]             = useState('');
   const [loadingMsgIdx, setLoadingMsgIdx]   = useState(0);
   const [showToast, setShowToast]           = useState(false);
@@ -259,6 +260,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
   const handleSelectAvatar = (avatar: Avatar) => {
     setSelectedAvatar(avatar);
     setPassword('');
+    setShowPassword(false);
     setErrorMsg('');
     setStep('auth');
     setTimeout(() => passwordInputRef.current?.focus(), 100);
@@ -909,16 +911,28 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                 <label className="text-sepia-300 text-sm flex items-center gap-2">
                   <Lock className="w-4 h-4" /> Código de acceso
                 </label>
-                <input
-                  ref={passwordInputRef}
-                  type="text"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Ej: ABC123"
-                  autoComplete="off"
-                  className="bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700 font-mono tracking-widest"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    ref={passwordInputRef}
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Ej: ABC123"
+                    autoComplete="off"
+                    className="w-full bg-sepia-950 border border-sepia-700 focus:border-sepia-500 rounded-xl px-4 py-3 pr-12 text-sepia-100 outline-none transition-colors placeholder:text-sepia-700 font-mono tracking-widest"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? 'Ocultar código de acceso' : 'Mostrar código de acceso'}
+                    aria-pressed={showPassword}
+                    title={showPassword ? 'Ocultar código' : 'Mostrar código'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sepia-500 hover:text-sepia-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 {errorMsg && (
                   <p className="text-red-400 text-sm flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0" /> {errorMsg}
