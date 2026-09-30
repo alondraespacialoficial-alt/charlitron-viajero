@@ -2,6 +2,8 @@
 
 Este proyecto es una aplicación web interactiva diseñada para la preservación de historias familiares, genealogía y una tienda temática de antigüedades.
 
+Para consultar el mapa general de módulos, rutas, servicios y despliegue, revisa [ARQUITECTURA-APP.md](ARQUITECTURA-APP.md).
+
 ## Características
 
 - **Árbol Genealógico:** Gestión de miembros de la familia y relaciones.
