@@ -818,6 +818,8 @@ export const ConferencesSection: React.FC<{ initialFolio?: string }> = ({ initia
                         <img
                           src={conf.banner_url}
                           alt={conf.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-auto max-h-[28rem] object-contain group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                           onContextMenu={(e) => e.preventDefault()}
                           onDragStart={(e) => e.preventDefault()}

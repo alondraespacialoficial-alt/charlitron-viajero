@@ -213,6 +213,8 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                     <img 
                       src={product.image_url} 
                       alt={product.title}
+                      loading="lazy"
+                      decoding="async"
                       className={`w-full h-auto max-h-[22rem] object-contain transition-transform duration-700 group-hover:scale-105 ${product.is_sold_out ? 'grayscale opacity-60' : ''}`}
                       referrerPolicy="no-referrer"
                     />

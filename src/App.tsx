@@ -1717,6 +1717,7 @@ const TravelPhotosSection = ({ photos }: { photos: TravelPhoto[] }) => {
                   alt={photo.character_name}
                   className="w-full h-full object-cover sepia-[0.3] group-hover:sepia-0 transition-all duration-700 pointer-events-none select-none"
                   loading="lazy"
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   onContextMenu={(e) => e.preventDefault()}
                   onDragStart={(e) => e.preventDefault()}

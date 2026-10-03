@@ -312,7 +312,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
               {/* Encabezado */}
               <div className="text-center space-y-3">
                 {memorial.photo_url && (
-                  <img src={memorial.photo_url} alt={memorial.full_name} className="w-32 h-32 rounded-full object-cover border-4 border-sepia-700 mx-auto shadow-xl" />
+                  <img src={memorial.photo_url} alt={memorial.full_name} decoding="async" className="w-32 h-32 rounded-full object-cover border-4 border-sepia-700 mx-auto shadow-xl" />
                 )}
                 <h1 className="text-sepia-100 font-serif text-3xl">{memorial.full_name}</h1>
                 {(memorial.birth_date || memorial.death_date) && (
@@ -376,7 +376,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   className="w-full flex items-center gap-4 bg-sepia-900/40 hover:bg-sepia-900/70 border border-sepia-800 rounded-2xl p-4 text-left transition-all"
                 >
                   {linkedMemorial.photo_url
-                    ? <img src={linkedMemorial.photo_url} alt={linkedMemorial.full_name} className="w-12 h-12 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
+                    ? <img src={linkedMemorial.photo_url} alt={linkedMemorial.full_name} loading="lazy" decoding="async" className="w-12 h-12 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
                     : <span className="text-2xl flex-shrink-0">💞</span>
                   }
                   <p className="text-sepia-200 text-sm">Visita el memorial de <span className="text-sepia-100 font-serif">{linkedMemorial.full_name}</span></p>
@@ -388,7 +388,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   <h3 className="text-sepia-300 text-xs font-bold uppercase tracking-widest mb-3">Su lugar en el Árbol de Linaje</h3>
                   <div className="flex items-center gap-4">
                     {linkedFamilyMember.photo_url
-                      ? <img src={linkedFamilyMember.photo_url} alt={linkedFamilyMember.name} className="w-14 h-14 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
+                      ? <img src={linkedFamilyMember.photo_url} alt={linkedFamilyMember.name} loading="lazy" decoding="async" className="w-14 h-14 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
                       : <span className="text-3xl flex-shrink-0">🌳</span>
                     }
                     <div className="min-w-0">
@@ -491,7 +491,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                         <p className="text-sepia-200 text-sm font-semibold">{g.visitor_name}</p>
                         <p className="text-sepia-400 text-sm">{g.message}</p>
                         {g.photo_url && (
-                          <img src={g.photo_url} alt={`Foto compartida por ${g.visitor_name}`} className="mt-2 max-h-48 rounded-lg border border-sepia-800 object-cover" />
+                          <img src={g.photo_url} alt={`Foto compartida por ${g.visitor_name}`} loading="lazy" decoding="async" className="mt-2 max-h-48 rounded-lg border border-sepia-800 object-cover" />
                         )}
                         <button
                           onClick={() => likeGuestbookEntry(g)}
@@ -720,7 +720,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                 className="w-full flex items-center gap-4 bg-sepia-900/40 hover:bg-sepia-900/70 border border-sepia-800 rounded-xl p-4 text-left transition-all"
               >
                 {m.photo_url
-                  ? <img src={m.photo_url} alt={m.full_name} className="w-12 h-12 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
+                  ? <img src={m.photo_url} alt={m.full_name} loading="lazy" decoding="async" className="w-12 h-12 rounded-full object-cover border border-sepia-700 flex-shrink-0" />
                   : <span className="text-2xl flex-shrink-0">🌷</span>
                 }
                 <div className="flex-1 min-w-0">

@@ -873,6 +873,8 @@ export const CoursesSection: React.FC = () => {
                         <img
                           src={course.banner_url}
                           alt={course.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                           onContextMenu={e => e.preventDefault()}
                         />
@@ -1098,6 +1100,8 @@ export const CoursesSection: React.FC = () => {
                               key={idx}
                               src={img}
                               alt={`Imagen ${idx + 1}`}
+                              loading="lazy"
+                              decoding="async"
                               onClick={() => setLightboxImg(img)}
                               className="w-full h-32 object-cover rounded-xl border border-sepia-800 cursor-zoom-in hover:border-sepia-500 transition-all"
                               onContextMenu={e => e.preventDefault()}

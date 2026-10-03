@@ -176,6 +176,8 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                     <img 
                       src={photo.url} 
                       alt={photo.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full max-h-[500px] object-contain transition-all duration-700 sepia-filter grayscale-[0.3] contrast-[1.1] brightness-[0.9] group-hover:sepia-0 group-hover:grayscale-0 group-hover:contrast-100 group-hover:brightness-100 pointer-events-none select-none"
                       referrerPolicy="no-referrer"
                       onContextMenu={(e) => e.preventDefault()}
