@@ -19,6 +19,6 @@ export const resolveImageVariant = (
     case 'web':
       return normalizeUrl(variants?.web) || thumbnail || legacy;
     case 'master':
-      return normalizeUrl(variants?.masterSignedUrl) || legacy;
+      return normalizeUrl(variants?.masterSignedUrl);
   }
 };
