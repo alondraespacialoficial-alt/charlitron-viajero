@@ -2111,7 +2111,7 @@ export default function App() {
         for (let offset = 0; ; offset += pageSize) {
           const { data, error } = await supabase
             .from('products')
-            .select('id, title, description, price, image_url, is_sold_out, category, created_at')
+            .select('*')
             .order('created_at', { ascending: false })
             .order('id', { ascending: true })
             .range(offset, offset + pageSize - 1);

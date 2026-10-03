@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto, Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
+import { resolveImageVariant } from '../imageVariants';
 import { generateSlug } from '../seoUtils';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ContestsAdmin } from './ContestsAdmin';
@@ -60,6 +61,12 @@ interface AdminPanelProps {
   initialRestoredPhotosLoaded?: boolean;
   adminToken?: string;
 }
+
+const resolveProductImage = (product: Partial<Product>, role: 'thumbnail' | 'web') =>
+  resolveImageVariant(product.image_url, {
+    thumbnail: product.image_thumbnail_url,
+    web: product.image_web_url,
+  }, role);
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ 
   onClose, 
@@ -1500,13 +1507,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       className={`p-4 rounded-xl transition-all cursor-pointer flex items-center justify-between ${editingProduct?.id === p.id ? 'bg-sepia-800/50 border border-sepia-500/30' : 'hover:bg-sepia-900/50 border border-transparent'}`}
                       onClick={() => setEditingProduct(p)}
                     >
-                      <div className="overflow-hidden">
-                        <h4 className="text-sepia-100 font-medium truncate">{p.title}</h4>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sepia-500 text-[10px] uppercase tracking-widest">${p.price}</p>
-                          {p.is_sold_out && (
-                            <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase font-bold">Agotado</span>
-                          )}
+                      <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+                        {p.image_url && (
+                          <img
+                            src={resolveProductImage(p, 'thumbnail')}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <h4 className="text-sepia-100 font-medium truncate">{p.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sepia-500 text-[10px] uppercase tracking-widest">${p.price}</p>
+                            {p.is_sold_out && (
+                              <span className="text-[8px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase font-bold">Agotado</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <button 
@@ -2524,7 +2542,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <label className="block text-xs uppercase tracking-widest font-bold text-sepia-500 mb-2">Vista Previa</label>
                             <div className="aspect-square rounded-2xl overflow-hidden border border-sepia-800 bg-sepia-900">
                               <img 
-                                src={editingProduct.image_url} 
+                                src={resolveProductImage(editingProduct, 'web')}
                                 alt="Preview" 
                                 className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"

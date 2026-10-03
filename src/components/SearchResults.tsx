@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Scroll, Users, Camera, Image as ImageIcon, ShoppingBag, MapPin } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product } from '../types';
+import { resolveImageVariant } from '../imageVariants';
 
 interface SearchResultsProps {
   isOpen: boolean;
@@ -353,8 +354,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                             className="bg-sepia-800/30 rounded-xl overflow-hidden cursor-pointer group"
                           >
                             <img
-                              src={product.image_url}
+                              src={resolveImageVariant(product.image_url, {
+                                thumbnail: product.image_thumbnail_url,
+                                web: product.image_web_url,
+                              }, 'thumbnail')}
                               alt={product.title}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full aspect-square object-cover sepia-filter group-hover:sepia-0 transition-all"
                             />
                             <div className="p-2">

@@ -113,6 +113,8 @@ export interface Product {
   description?: string;
   price: number;
   image_url: string;
+  image_thumbnail_url?: string | null;
+  image_web_url?: string | null;
   is_sold_out: boolean;
   category?: string;
   created_at?: string;

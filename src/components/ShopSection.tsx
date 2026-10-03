@@ -3,11 +3,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, Tag, Clock, ArrowLeft, Package, ExternalLink, AlertCircle, Plus, Minus, Trash2, X, Send, Heart } from 'lucide-react';
 import { supabase } from '../supabase';
 import { Product, CartItem } from '../types';
+import { resolveImageVariant } from '../imageVariants';
 import { isFavorited, addToFavorites, removeFromFavorites } from '../favoritesUtils';
 
 interface ShopSectionProps {
   onBack: () => void;
 }
+
+const resolveProductImage = (product: Product, role: 'thumbnail' | 'web') =>
+  resolveImageVariant(product.image_url, {
+    thumbnail: product.image_thumbnail_url,
+    web: product.image_web_url,
+  }, role);
 
 export const ShopSection = ({ onBack }: ShopSectionProps) => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -56,7 +63,7 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
           return newSet;
         });
       } else {
-        await addToFavorites('product', product.id, product.title, product.image_url);
+        await addToFavorites('product', product.id, product.title, resolveProductImage(product, 'thumbnail'));
         setFavorites(prev => new Set(prev).add(product.id));
       }
     } catch (err) {
@@ -211,7 +218,7 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                   {/* Image Container */}
                   <div className="relative w-full overflow-hidden bg-sepia-100 flex items-center justify-center">
                     <img 
-                      src={product.image_url} 
+                      src={resolveProductImage(product, 'thumbnail')}
                       alt={product.title}
                       loading="lazy"
                       decoding="async"
@@ -346,7 +353,7 @@ export const ShopSection = ({ onBack }: ShopSectionProps) => {
                     <div key={item.product.id} className="flex gap-4 bg-white p-4 rounded-2xl border border-sepia-100 shadow-sm">
                       <div className="w-20 h-20 rounded-xl overflow-hidden bg-sepia-100 flex-shrink-0 flex items-center justify-center">
                         <img 
-                          src={item.product.image_url} 
+                          src={resolveProductImage(item.product, 'thumbnail')}
                           alt={item.product.title} 
                           className="w-full h-auto max-h-20 object-contain"
                           referrerPolicy="no-referrer"
