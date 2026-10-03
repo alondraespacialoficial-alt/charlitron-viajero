@@ -1904,6 +1904,12 @@ export default function App() {
   const [travelPhotos, setTravelPhotos] = useState<TravelPhoto[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [restoredPhotos, setRestoredPhotos] = useState<RestoredPhoto[]>([]);
+  const [hasLoadedRestoredPhotos, setHasLoadedRestoredPhotos] = useState(false);
+  const [isLoadingRestoredPhotos, setIsLoadingRestoredPhotos] = useState(false);
+  const restoredPhotosRequestStarted = React.useRef(false);
+  const [hasLoadedSearchProducts, setHasLoadedSearchProducts] = useState(false);
+  const [isLoadingSearchProducts, setIsLoadingSearchProducts] = useState(false);
+  const searchProductsRequestStarted = React.useRef(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
@@ -2023,7 +2029,7 @@ export default function App() {
     try {
       const { data, error } = await supabase
         .from('travel_photos')
-        .select('*')
+        .select('id, url, character_name, year, description, external_link, created_at')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -2053,29 +2059,73 @@ export default function App() {
     }
   };
 
-  const fetchRestoredPhotos = async () => {
-    try {
-      const { data } = await supabase
-        .from('restored_photos')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (data) setRestoredPhotos(data);
-    } catch (err) {
-      console.error('Error fetching restored photos:', err);
-    }
-  };
+  useEffect(() => {
+    if (!showSearchResults || hasLoadedRestoredPhotos || restoredPhotosRequestStarted.current) return;
+    restoredPhotosRequestStarted.current = true;
+    setIsLoadingRestoredPhotos(true);
 
-  const fetchProducts = async () => {
-    try {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (data) setProducts(data);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-    }
-  };
+    const fetchRestoredPhotos = async () => {
+      const pageSize = 100;
+      const fetchedPhotos: RestoredPhoto[] = [];
+      try {
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase
+            .from('restored_photos')
+            .select('id, title, url, place, era, intervention_type, description, category, is_vertical, created_at')
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) throw error;
+          const page = data || [];
+          fetchedPhotos.push(...page);
+          if (page.length < pageSize) break;
+        }
+        setRestoredPhotos(fetchedPhotos);
+        setHasLoadedRestoredPhotos(true);
+      } catch (err) {
+        console.error('Error fetching restored photos for search:', err);
+        restoredPhotosRequestStarted.current = false;
+      } finally {
+        setIsLoadingRestoredPhotos(false);
+      }
+    };
+
+    void fetchRestoredPhotos();
+  }, [showSearchResults, hasLoadedRestoredPhotos]);
+
+  useEffect(() => {
+    if (!showSearchResults || hasLoadedSearchProducts || searchProductsRequestStarted.current) return;
+    searchProductsRequestStarted.current = true;
+    setIsLoadingSearchProducts(true);
+
+    const fetchSearchProducts = async () => {
+      const pageSize = 100;
+      const fetchedProducts: Product[] = [];
+      try {
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase
+            .from('products')
+            .select('id, title, description, price, image_url, is_sold_out, category, created_at')
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) throw error;
+          const page = data || [];
+          fetchedProducts.push(...page);
+          if (page.length < pageSize) break;
+        }
+        setProducts(fetchedProducts);
+        setHasLoadedSearchProducts(true);
+      } catch (err) {
+        console.error('Error fetching products for search:', err);
+        searchProductsRequestStarted.current = false;
+      } finally {
+        setIsLoadingSearchProducts(false);
+      }
+    };
+
+    void fetchSearchProducts();
+  }, [showSearchResults, hasLoadedSearchProducts]);
 
   useEffect(() => {
     const fetchStories = async () => {
@@ -2118,8 +2168,6 @@ export default function App() {
     fetchHistorians();
     fetchTravelPhotos();
     fetchSponsors();
-    fetchRestoredPhotos();
-    fetchProducts();
 
     // Listen for popstate (back/forward browser buttons)
     const handlePopState = () => {
@@ -2464,6 +2512,8 @@ export default function App() {
           <AdminPanel 
             initialStories={stories}
             initialTravelPhotos={travelPhotos}
+            initialRestoredPhotos={restoredPhotos}
+            initialRestoredPhotosLoaded={hasLoadedRestoredPhotos}
             onStoriesUpdate={setStories}
             onTravelPhotosUpdate={setTravelPhotos}
             onSettingsUpdate={fetchIntroVideo}
@@ -2497,7 +2547,11 @@ export default function App() {
             transition={{ duration: 0.5 }}
           >
             <Suspense fallback={<SectionLoader />}>
-              <RestoredGallery onBack={() => setShowGallery(false)} />
+              <RestoredGallery
+                onBack={() => setShowGallery(false)}
+                initialPhotos={restoredPhotos}
+                initialPhotosLoaded={hasLoadedRestoredPhotos}
+              />
             </Suspense>
           </motion.div>
         ) : showShop ? (
@@ -2803,6 +2857,7 @@ export default function App() {
         stories={publicStories}
         historians={historians}
         restoredPhotos={restoredPhotos}
+        isSearchDataLoading={isLoadingRestoredPhotos || isLoadingSearchProducts}
         travelPhotos={travelPhotos}
         products={products}
         onSelectStory={(story) => {

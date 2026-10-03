@@ -148,6 +148,29 @@ export const isFavorited = async (
   }
 };
 
+export const getFavoriteIdsByType = async (
+  favoriteType: 'story' | 'product' | 'photo'
+): Promise<string[]> => {
+  try {
+    const sessionId = getSessionId();
+    const { data, error } = await supabase
+      .from('user_favorites')
+      .select('favorite_id')
+      .eq('favorite_type', favoriteType)
+      .eq('session_id', sessionId);
+
+    if (error) {
+      console.error('Error fetching favorite IDs:', error);
+      return [];
+    }
+
+    return data?.map(favorite => favorite.favorite_id) || [];
+  } catch (err) {
+    console.error('Error fetching favorite IDs:', err);
+    return [];
+  }
+};
+
 /**
  * Obtener todos los favoritos de un tipo
  */

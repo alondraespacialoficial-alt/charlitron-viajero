@@ -10,6 +10,7 @@ interface SearchResultsProps {
   stories: Story[];
   historians: Historian[];
   restoredPhotos: RestoredPhoto[];
+  isSearchDataLoading: boolean;
   travelPhotos: TravelPhoto[];
   products: Product[];
   onSelectStory: (story: Story) => void;
@@ -25,6 +26,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   stories,
   historians,
   restoredPhotos,
+  isSearchDataLoading,
   travelPhotos,
   products,
   onSelectStory,
@@ -133,7 +135,11 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
             {/* Content */}
             <div className="overflow-y-auto">
-              {!hasResults ? (
+              {!hasResults && isSearchDataLoading ? (
+                <div className="p-12 text-center">
+                  <p className="text-sepia-400 text-sm">Buscando en la galería restaurada...</p>
+                </div>
+              ) : !hasResults ? (
                 <div className="p-12 text-center">
                   <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-sepia-800/50 flex items-center justify-center">
                     <Scroll className="w-8 h-8 text-sepia-500" />

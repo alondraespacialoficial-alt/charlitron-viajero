@@ -56,6 +56,8 @@ interface AdminPanelProps {
   onSettingsUpdate?: () => void;
   initialStories: Story[];
   initialTravelPhotos?: TravelPhoto[];
+  initialRestoredPhotos?: RestoredPhoto[];
+  initialRestoredPhotosLoaded?: boolean;
   adminToken?: string;
 }
 
@@ -66,11 +68,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onSettingsUpdate, 
   initialStories,
   initialTravelPhotos = [],
+  initialRestoredPhotos = [],
+  initialRestoredPhotosLoaded = false,
   adminToken = ''
 }) => {
   const [stories, setStories] = useState<Story[]>(initialStories);
   const [historians, setHistorians] = useState<Historian[]>([]);
-  const [restoredPhotos, setRestoredPhotos] = useState<RestoredPhoto[]>([]);
+  const [restoredPhotos, setRestoredPhotos] = useState<RestoredPhoto[]>(initialRestoredPhotos);
   const [travelPhotos, setTravelPhotos] = useState<TravelPhoto[]>(initialTravelPhotos);
   const [products, setProducts] = useState<Product[]>([]);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -120,7 +124,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setStories(initialStories);
     fetchSettings();
     fetchHistorians();
-    fetchRestoredPhotos();
+    if (initialRestoredPhotosLoaded) setRestoredPhotos(initialRestoredPhotos);
+    else fetchRestoredPhotos();
     fetchTravelPhotos();
     fetchFamilyKeys();
     fetchProducts();
@@ -384,7 +389,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     try {
       const { data, error } = await supabase
         .from('restored_photos')
-        .select('*')
+        .select('id, title, url, place, era, intervention_type, description, category, is_vertical, created_at, images')
         .order('created_at', { ascending: false });
       if (data) setRestoredPhotos(data);
     } catch (err: any) {

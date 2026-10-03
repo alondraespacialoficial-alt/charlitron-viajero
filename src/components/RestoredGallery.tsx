@@ -4,7 +4,9 @@ import { ArrowLeft, Maximize2, X, Clock, Camera, MapPin, Calendar, ShieldCheck, 
 import { supabase } from '../supabase';
 import { RestoredPhoto } from '../types';
 import { WHATSAPP_LINK } from '../constants';
-import { isFavorited, addToFavorites, removeFromFavorites } from '../favoritesUtils';
+import { getFavoriteIdsByType, addToFavorites, removeFromFavorites } from '../favoritesUtils';
+
+const PHOTO_PAGE_SIZE = 24;
 
 const CATEGORIES = [
   'Todos',
@@ -27,51 +29,130 @@ const INTERVENTION_LABELS: Record<string, string> = {
   'Antes / Después': 'Antes / Después'
 };
 
-export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
+export const RestoredGallery = ({
+  onBack,
+  initialPhotos,
+  initialPhotosLoaded = false
+}: {
+  onBack: () => void;
+  initialPhotos?: RestoredPhoto[];
+  initialPhotosLoaded?: boolean;
+}) => {
   const [photos, setPhotos] = useState<RestoredPhoto[]>([]);
+  const [usingInitialPhotos, setUsingInitialPhotos] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PHOTO_PAGE_SIZE);
   const [activePhoto, setActivePhoto] = useState<RestoredPhoto | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMorePhotos, setHasMorePhotos] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const initialFavoritesLoaded = React.useRef(false);
 
   useEffect(() => {
     setActiveImageIndex(0);
   }, [activePhoto]);
 
   useEffect(() => {
+    if (initialPhotosLoaded) {
+      const loadedPhotos = initialPhotos || [];
+      setUsingInitialPhotos(true);
+      setPhotos(loadedPhotos);
+      setVisibleCount(PHOTO_PAGE_SIZE);
+      setLoading(false);
+      if (!initialFavoritesLoaded.current) {
+        initialFavoritesLoaded.current = true;
+        void loadFavorites();
+      }
+      return;
+    }
+
+    setUsingInitialPhotos(false);
+    let cancelled = false;
+
     const fetchPhotos = async () => {
+      setLoading(true);
+      setPhotos([]);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('restored_photos')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('id, title, url, place, era, intervention_type, description, category, is_vertical, created_at')
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true });
+        if (activeCategory !== 'Todos') query = query.eq('category', activeCategory);
+
+        const { data, error } = await query.range(0, PHOTO_PAGE_SIZE - 1);
         if (error) throw error;
-        if (data) {
+        if (data && !cancelled) {
           setPhotos(data);
-          await loadFavorites(data);
+          setHasMorePhotos(data.length === PHOTO_PAGE_SIZE);
+          await loadFavorites();
         }
       } catch (err) {
         console.error('Error fetching restored photos:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchPhotos();
-  }, []);
+    return () => { cancelled = true; };
+  }, [activeCategory, initialPhotosLoaded, initialPhotos]);
 
-  const loadFavorites = async (photoList: RestoredPhoto[]) => {
+  const loadFavorites = async () => {
     try {
-      const favSet = new Set<string>();
-      for (const photo of photoList) {
-        const isFav = await isFavorited('photo', photo.id);
-        if (isFav) {
-          favSet.add(photo.id);
-        }
-      }
-      setFavorites(favSet);
+      setFavorites(new Set(await getFavoriteIdsByType('photo')));
     } catch (err) {
       console.error('Error loading favorites:', err);
+    }
+  };
+
+  const loadMorePhotos = async () => {
+    if (loadingMore || (!usingInitialPhotos && !hasMorePhotos)) return;
+    if (usingInitialPhotos) {
+      setVisibleCount(current => current + PHOTO_PAGE_SIZE);
+      return;
+    }
+
+    setLoadingMore(true);
+    try {
+      let query = supabase
+        .from('restored_photos')
+        .select('id, title, url, place, era, intervention_type, description, category, is_vertical, created_at')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true });
+      if (activeCategory !== 'Todos') query = query.eq('category', activeCategory);
+
+      const { data, error } = await query.range(photos.length, photos.length + PHOTO_PAGE_SIZE - 1);
+      if (error) throw error;
+      if (data) {
+        setPhotos(current => [...current, ...data]);
+        setHasMorePhotos(data.length === PHOTO_PAGE_SIZE);
+        await loadFavorites();
+      }
+    } catch (err) {
+      console.error('Error loading more restored photos:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const openPhoto = async (photo: RestoredPhoto) => {
+    setActivePhoto(photo);
+    try {
+      const { data, error } = await supabase
+        .from('restored_photos')
+        .select('images')
+        .eq('id', photo.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        setActivePhoto(current => current?.id === photo.id
+          ? { ...current, images: data.images || [] }
+          : current);
+      }
+    } catch (err) {
+      console.error('Error fetching restored photo details:', err);
     }
   };
 
@@ -96,6 +177,10 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
   const filteredPhotos = activeCategory === 'Todos' 
     ? photos 
     : photos.filter(p => p.category === activeCategory);
+  const visiblePhotos = usingInitialPhotos ? filteredPhotos.slice(0, visibleCount) : filteredPhotos;
+  const canLoadMore = usingInitialPhotos
+    ? visibleCount < filteredPhotos.length
+    : hasMorePhotos;
 
   return (
     <div className="min-h-screen bg-sepia-50 pt-32 pb-24 px-6">
@@ -126,6 +211,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
+              disabled={loadingMore}
               className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
                 activeCategory === cat 
                   ? 'bg-sepia-950 text-white shadow-lg' 
@@ -147,8 +233,9 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
             <p className="text-sepia-500 font-serif italic text-xl">No hay fotos en esta categoría todavía...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
-            {filteredPhotos.map((photo) => (
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 items-start">
+            {visiblePhotos.map((photo) => (
               <motion.div
                 key={photo.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -158,7 +245,7 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
               >
                 <div 
                   className="rounded-2xl overflow-hidden shadow-xl border-8 border-white cursor-zoom-in relative bg-sepia-950 group-hover:shadow-2xl transition-all duration-500 flex items-center justify-center min-h-[200px]"
-                  onClick={() => setActivePhoto(photo)}
+                  onClick={() => openPhoto(photo)}
                 >
                   {/* Favorite Button */}
                   <button
@@ -226,6 +313,18 @@ export const RestoredGallery = ({ onBack }: { onBack: () => void }) => {
                 </div>
               </motion.div>
             ))}
+            </div>
+            {canLoadMore && (
+              <div className="mt-12 flex justify-center">
+                <button
+                  onClick={loadMorePhotos}
+                  disabled={loadingMore}
+                  className="px-6 py-3 rounded-xl bg-sepia-950 text-sepia-100 font-bold uppercase tracking-widest text-xs hover:bg-sepia-800 disabled:opacity-50 transition-colors"
+                >
+                  {loadingMore ? 'Cargando...' : 'Cargar más fotos'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
