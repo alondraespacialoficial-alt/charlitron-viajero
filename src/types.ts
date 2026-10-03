@@ -1,3 +1,11 @@
+export type ImageVariantRole = 'thumbnail' | 'web' | 'master';
+
+export interface ImageVariants {
+  thumbnail?: string | null;
+  web?: string | null;
+  masterSignedUrl?: string | null;
+}
+
 export interface Story {
   id: string;
   title: string;
