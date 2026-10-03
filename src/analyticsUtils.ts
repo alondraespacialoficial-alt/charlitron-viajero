@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { isSupabaseRestricted } from './supabaseRestriction';
 
 export interface PageView {
   id: string;
@@ -22,6 +23,8 @@ export const trackPageView = async (
   pageId?: string,
   pageTitle?: string
 ): Promise<void> => {
+  if (isSupabaseRestricted()) return;
+
   try {
     // Buscar si ya existe un registro para esta página
     const { data: existing, error: fetchError } = await supabase
@@ -33,9 +36,11 @@ export const trackPageView = async (
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       // PGRST116 = no rows returned (is expected)
-      console.error('Error fetching analytics:', fetchError);
+      if (!isSupabaseRestricted()) console.error('Error fetching analytics:', fetchError);
       return;
     }
+
+    if (isSupabaseRestricted()) return;
 
     if (existing) {
       // Actualizar contador existente
@@ -49,7 +54,7 @@ export const trackPageView = async (
         .eq('id', existing.id);
 
       if (updateError) {
-        console.error('Error updating analytics:', updateError);
+        if (!isSupabaseRestricted()) console.error('Error updating analytics:', updateError);
       }
     } else {
       // Insertar nuevo registro
@@ -66,11 +71,11 @@ export const trackPageView = async (
         ]);
 
       if (insertError) {
-        console.error('Error inserting analytics:', insertError);
+        if (!isSupabaseRestricted()) console.error('Error inserting analytics:', insertError);
       }
     }
   } catch (err) {
-    console.error('Analytics tracking error:', err);
+    if (!isSupabaseRestricted()) console.error('Analytics tracking error:', err);
   }
 };
 
@@ -78,6 +83,8 @@ export const trackPageView = async (
  * Obtiene todas las analíticas
  */
 export const fetchAnalytics = async (): Promise<PageView[] | null> => {
+  if (isSupabaseRestricted()) return null;
+
   try {
     const { data, error } = await supabase
       .from('page_analytics')
@@ -87,7 +94,7 @@ export const fetchAnalytics = async (): Promise<PageView[] | null> => {
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('Error fetching analytics:', err);
+    if (!isSupabaseRestricted()) console.error('Error fetching analytics:', err);
     return null;
   }
 };
@@ -96,6 +103,8 @@ export const fetchAnalytics = async (): Promise<PageView[] | null> => {
  * Obtiene analíticas por tipo
  */
 export const fetchAnalyticsByType = async (pageType: string): Promise<PageView[] | null> => {
+  if (isSupabaseRestricted()) return null;
+
   try {
     const { data, error } = await supabase
       .from('page_analytics')
@@ -106,7 +115,7 @@ export const fetchAnalyticsByType = async (pageType: string): Promise<PageView[]
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('Error fetching analytics by type:', err);
+    if (!isSupabaseRestricted()) console.error('Error fetching analytics by type:', err);
     return null;
   }
 };
@@ -115,6 +124,8 @@ export const fetchAnalyticsByType = async (pageType: string): Promise<PageView[]
  * Obtiene vistas para una página específica
  */
 export const getPageViews = async (pageId: string): Promise<number | null> => {
+  if (isSupabaseRestricted()) return null;
+
   try {
     const { data, error } = await supabase
       .from('page_analytics')
@@ -129,7 +140,7 @@ export const getPageViews = async (pageId: string): Promise<number | null> => {
 
     return data?.view_count || 0;
   } catch (err) {
-    console.error('Error getting page views:', err);
+    if (!isSupabaseRestricted()) console.error('Error getting page views:', err);
     return null;
   }
 };

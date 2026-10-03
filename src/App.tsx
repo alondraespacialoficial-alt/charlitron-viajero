@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useSyncExternalStore, Suspense, lazy } from 'react';
 import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import QRCode from 'qrcode';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
 import { Story, TravelPhoto, Historian, Sponsor, RestoredPhoto, Product, Contest } from './types';
 import { supabase } from './supabase';
+import { getSupabaseRestriction, subscribeToSupabaseRestriction } from './supabaseRestriction';
 import { HistoriansSection } from './components/HistoriansSection';
 import { SearchResults } from './components/SearchResults';
 import { FavoritesPanel } from './components/FavoritesPanel';
@@ -1880,6 +1881,11 @@ const getInitialFolio = (): string => {
 const INITIAL_FOLIO = getInitialFolio();
 
 export default function App() {
+  const supabaseRestriction = useSyncExternalStore(
+    subscribeToSupabaseRestriction,
+    getSupabaseRestriction,
+    getSupabaseRestriction
+  );
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [showGallery,       setShowGallery]       = useState(() => INITIAL_PATH === 'galeria');
   const [showShop,          setShowShop]          = useState(() => INITIAL_PATH === 'tienda');
@@ -2426,6 +2432,17 @@ export default function App() {
   return (
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
       <InstallPrompt />
+      {supabaseRestriction && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed top-20 left-4 right-4 z-[300] mx-auto max-w-2xl rounded-xl border border-amber-700 bg-sepia-950/95 px-5 py-3 text-sm text-amber-200 shadow-xl"
+        >
+          {supabaseRestriction === 'payment_required'
+            ? 'Supabase requiere atención de facturación. La navegación continúa, pero algunos datos remotos no están disponibles.'
+            : 'Supabase no responde temporalmente. Las solicitudes están pausadas; la siguiente consulta comprobará la conexión después de una espera.'}
+        </div>
+      )}
       <AIChatBubble />
       <Navbar 
         onHome={() => { setSelectedStory(null); setShowGallery(false); setShowShop(false); setShowInvestigation(false); setShowContests(false); setShowConferences(false); setShowCourses(false); setShowFamilyTree(false); setShowMural(false); setShowCollaborators(false); setShowAvatars(false); setShowJardin(false); setShowTravelerMap(false); setIsPresentationMode(false); }} 

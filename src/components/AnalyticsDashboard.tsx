@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
 import { motion } from 'motion/react';
 import { Eye, TrendingUp, ChevronDown } from 'lucide-react';
 import { fetchAnalytics, formatViewCount } from '../analyticsUtils';
+import { getSupabaseRestriction, subscribeToSupabaseRestriction } from '../supabaseRestriction';
 
 interface PageView {
   id: string;
@@ -18,12 +19,25 @@ export const AnalyticsDashboard = () => {
   const [analytics, setAnalytics] = useState<PageView[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>('all');
+  const restriction = useSyncExternalStore(
+    subscribeToSupabaseRestriction,
+    getSupabaseRestriction,
+    getSupabaseRestriction
+  );
 
   useEffect(() => {
+    if (restriction) {
+      setLoading(false);
+      return;
+    }
     loadAnalytics();
-  }, []);
+  }, [restriction]);
 
   const loadAnalytics = async () => {
+    if (getSupabaseRestriction()) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const data = await fetchAnalytics();
     if (data) {
@@ -87,9 +101,9 @@ export const AnalyticsDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sepia-400 text-sm font-semibold mb-2">Vistas Totales</p>
-            <p className="text-4xl font-bold text-sepia-100">{formatViewCount(totalViews)}</p>
+            <p className="text-4xl font-bold text-sepia-100">{restriction ? '—' : formatViewCount(totalViews)}</p>
             <p className="text-sepia-500 text-xs mt-2">
-              {analytics.length} páginas / secciones rastreadas
+              {restriction ? 'Datos no disponibles' : `${analytics.length} páginas / secciones rastreadas`}
             </p>
           </div>
           <TrendingUp className="w-12 h-12 text-sepia-500 opacity-50" />
@@ -102,7 +116,9 @@ export const AnalyticsDashboard = () => {
           Vistas por Tipo de Página
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {totals.map((item) => (
+          {restriction ? (
+            <p className="text-sepia-500 text-sm">El resumen se reanudará cuando Supabase vuelva a estar disponible.</p>
+          ) : totals.map((item) => (
             <motion.button
               key={item.type}
               whileHover={{ scale: 1.05 }}
@@ -149,6 +165,10 @@ export const AnalyticsDashboard = () => {
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block w-6 h-6 border-2 border-sepia-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : restriction ? (
+          <div className="text-center py-8 text-sepia-500">
+            <p className="text-sm">Analíticas pausadas mientras Supabase está restringido.</p>
           </div>
         ) : displayedData.length === 0 ? (
           <div className="text-center py-8 text-sepia-500">
@@ -199,10 +219,10 @@ export const AnalyticsDashboard = () => {
       {/* Botón Refrescar */}
       <button
         onClick={loadAnalytics}
-        disabled={loading}
+        disabled={loading || !!restriction}
         className="w-full bg-sepia-700 hover:bg-sepia-600 text-sepia-100 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all disabled:opacity-50"
       >
-        {loading ? 'Cargando...' : 'Refrescar Datos'}
+        {restriction ? 'Pausado por Supabase' : loading ? 'Cargando...' : 'Refrescar Datos'}
       </button>
     </div>
   );
