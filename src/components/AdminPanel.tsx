@@ -34,6 +34,7 @@ import {
   UserCheck,
   Bot,
 } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product, Sponsor, Contest, MuralPhoto, Conference, ConferenceTicket } from '../types';
 import { supabase } from '../supabase';
 import { resolveImageVariant } from '../imageVariants';
@@ -213,7 +214,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select('id, title, description, price, image_url, image_thumbnail_url, image_web_url, is_sold_out, category, created_at')
         .order('created_at', { ascending: false });
       if (data) setProducts(data);
     } catch (err) {
@@ -301,7 +302,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const { data, error } = await supabase
         .from('products')
         .upsert(productToSave)
-        .select();
+        .select('id, title, description, price, image_url, image_thumbnail_url, image_web_url, is_sold_out, category, created_at');
 
       if (error) throw error;
       if (data) {
@@ -319,6 +320,88 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } finally {
       setIsSaving(false);
       setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  const handleProductImageUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const [webFile, thumbnailFile] = await Promise.all([
+        imageCompression(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1800,
+          useWebWorker: true,
+          fileType: 'image/webp',
+          initialQuality: 0.82,
+        }),
+        imageCompression(file, {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 600,
+          useWebWorker: true,
+          fileType: 'image/webp',
+          initialQuality: 0.8,
+        }),
+      ]);
+
+      const productId = editingProduct?.id || crypto.randomUUID();
+      const uploadId = crypto.randomUUID();
+      const masterExtension = file.name.match(/\.([^.]+)$/)?.[1]?.toLowerCase() || 'bin';
+      const getVariantExtension = (image: File) => {
+        if (image.type === 'image/webp') return 'webp';
+        if (image.type === 'image/jpeg') return 'jpg';
+        return image.type.split('/')[1]?.replace(/[^a-z0-9]/g, '') || 'img';
+      };
+      const paths = {
+        master: `products/master/${productId}/${uploadId}.${masterExtension}`,
+        web: `products/web/${productId}/${uploadId}.${getVariantExtension(webFile)}`,
+        thumbnail: `products/thumb/${productId}/${uploadId}.${getVariantExtension(thumbnailFile)}`,
+      };
+      const bucket = supabase.storage.from('images');
+      const uploadedPaths: string[] = [];
+
+      const upload = async (path: string, image: File) => {
+        const { error } = await bucket.upload(path, image, {
+          contentType: image.type || 'application/octet-stream',
+          upsert: false,
+        });
+        if (error) throw error;
+        uploadedPaths.push(path);
+        return bucket.getPublicUrl(path).data.publicUrl;
+      };
+
+      let masterUrl: string;
+      let webUrl: string;
+      let thumbnailUrl: string;
+      try {
+        masterUrl = await upload(paths.master, file);
+        webUrl = await upload(paths.web, webFile);
+        thumbnailUrl = await upload(paths.thumbnail, thumbnailFile);
+      } catch (uploadError) {
+        if (uploadedPaths.length > 0) {
+          try {
+            const { error: cleanupError } = await bucket.remove(uploadedPaths);
+            if (cleanupError) console.warn('Could not remove incomplete product image upload:', cleanupError);
+          } catch (cleanupError) {
+            console.warn('Could not remove incomplete product image upload:', cleanupError);
+          }
+        }
+        throw uploadError;
+      }
+
+      setEditingProduct(current => current ? {
+        ...current,
+        id: current.id || productId,
+        image_url: masterUrl,
+        image_web_url: webUrl,
+        image_thumbnail_url: thumbnailUrl,
+      } : current);
+      setMessage({ type: 'success', text: 'Master y variantes del producto subidos correctamente' });
+    } catch (err: any) {
+      console.error('Error uploading product image variants:', err);
+      setMessage({ type: 'error', text: `No se subieron las variantes del producto: ${err.message || 'Error desconocido'}` });
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setMessage(null), 6000);
     }
   };
 
@@ -2287,7 +2370,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </button>
                       <button 
                         type="submit"
-                        disabled={isSaving}
+                        disabled={isSaving || isUploading}
                         className="bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50"
                       >
                         {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -2413,6 +2496,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <button 
                         type="button"
                         onClick={() => setEditingProduct(null)}
+                        disabled={isUploading}
                         className="px-6 py-3 rounded-xl font-bold text-sepia-400 hover:bg-sepia-800 transition-all"
                       >
                         Cancelar
@@ -2480,7 +2564,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <input 
                               type="text" 
                               value={editingProduct.image_url}
-                              onChange={e => setEditingProduct({...editingProduct, image_url: e.target.value})}
+                              onChange={e => setEditingProduct({
+                                ...editingProduct,
+                                image_url: e.target.value,
+                                image_thumbnail_url: null,
+                                image_web_url: null,
+                              })}
                               className="flex-grow bg-sepia-900 border border-sepia-800 rounded-xl p-4 text-sepia-100 outline-none focus:border-sepia-500 transition-all"
                               placeholder="https://..."
                               required
@@ -2490,13 +2579,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 type="file" 
                                 accept="image/*"
                                 onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleImageUpload(file).then(url => {
-                                      if (url) setEditingProduct({...editingProduct, image_url: url});
-                                    });
-                                  }
+                                  const file = e.currentTarget.files?.[0];
+                                  if (file) void handleProductImageUpload(file);
+                                  e.currentTarget.value = '';
                                 }}
+                                disabled={isUploading}
                                 className="hidden"
                                 id="product-image-upload"
                               />

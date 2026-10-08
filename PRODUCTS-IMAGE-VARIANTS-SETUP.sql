@@ -11,5 +11,5 @@ COMMENT ON COLUMN public.products.image_thumbnail_url IS
 COMMENT ON COLUMN public.products.image_web_url IS
   'URL publica de la variante web. NULL indica usar thumbnail o image_url.';
 
--- El master no se guarda como URL en la fila publica de products.
--- Cuando se implemente, vivira en Storage privado y se entregara como URL firmada.
+-- Fase 4C.2 piloto: image_url conserva la URL publica del master original en `images`.
+-- Master privado y URLs firmadas quedan para una fase posterior; no se cambian buckets ni politicas aqui.
