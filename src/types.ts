@@ -276,7 +276,6 @@ export interface Memorial {
   epitaph?: string | null;
   bio_short?: string | null;
   visibility: MemorialVisibility;
-  access_code?: string | null;
   story_id?: string | null;
   family_member_id?: string | null;
   linked_memorial_id?: string | null;
@@ -284,14 +283,19 @@ export interface Memorial {
   spotify_link?: string | null;
   tribute_video_url?: string | null;
   requires_approval: boolean;
+  banner_message?: string | null;
+  banner_active?: boolean;
+  has_family_editor?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MemorialAdminDTO extends Memorial {
+  access_code?: string | null;
   client_name?: string | null;
   client_contact?: string | null;
   editor_email?: string | null;
   editor_password?: string | null;
-  banner_message?: string | null;
-  banner_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export type MemorialGestureType = 'flower_rose' | 'flower_lily' | 'flower_sunflower' | 'flower_daisy' | 'candle';

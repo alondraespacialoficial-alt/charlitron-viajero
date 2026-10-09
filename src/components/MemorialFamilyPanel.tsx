@@ -3,6 +3,7 @@ import {
   Lock, KeyRound, Loader2, Upload, X, Check, Trash2, CheckCircle2, XCircle, Megaphone,
 } from 'lucide-react';
 import { Memorial, MemorialGuestbookEntry } from '../types';
+import { memorialRequest } from '../memorialApi';
 import { supabase } from '../supabase';
 
 const editorSessionKey = (slug: string) => `jardin_editor_${slug}`;
@@ -16,6 +17,7 @@ interface Props {
 // de su propio memorial, sin tocar video, música, historia ni privacidad.
 export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdated }) => {
   const [unlocked, setUnlocked] = useState(false);
+  const [sessionToken, setSessionToken] = useState('');
   const [showLogin, setShowLogin] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -39,11 +41,27 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
   const [guestbookLoading, setGuestbookLoading] = useState(false);
 
   useEffect(() => {
-    setUnlocked(localStorage.getItem(editorSessionKey(memorial.slug)) === 'true');
+    const token = localStorage.getItem(editorSessionKey(memorial.slug)) || '';
+    setSessionToken(token);
+    setUnlocked(false);
     setShowLogin(false);
     setEmailInput('');
     setPasswordInput('');
     setLoginError('');
+    if (!token) return;
+    let active = true;
+    memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorial-family', {
+      action: 'load', memorialId: memorial.id,
+    }, token).then(result => {
+      if (active) {
+        setGuestbook(result.guestbook || []);
+        setUnlocked(true);
+      }
+    }).catch(() => {
+      localStorage.removeItem(editorSessionKey(memorial.slug));
+      if (active) setSessionToken('');
+    });
+    return () => { active = false; };
   }, [memorial.slug]);
 
   useEffect(() => {
@@ -56,36 +74,44 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
     setBannerActive(!!memorial.banner_active);
   }, [memorial]);
 
-  const loadGuestbook = async () => {
+  const loadGuestbook = async (token: string) => {
     setGuestbookLoading(true);
-    const { data } = await supabase
-      .from('memorial_guestbook')
-      .select('*')
-      .eq('memorial_id', memorial.id)
-      .order('created_at', { ascending: false });
-    setGuestbook((data as MemorialGuestbookEntry[]) || []);
-    setGuestbookLoading(false);
+    try {
+      const result = await memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorial-family', {
+        action: 'load', memorialId: memorial.id,
+      }, token);
+      setGuestbook(result.guestbook || []);
+    } finally {
+      setGuestbookLoading(false);
+    }
   };
 
-  useEffect(() => {
-    if (unlocked) loadGuestbook();
-  }, [unlocked]); // eslint-disable-line
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const emailOk = emailInput.trim().toLowerCase() === (memorial.editor_email || '').trim().toLowerCase();
-    const passOk = passwordInput.trim() === (memorial.editor_password || '').trim();
-    if (emailOk && passOk && memorial.editor_email && memorial.editor_password) {
-      localStorage.setItem(editorSessionKey(memorial.slug), 'true');
-      setUnlocked(true);
-      setLoginError('');
-    } else {
+    let result: { sessionToken: string; memorial: Memorial };
+    try {
+      result = await memorialRequest<{ sessionToken: string; memorial: Memorial }>('/api/memorial-family', {
+        action: 'login', slug: memorial.slug, email: emailInput, password: passwordInput,
+      });
+    } catch {
       setLoginError('Correo o contraseña incorrectos.');
+      return;
+    }
+    localStorage.setItem(editorSessionKey(memorial.slug), result.sessionToken);
+    setSessionToken(result.sessionToken);
+    onMemorialUpdated(result.memorial);
+    setUnlocked(true);
+    setLoginError('');
+    try {
+      await loadGuestbook(result.sessionToken);
+    } catch {
+      console.error('La sesión se inició, pero no se pudo cargar el libro de visitas.');
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem(editorSessionKey(memorial.slug));
+    setSessionToken('');
     setUnlocked(false);
     setShowLogin(false);
   };
@@ -115,11 +141,13 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
       epitaph: epitaph.trim() || null,
       photo_url: photoUrl.trim() || null,
     };
-    const { error } = await supabase.from('memorials').update(patch).eq('id', memorial.id);
-    if (!error) {
+    try {
+      await memorialRequest('/api/memorial-family', { action: 'profile', memorialId: memorial.id, ...patch }, sessionToken);
       onMemorialUpdated(patch);
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2500);
+    } catch (error) {
+      console.error('No se pudo guardar el perfil familiar:', error);
     }
     setSavingProfile(false);
   };
@@ -128,27 +156,37 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
     e.preventDefault();
     setSavingBanner(true);
     const patch = { banner_message: bannerMessage.trim() || null, banner_active: bannerActive };
-    const { error } = await supabase.from('memorials').update(patch).eq('id', memorial.id);
-    if (!error) {
+    try {
+      await memorialRequest('/api/memorial-family', { action: 'banner', memorialId: memorial.id, ...patch }, sessionToken);
       onMemorialUpdated(patch);
       setBannerSaved(true);
       setTimeout(() => setBannerSaved(false), 2500);
+    } catch (error) {
+      console.error('No se pudo guardar el aviso familiar:', error);
     }
     setSavingBanner(false);
   };
 
   const moderate = async (entryId: string, status: 'approved' | 'rejected') => {
-    await supabase.from('memorial_guestbook').update({ status }).eq('id', entryId);
-    setGuestbook(prev => prev.map(g => (g.id === entryId ? { ...g, status } : g)));
+    try {
+      await memorialRequest('/api/memorial-family', { action: 'moderate', memorialId: memorial.id, entryId, status }, sessionToken);
+      setGuestbook(prev => prev.map(g => (g.id === entryId ? { ...g, status } : g)));
+    } catch (error) {
+      console.error('No se pudo moderar el recuerdo:', error);
+    }
   };
 
   const removeEntry = async (entryId: string) => {
     if (!confirm('¿Eliminar este mensaje?')) return;
-    await supabase.from('memorial_guestbook').delete().eq('id', entryId);
-    setGuestbook(prev => prev.filter(g => g.id !== entryId));
+    try {
+      await memorialRequest('/api/memorial-family', { action: 'delete-entry', memorialId: memorial.id, entryId }, sessionToken);
+      setGuestbook(prev => prev.filter(g => g.id !== entryId));
+    } catch (error) {
+      console.error('No se pudo eliminar el recuerdo:', error);
+    }
   };
 
-  if (!memorial.editor_email || !memorial.editor_password) return null;
+  if (!memorial.has_family_editor) return null;
 
   if (!unlocked) {
     return (

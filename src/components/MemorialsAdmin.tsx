@@ -4,7 +4,8 @@ import {
   Plus, Trash2, Edit2, X, Loader2, Check, AlertCircle, Upload, RefreshCw,
   Copy, Search, Music, Link2, MessageCircle, Flower2, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { Memorial, MemorialGesture, MemorialGuestbookEntry, MemorialVisibility } from '../types';
+import { MemorialAdminDTO, MemorialGesture, MemorialGuestbookEntry, MemorialVisibility } from '../types';
+import { memorialRequest } from '../memorialApi';
 import { supabase } from '../supabase';
 
 function toSlug(text: string): string {
@@ -28,10 +29,12 @@ const VISIBILITY_INFO: Record<MemorialVisibility, { label: string; hint: string;
   private: { label: 'Privado', hint: 'No aparece en el buscador; el enlace pide el código de acceso.', color: 'text-amber-300 border-amber-700 bg-amber-900/20' },
 };
 
-export const MemorialsAdmin: React.FC = () => {
-  const [memorials, setMemorials] = useState<Memorial[]>([]);
+interface Props { adminToken: string }
+
+export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
+  const [memorials, setMemorials] = useState<MemorialAdminDTO[]>([]);
   const [search, setSearch] = useState('');
-  const [editing, setEditing] = useState<Partial<Memorial> | null>(null);
+  const [editing, setEditing] = useState<Partial<MemorialAdminDTO> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -82,11 +85,12 @@ export const MemorialsAdmin: React.FC = () => {
   };
 
   const fetchMemorials = async () => {
-    const { data, error } = await supabase
-      .from('memorials')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setMemorials(data);
+    try {
+      const { data } = await memorialRequest<{ data: MemorialAdminDTO[] }>('/api/memorial-admin', { action: 'list' }, adminToken);
+      setMemorials(data || []);
+    } catch (error) {
+      console.error('No se pudieron cargar los memoriales:', error);
+    }
   };
 
   useEffect(() => { fetchMemorials(); }, []);
@@ -140,13 +144,14 @@ export const MemorialsAdmin: React.FC = () => {
     const q = memorialLinkSearch.trim();
     if (q.length < 2) { setMemorialLinkResults([]); return; }
     setMemorialLinkSearching(true);
-    const { data } = await supabase
-      .from('memorials')
-      .select('id, full_name')
-      .ilike('full_name', `%${q}%`)
-      .neq('id', editing?.id || '')
-      .limit(15);
-    setMemorialLinkResults((data as { id: string; full_name: string }[]) || []);
+    try {
+      const { data } = await memorialRequest<{ data: { id: string; full_name: string }[] }>('/api/memorial-admin', {
+        action: 'search-linked', query: q, excludeId: editing?.id || '',
+      }, adminToken);
+      setMemorialLinkResults(data || []);
+    } catch (error) {
+      console.error('No se pudieron buscar memoriales vinculables:', error);
+    }
     setMemorialLinkSearching(false);
   };
 
@@ -158,23 +163,27 @@ export const MemorialsAdmin: React.FC = () => {
 
   const loadGuestbook = async (memorialId: string) => {
     setGuestbookLoading(true);
-    const { data } = await supabase
-      .from('memorial_guestbook')
-      .select('*')
-      .eq('memorial_id', memorialId)
-      .order('created_at', { ascending: false });
-    setGuestbook((data as MemorialGuestbookEntry[]) || []);
-    setGuestbookLoading(false);
+    try {
+      const { data } = await memorialRequest<{ data: MemorialGuestbookEntry[] }>('/api/memorial-admin', {
+        action: 'guestbook', memorialId,
+      }, adminToken);
+      setGuestbook(data || []);
+    } catch (error) {
+      console.error('No se pudieron cargar los recuerdos:', error);
+    } finally {
+      setGuestbookLoading(false);
+    }
   };
 
   const loadGestures = async (memorialId: string) => {
-    const { data } = await supabase
-      .from('memorial_gestures')
-      .select('*')
-      .eq('memorial_id', memorialId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    setGestures((data as MemorialGesture[]) || []);
+    try {
+      const { data } = await memorialRequest<{ data: MemorialGesture[] }>('/api/memorial-admin', {
+        action: 'gestures', memorialId,
+      }, adminToken);
+      setGestures(data || []);
+    } catch (error) {
+      console.error('No se pudieron cargar los homenajes:', error);
+    }
   };
 
   useEffect(() => {
@@ -195,8 +204,9 @@ export const MemorialsAdmin: React.FC = () => {
         setLinkedMemberContext('');
       }
       if (editing.linked_memorial_id) {
-        supabase.from('memorials').select('full_name').eq('id', editing.linked_memorial_id).maybeSingle()
-          .then(({ data }) => setLinkedMemorialName((data as any)?.full_name || ''));
+        memorialRequest<{ data: { full_name: string } | null }>('/api/memorial-admin', {
+          action: 'linked-name', id: editing.linked_memorial_id,
+        }, adminToken).then(({ data }) => setLinkedMemorialName(data?.full_name || '')).catch(() => setLinkedMemorialName(''));
       } else {
         setLinkedMemorialName('');
       }
@@ -213,18 +223,18 @@ export const MemorialsAdmin: React.FC = () => {
   }, [editing?.id]); // eslint-disable-line
 
   const moderateGuestbook = async (entryId: string, status: 'approved' | 'rejected') => {
-    await supabase.from('memorial_guestbook').update({ status }).eq('id', entryId);
+    await memorialRequest('/api/memorial-admin', { action: 'moderate', entryId, status }, adminToken);
     setGuestbook(prev => prev.map(g => g.id === entryId ? { ...g, status } : g));
   };
 
   const deleteGuestbookEntry = async (entryId: string) => {
     if (!confirm('¿Eliminar este mensaje?')) return;
-    await supabase.from('memorial_guestbook').delete().eq('id', entryId);
+    await memorialRequest('/api/memorial-admin', { action: 'delete-entry', entryId }, adminToken);
     setGuestbook(prev => prev.filter(g => g.id !== entryId));
   };
 
   const deleteGesture = async (gestureId: string) => {
-    await supabase.from('memorial_gestures').delete().eq('id', gestureId);
+    await memorialRequest('/api/memorial-admin', { action: 'delete-gesture', gestureId }, adminToken);
     setGestures(prev => prev.filter(g => g.id !== gestureId));
   };
 
@@ -314,12 +324,10 @@ export const MemorialsAdmin: React.FC = () => {
       };
 
       if (editing.id) {
-        const { error } = await supabase.from('memorials').update(payload).eq('id', editing.id);
-        if (error) throw error;
+        await memorialRequest('/api/memorial-admin', { action: 'update', id: editing.id, memorial: payload }, adminToken);
         showMsg('success', 'Memorial actualizado');
       } else {
-        const { error } = await supabase.from('memorials').insert([payload]);
-        if (error) throw error;
+        await memorialRequest('/api/memorial-admin', { action: 'create', memorial: payload }, adminToken);
         showMsg('success', 'Memorial creado');
       }
       setEditing(null);
@@ -334,9 +342,13 @@ export const MemorialsAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este memorial? Se borrarán también sus mensajes y flores.')) return;
     setIsDeleting(id);
-    const { error } = await supabase.from('memorials').delete().eq('id', id);
-    if (!error) { fetchMemorials(); showMsg('success', 'Memorial eliminado'); }
-    else showMsg('error', 'Error al eliminar');
+    try {
+      await memorialRequest('/api/memorial-admin', { action: 'delete', id }, adminToken);
+      fetchMemorials();
+      showMsg('success', 'Memorial eliminado');
+    } catch {
+      showMsg('error', 'Error al eliminar');
+    }
     setIsDeleting(null);
   };
 
@@ -385,7 +397,7 @@ export const MemorialsAdmin: React.FC = () => {
                   value={editing.full_name || ''}
                   onChange={(e) => {
                     const full_name = e.target.value;
-                    const update: Partial<Memorial> = { full_name };
+                    const update: Partial<MemorialAdminDTO> = { full_name };
                     if (!editing.id && !slugEdited) update.slug = toSlug(full_name);
                     setEditing({ ...editing, ...update });
                   }}
