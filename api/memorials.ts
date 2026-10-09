@@ -13,6 +13,11 @@ import {
   verifyMemorialSession,
 } from './_memorials.js';
 import { timingSafeEqual } from 'node:crypto';
+import { isAuthorizedAdmin } from './_auth.js';
+import { handleMemorialAdmin } from './_memorial-admin.js';
+import { handleMemorialFamily } from './_memorial-family.js';
+
+const FAMILY_ACTIONS = new Set(['login', 'load', 'profile', 'banner', 'moderate', 'delete-entry']);
 
 const send = (res: VercelResponse, status: number, body: Record<string, unknown>) => res.status(status).json(body);
 const cleanText = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : '';
@@ -133,6 +138,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const body = getBody(req);
   const action = cleanText(body.action, 30);
+  if (isAuthorizedAdmin(req)) return handleMemorialAdmin(req, res);
+  if (FAMILY_ACTIONS.has(action)) return handleMemorialFamily(req, res);
+
   try {
     if (action === 'search') {
       const client = getMemorialClient();

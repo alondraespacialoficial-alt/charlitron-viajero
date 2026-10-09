@@ -86,7 +86,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
 
   const fetchMemorials = async () => {
     try {
-      const { data } = await memorialRequest<{ data: MemorialAdminDTO[] }>('/api/memorial-admin', { action: 'list' }, adminToken);
+      const { data } = await memorialRequest<{ data: MemorialAdminDTO[] }>('/api/memorials', { action: 'list' }, adminToken);
       setMemorials(data || []);
     } catch (error) {
       console.error('No se pudieron cargar los memoriales:', error);
@@ -145,7 +145,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
     if (q.length < 2) { setMemorialLinkResults([]); return; }
     setMemorialLinkSearching(true);
     try {
-      const { data } = await memorialRequest<{ data: { id: string; full_name: string }[] }>('/api/memorial-admin', {
+      const { data } = await memorialRequest<{ data: { id: string; full_name: string }[] }>('/api/memorials', {
         action: 'search-linked', query: q, excludeId: editing?.id || '',
       }, adminToken);
       setMemorialLinkResults(data || []);
@@ -164,7 +164,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
   const loadGuestbook = async (memorialId: string) => {
     setGuestbookLoading(true);
     try {
-      const { data } = await memorialRequest<{ data: MemorialGuestbookEntry[] }>('/api/memorial-admin', {
+      const { data } = await memorialRequest<{ data: MemorialGuestbookEntry[] }>('/api/memorials', {
         action: 'guestbook', memorialId,
       }, adminToken);
       setGuestbook(data || []);
@@ -177,7 +177,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
 
   const loadGestures = async (memorialId: string) => {
     try {
-      const { data } = await memorialRequest<{ data: MemorialGesture[] }>('/api/memorial-admin', {
+      const { data } = await memorialRequest<{ data: MemorialGesture[] }>('/api/memorials', {
         action: 'gestures', memorialId,
       }, adminToken);
       setGestures(data || []);
@@ -204,7 +204,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
         setLinkedMemberContext('');
       }
       if (editing.linked_memorial_id) {
-        memorialRequest<{ data: { full_name: string } | null }>('/api/memorial-admin', {
+        memorialRequest<{ data: { full_name: string } | null }>('/api/memorials', {
           action: 'linked-name', id: editing.linked_memorial_id,
         }, adminToken).then(({ data }) => setLinkedMemorialName(data?.full_name || '')).catch(() => setLinkedMemorialName(''));
       } else {
@@ -223,18 +223,18 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
   }, [editing?.id]); // eslint-disable-line
 
   const moderateGuestbook = async (entryId: string, status: 'approved' | 'rejected') => {
-    await memorialRequest('/api/memorial-admin', { action: 'moderate', entryId, status }, adminToken);
+    await memorialRequest('/api/memorials', { action: 'moderate', entryId, status }, adminToken);
     setGuestbook(prev => prev.map(g => g.id === entryId ? { ...g, status } : g));
   };
 
   const deleteGuestbookEntry = async (entryId: string) => {
     if (!confirm('¿Eliminar este mensaje?')) return;
-    await memorialRequest('/api/memorial-admin', { action: 'delete-entry', entryId }, adminToken);
+    await memorialRequest('/api/memorials', { action: 'delete-entry', entryId }, adminToken);
     setGuestbook(prev => prev.filter(g => g.id !== entryId));
   };
 
   const deleteGesture = async (gestureId: string) => {
-    await memorialRequest('/api/memorial-admin', { action: 'delete-gesture', gestureId }, adminToken);
+    await memorialRequest('/api/memorials', { action: 'delete-gesture', gestureId }, adminToken);
     setGestures(prev => prev.filter(g => g.id !== gestureId));
   };
 
@@ -324,10 +324,10 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
       };
 
       if (editing.id) {
-        await memorialRequest('/api/memorial-admin', { action: 'update', id: editing.id, memorial: payload }, adminToken);
+        await memorialRequest('/api/memorials', { action: 'update', id: editing.id, memorial: payload }, adminToken);
         showMsg('success', 'Memorial actualizado');
       } else {
-        await memorialRequest('/api/memorial-admin', { action: 'create', memorial: payload }, adminToken);
+        await memorialRequest('/api/memorials', { action: 'create', memorial: payload }, adminToken);
         showMsg('success', 'Memorial creado');
       }
       setEditing(null);
@@ -343,7 +343,7 @@ export const MemorialsAdmin: React.FC<Props> = ({ adminToken }) => {
     if (!confirm('¿Eliminar este memorial? Se borrarán también sus mensajes y flores.')) return;
     setIsDeleting(id);
     try {
-      await memorialRequest('/api/memorial-admin', { action: 'delete', id }, adminToken);
+      await memorialRequest('/api/memorials', { action: 'delete', id }, adminToken);
       fetchMemorials();
       showMsg('success', 'Memorial eliminado');
     } catch {

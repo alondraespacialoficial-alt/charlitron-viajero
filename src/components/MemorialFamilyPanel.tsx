@@ -50,7 +50,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
     setLoginError('');
     if (!token) return;
     let active = true;
-    memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorial-family', {
+    memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorials', {
       action: 'load', memorialId: memorial.id,
     }, token).then(result => {
       if (active) {
@@ -77,7 +77,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
   const loadGuestbook = async (token: string) => {
     setGuestbookLoading(true);
     try {
-      const result = await memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorial-family', {
+      const result = await memorialRequest<{ guestbook: MemorialGuestbookEntry[] }>('/api/memorials', {
         action: 'load', memorialId: memorial.id,
       }, token);
       setGuestbook(result.guestbook || []);
@@ -90,7 +90,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
     e.preventDefault();
     let result: { sessionToken: string; memorial: Memorial };
     try {
-      result = await memorialRequest<{ sessionToken: string; memorial: Memorial }>('/api/memorial-family', {
+      result = await memorialRequest<{ sessionToken: string; memorial: Memorial }>('/api/memorials', {
         action: 'login', slug: memorial.slug, email: emailInput, password: passwordInput,
       });
     } catch {
@@ -142,7 +142,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
       photo_url: photoUrl.trim() || null,
     };
     try {
-      await memorialRequest('/api/memorial-family', { action: 'profile', memorialId: memorial.id, ...patch }, sessionToken);
+      await memorialRequest('/api/memorials', { action: 'profile', memorialId: memorial.id, ...patch }, sessionToken);
       onMemorialUpdated(patch);
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 2500);
@@ -157,7 +157,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
     setSavingBanner(true);
     const patch = { banner_message: bannerMessage.trim() || null, banner_active: bannerActive };
     try {
-      await memorialRequest('/api/memorial-family', { action: 'banner', memorialId: memorial.id, ...patch }, sessionToken);
+      await memorialRequest('/api/memorials', { action: 'banner', memorialId: memorial.id, ...patch }, sessionToken);
       onMemorialUpdated(patch);
       setBannerSaved(true);
       setTimeout(() => setBannerSaved(false), 2500);
@@ -169,7 +169,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
 
   const moderate = async (entryId: string, status: 'approved' | 'rejected') => {
     try {
-      await memorialRequest('/api/memorial-family', { action: 'moderate', memorialId: memorial.id, entryId, status }, sessionToken);
+      await memorialRequest('/api/memorials', { action: 'moderate', memorialId: memorial.id, entryId, status }, sessionToken);
       setGuestbook(prev => prev.map(g => (g.id === entryId ? { ...g, status } : g)));
     } catch (error) {
       console.error('No se pudo moderar el recuerdo:', error);
@@ -179,7 +179,7 @@ export const MemorialFamilyPanel: React.FC<Props> = ({ memorial, onMemorialUpdat
   const removeEntry = async (entryId: string) => {
     if (!confirm('¿Eliminar este mensaje?')) return;
     try {
-      await memorialRequest('/api/memorial-family', { action: 'delete-entry', memorialId: memorial.id, entryId }, sessionToken);
+      await memorialRequest('/api/memorials', { action: 'delete-entry', memorialId: memorial.id, entryId }, sessionToken);
       setGuestbook(prev => prev.filter(g => g.id !== entryId));
     } catch (error) {
       console.error('No se pudo eliminar el recuerdo:', error);

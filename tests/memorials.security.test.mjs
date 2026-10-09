@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { issueMemorialSession, toAdminMemorial, toPublicMemorial, verifyMemorialSession } from './_memorials.ts';
+import { issueMemorialSession, toAdminMemorial, toPublicMemorial, verifyMemorialSession } from '../api/_memorials.ts';
 
 const row = {
   id: 'memorial-1',

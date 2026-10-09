@@ -41,7 +41,7 @@ function memorialPayload(input: Record<string, any>) {
   };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handleMemorialAdmin(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return send(res, 405, { error: 'Método no permitido.' });
