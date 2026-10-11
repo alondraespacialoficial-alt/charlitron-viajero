@@ -276,61 +276,61 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             </div>
             
             <div className="hidden md:flex flex-1 min-w-0 justify-end">
-              <div className="flex max-w-[calc(100vw-320px)] items-center gap-3 xl:gap-5 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1">
-                <button onClick={onHome} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium">Inicio</button>
-                <button onClick={onGallery} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium">Galería</button>
-                <button onClick={onShop} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4" />
+              <div className="flex max-w-[calc(100vw-360px)] items-center gap-1 xl:gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1 px-1">
+                <button onClick={onHome} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Inicio</button>
+                <button onClick={onGallery} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Galería</button>
+                <button onClick={onShop} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <ShoppingBag className="w-3.5 h-3.5" />
                   Tienda
                 </button>
-                <button onClick={onFavorites} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Heart className="w-4 h-4" />
+                <button onClick={onFavorites} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5" />
                   Favoritos
                 </button>
-                <button onClick={onFamilyTree} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Users className="w-4 h-4" />
+                <button onClick={onFamilyTree} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
                   Árbol Genealógico
                 </button>
                 {investigationEnabled && (
-                  <button onClick={onInvestigation} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                    <Scroll className="w-4 h-4" />
+                  <button onClick={onInvestigation} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                    <Scroll className="w-3.5 h-3.5" />
                     Investiga tu Historia
                   </button>
                 )}
-                <button onClick={onContests} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
+                <button onClick={onContests} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5" />
                   Concursos
                 </button>
-                <button onClick={onConferences} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Ticket className="w-4 h-4" />
+                <button onClick={onConferences} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5" />
                   Conferencias
                 </button>
-                <button onClick={onCourses} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
+                <button onClick={onCourses} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5" />
                   Cursos
                 </button>
-                <button onClick={onMural} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Frame className="w-4 h-4" />
+                <button onClick={onMural} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Frame className="w-3.5 h-3.5" />
                   Mural
                 </button>
-                <button onClick={onCollaborators} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Users className="w-4 h-4" />
+                <button onClick={onCollaborators} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
                   Colaboradores
                 </button>
-                <button onClick={onAvatars} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Video className="w-4 h-4" />
+                <button onClick={onAvatars} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5" />
                   Avatares
                 </button>
-                <button onClick={onJardin} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <Flower2 className="w-4 h-4" />
+                <button onClick={onJardin} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <Flower2 className="w-3.5 h-3.5" />
                   Jardín
                 </button>
-                <button onClick={onMap} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+                <button onClick={onMap} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" />
                   Mapa del Viajero
                 </button>
-                <button onClick={onHistorias} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[10px] xl:text-sm uppercase tracking-widest font-medium">Historias</button>
-                <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex-shrink-0 bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-4 xl:px-6 py-2 rounded-full text-[10px] xl:text-sm font-bold uppercase tracking-widest transition-all">Contacto</a>
+                <button onClick={onHistorias} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Historias</button>
+                <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex-shrink-0 bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs font-bold uppercase tracking-[0.18em] transition-all leading-none">Contacto</a>
               </div>
             </div>
 
