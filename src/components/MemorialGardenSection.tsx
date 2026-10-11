@@ -7,6 +7,7 @@ import {
   Heart, Image as ImageIcon, X,
 } from 'lucide-react';
 import { Memorial, MemorialGesture, MemorialGuestbookEntry, Story } from '../types';
+import { memorialRequest } from '../memorialApi';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
 import { updateMemorialMetaTags, generateMemorialShareUrl, setSectionMetaTags } from '../seoUtils';
@@ -65,7 +66,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const [loadingMemorial, setLoadingMemorial] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  const [unlocked, setUnlocked] = useState(false);
+  const [requiresCode, setRequiresCode] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
 
@@ -118,10 +119,8 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
     setSearching(true);
     setSearched(true);
     try {
-      let request = supabase.from('memorials').select('*').eq('visibility', 'public');
-      if (q) request = request.or(`full_name.ilike.%${q}%,family_label.ilike.%${q}%`);
-      const { data } = await request.order('full_name').limit(30);
-      setResults((data as Memorial[]) || []);
+      const { data } = await memorialRequest<{ data: Memorial[] }>('/api/memorials', { action: 'search', query: q });
+      setResults(data || []);
     } finally {
       setSearching(false);
     }
@@ -132,63 +131,75 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const loadMemorial = async (slug: string) => {
     setLoadingMemorial(true);
     setNotFound(false);
+    setRequiresCode(false);
     setMessageSent(false);
-    setUnlocked(localStorage.getItem(unlockKey(slug)) === 'true');
-    const { data } = await supabase.from('memorials').select('*').eq('slug', slug).maybeSingle();
-    if (!data) {
+    const token = localStorage.getItem(unlockKey(slug)) || '';
+    try {
+      const result = await memorialRequest<{
+        memorial?: Memorial;
+        guestbook?: MemorialGuestbookEntry[];
+        gestures?: MemorialGesture[];
+        linkedFamilyMember?: typeof linkedFamilyMember;
+        linkedMemorial?: typeof linkedMemorial;
+        requiresCode?: boolean;
+        notFound?: boolean;
+      }>('/api/memorials', { action: 'detail', slug }, token);
+      if (result.requiresCode) {
+        setRequiresCode(true);
+        setMemorial(null);
+        setGestures([]);
+        setGuestbook([]);
+        setLinkedMemorial(null);
+        if (token) localStorage.removeItem(unlockKey(slug));
+      } else if (result.notFound || !result.memorial) {
+        setNotFound(true);
+        setMemorial(null);
+      } else {
+        const m = result.memorial;
+        setMemorial(m);
+        updateMemorialMetaTags(m.full_name, m.epitaph, m.photo_url, m.slug);
+        setGestures(result.gestures || []);
+        const entries = result.guestbook || [];
+        setGuestbook(entries);
+        setLikedEntryIds(new Set(entries.filter(e => localStorage.getItem(likedEntryKey(e.id)) === 'true').map(e => e.id)));
+        setLinkedFamilyMember(result.linkedFamilyMember || null);
+        setLinkedMemorial(result.linkedMemorial || null);
+      }
+    } catch (error) {
+      console.error('No se pudo cargar el memorial:', error);
       setNotFound(true);
       setMemorial(null);
-    } else {
-      const m = data as Memorial;
-      setMemorial(m);
-      updateMemorialMetaTags(m.full_name, m.epitaph, m.photo_url, m.slug);
-      const [{ data: gestureData }, { data: guestbookData }] = await Promise.all([
-        supabase.from('memorial_gestures').select('*').eq('memorial_id', m.id).order('created_at', { ascending: false }).limit(500),
-        supabase.from('memorial_guestbook').select('*').eq('memorial_id', m.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(30),
-      ]);
-      setGestures((gestureData as MemorialGesture[]) || []);
-      const entries = (guestbookData as MemorialGuestbookEntry[]) || [];
-      setGuestbook(entries);
-      setLikedEntryIds(new Set(entries.filter(e => localStorage.getItem(likedEntryKey(e.id)) === 'true').map(e => e.id)));
-      if (m.family_member_id) {
-        // Solo se muestra una tarjeta de vista previa; el Árbol completo
-        // sigue protegido por su propia clave de acceso familiar.
-        const { data: memberData } = await supabase
-          .from('family_members')
-          .select('name, relationship, photo_url, birth_date, death_date, bio')
-          .eq('id', m.family_member_id)
-          .maybeSingle();
-        setLinkedFamilyMember(memberData as typeof linkedFamilyMember);
-      } else {
-        setLinkedFamilyMember(null);
-      }
-      // El vínculo puede estar configurado desde este memorial o desde el otro lado (ej. su pareja)
-      const linkOrParts = [`linked_memorial_id.eq.${m.id}`];
-      if (m.linked_memorial_id) linkOrParts.push(`id.eq.${m.linked_memorial_id}`);
-      const { data: linkedData } = await supabase
-        .from('memorials')
-        .select('slug, full_name, photo_url')
-        .or(linkOrParts.join(','))
-        .neq('id', m.id)
-        .maybeSingle();
-      setLinkedMemorial(linkedData as typeof linkedMemorial);
     }
     setLoadingMemorial(false);
   };
 
   useEffect(() => {
     if (activeSlug) loadMemorial(activeSlug);
-    else { setMemorial(null); setGestures([]); setGuestbook([]); setLinkedMemorial(null); }
+    else { setMemorial(null); setGestures([]); setGuestbook([]); setLinkedMemorial(null); setRequiresCode(false); }
   }, [activeSlug]); // eslint-disable-line
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memorial) return;
-    if (codeInput.trim().toUpperCase() === (memorial.access_code || '').toUpperCase() && memorial.access_code) {
-      localStorage.setItem(unlockKey(memorial.slug), 'true');
-      setUnlocked(true);
+    if (!activeSlug) return;
+    try {
+      const result = await memorialRequest<{
+        memorial: Memorial;
+        guestbook: MemorialGuestbookEntry[];
+        gestures: MemorialGesture[];
+        linkedFamilyMember: typeof linkedFamilyMember;
+        linkedMemorial: typeof linkedMemorial;
+        sessionToken: string;
+      }>('/api/memorials', { action: 'unlock', slug: activeSlug, code: codeInput });
+      localStorage.setItem(unlockKey(activeSlug), result.sessionToken);
+      setMemorial(result.memorial);
+      setGuestbook(result.guestbook || []);
+      setGestures(result.gestures || []);
+      setLinkedFamilyMember(result.linkedFamilyMember || null);
+      setLinkedMemorial(result.linkedMemorial || null);
+      setRequiresCode(false);
+      updateMemorialMetaTags(result.memorial.full_name, result.memorial.epitaph, result.memorial.photo_url, result.memorial.slug);
       setCodeError('');
-    } else {
+    } catch {
       setCodeError('Código incorrecto. Verifica que lo hayas copiado tal cual te lo entregamos.');
     }
   };
@@ -196,12 +207,11 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   const leaveGesture = async (type: MemorialGesture['gesture_type']) => {
     if (!memorial) return;
     const name = visitorName.trim() || null;
-    const { data } = await supabase
-      .from('memorial_gestures')
-      .insert([{ memorial_id: memorial.id, gesture_type: type, visitor_name: name }])
-      .select()
-      .single();
-    if (data) setGestures(prev => [data as MemorialGesture, ...prev]);
+    const sessionToken = localStorage.getItem(unlockKey(memorial.slug)) || undefined;
+    const { data } = await memorialRequest<{ data: MemorialGesture }>('/api/memorials', {
+      action: 'gesture', memorialId: memorial.id, gestureType: type, visitorName: name,
+    }, sessionToken);
+    if (data) setGestures(prev => [data, ...prev]);
   };
 
   const handleGuestbookPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,18 +237,18 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       }
       setUploadingGuestbookPhoto(false);
     }
-    const status = memorial.requires_approval ? 'pending' : 'approved';
-    const { data, error } = await supabase
-      .from('memorial_guestbook')
-      .insert([{ memorial_id: memorial.id, visitor_name: visitorName.trim(), message: visitorMessage.trim(), photo_url, status }])
-      .select()
-      .single();
-    if (!error) {
-      if (status === 'approved' && data) setGuestbook(prev => [data as MemorialGuestbookEntry, ...prev]);
+    try {
+      const sessionToken = localStorage.getItem(unlockKey(memorial.slug)) || undefined;
+      const { data } = await memorialRequest<{ data: MemorialGuestbookEntry | null; pending: boolean }>('/api/memorials', {
+        action: 'guestbook', memorialId: memorial.id, visitorName: visitorName.trim(), message: visitorMessage.trim(), photoUrl: photo_url,
+      }, sessionToken);
+      if (data) setGuestbook(prev => [data, ...prev]);
       setVisitorMessage('');
       setVisitorPhotoFile(null);
       setVisitorPhotoPreview(null);
       setMessageSent(true);
+    } catch (error) {
+      console.error('No se pudo enviar el recuerdo:', error);
     }
     setSendingMessage(false);
   };
@@ -249,7 +259,17 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
     setGuestbook(prev => prev.map(g => (g.id === entry.id ? { ...g, likes: newLikes } : g)));
     setLikedEntryIds(prev => new Set(prev).add(entry.id));
     localStorage.setItem(likedEntryKey(entry.id), 'true');
-    await supabase.from('memorial_guestbook').update({ likes: newLikes }).eq('id', entry.id);
+    const sessionToken = memorial ? localStorage.getItem(unlockKey(memorial.slug)) || undefined : undefined;
+    try {
+      const result = await memorialRequest<{ data: { id: string; likes: number } }>('/api/memorials', {
+        action: 'like', entryId: entry.id,
+      }, sessionToken);
+      setGuestbook(prev => prev.map(g => g.id === entry.id ? { ...g, likes: result.data.likes } : g));
+    } catch {
+      setGuestbook(prev => prev.map(g => g.id === entry.id ? { ...g, likes: entry.likes || 0 } : g));
+      setLikedEntryIds(prev => { const next = new Set(prev); next.delete(entry.id); return next; });
+      localStorage.removeItem(likedEntryKey(entry.id));
+    }
   };
 
   const linkedStory = memorial?.story_id ? stories.find(s => s.id === memorial.story_id) : undefined;
@@ -277,11 +297,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
 
           {loadingMemorial ? (
             <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-sepia-500 animate-spin" /></div>
-          ) : notFound || !memorial ? (
-            <div className="text-center py-20 text-sepia-400">
-              No encontramos ese memorial. Verifica el enlace que te compartieron.
-            </div>
-          ) : memorial.visibility === 'private' && !unlocked ? (
+          ) : requiresCode ? (
             <div className="max-w-sm mx-auto bg-sepia-900/50 border border-sepia-700 rounded-2xl p-8 text-center space-y-4">
               <Lock className="w-10 h-10 text-sepia-500 mx-auto" />
               <h2 className="text-sepia-100 font-serif text-xl">Este espacio es privado</h2>
@@ -300,6 +316,10 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
                   <KeyRound className="w-4 h-4" /> Entrar
                 </button>
               </form>
+            </div>
+          ) : notFound || !memorial ? (
+            <div className="text-center py-20 text-sepia-400">
+              No encontramos ese memorial. Verifica el enlace que te compartieron.
             </div>
           ) : (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">

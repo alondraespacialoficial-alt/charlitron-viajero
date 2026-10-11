@@ -3797,7 +3797,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-3xl mx-auto"
               >
-                <MemorialsAdmin />
+                <MemorialsAdmin adminToken={adminToken} />
               </motion.div>
             ) : viewMode === 'traveler_map' ? (
               <motion.div
