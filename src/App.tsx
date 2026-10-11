@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useSyncExternalStore, Suspense, lazy } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, ChevronDown, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import QRCode from 'qrcode';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
@@ -223,12 +223,34 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const mainLinks = [
+    { label: 'Inicio', onClick: onHome },
+    { label: 'Galería', onClick: onGallery },
+    { label: 'Tienda', onClick: onShop, icon: ShoppingBag },
+    { label: 'Favoritos', onClick: onFavorites, icon: Heart },
+    { label: 'Árbol Genealógico', onClick: onFamilyTree, icon: Users },
+    ...(investigationEnabled ? [{ label: 'Investiga tu Historia', onClick: onInvestigation, icon: Scroll }] : []),
+    { label: 'Concursos', onClick: onContests, icon: Trophy },
+    { label: 'Conferencias', onClick: onConferences, icon: Ticket },
+  ];
+
+  const secondaryLinks = [
+    { label: 'Cursos', onClick: onCourses, icon: BookOpen },
+    { label: 'Mural', onClick: onMural, icon: Frame },
+    { label: 'Colaboradores', onClick: onCollaborators, icon: Users },
+    { label: 'Avatares', onClick: onAvatars, icon: Video },
+    { label: 'Jardín', onClick: onJardin, icon: Flower2 },
+    { label: 'Mapa del Viajero', onClick: onMap, icon: MapPin },
+    { label: 'Historias', onClick: onHistorias },
+  ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -276,61 +298,54 @@ const Navbar = ({ onHome, onLogoClick, onGallery, onShop, onInvestigation, onFam
             </div>
             
             <div className="hidden md:flex flex-1 min-w-0 justify-end">
-              <div className="flex max-w-[calc(100vw-360px)] items-center gap-1 xl:gap-2 overflow-x-auto scrollbar-hide whitespace-nowrap pb-1 px-1">
-                <button onClick={onHome} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Inicio</button>
-                <button onClick={onGallery} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Galería</button>
-                <button onClick={onShop} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  Tienda
-                </button>
-                <button onClick={onFavorites} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5" />
-                  Favoritos
-                </button>
-                <button onClick={onFamilyTree} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" />
-                  Árbol Genealógico
-                </button>
-                {investigationEnabled && (
-                  <button onClick={onInvestigation} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                    <Scroll className="w-3.5 h-3.5" />
-                    Investiga tu Historia
+              <div className="flex items-center gap-2 xl:gap-3">
+                {mainLinks.map(({ label, onClick, icon: Icon }) => (
+                  <button
+                    key={label}
+                    onClick={onClick}
+                    className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5"
+                  >
+                    {Icon && <Icon className="w-3.5 h-3.5" />} 
+                    {label}
                   </button>
-                )}
-                <button onClick={onContests} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5" />
-                  Concursos
-                </button>
-                <button onClick={onConferences} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Ticket className="w-3.5 h-3.5" />
-                  Conferencias
-                </button>
-                <button onClick={onCourses} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Cursos
-                </button>
-                <button onClick={onMural} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Frame className="w-3.5 h-3.5" />
-                  Mural
-                </button>
-                <button onClick={onCollaborators} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" />
-                  Colaboradores
-                </button>
-                <button onClick={onAvatars} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Video className="w-3.5 h-3.5" />
-                  Avatares
-                </button>
-                <button onClick={onJardin} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <Flower2 className="w-3.5 h-3.5" />
-                  Jardín
-                </button>
-                <button onClick={onMap} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" />
-                  Mapa del Viajero
-                </button>
-                <button onClick={onHistorias} className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none">Historias</button>
-                <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex-shrink-0 bg-sepia-500 hover:bg-sepia-400 text-sepia-950 px-3 py-1.5 rounded-full text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs font-bold uppercase tracking-[0.18em] transition-all leading-none">Contacto</a>
+                ))}
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreMenu((value) => !value)}
+                    className="flex-shrink-0 text-sepia-100 hover:text-sepia-400 transition-colors text-[9px] sm:text-[10px] lg:text-[11px] xl:text-xs uppercase tracking-[0.18em] font-medium leading-none flex items-center gap-1.5 border border-sepia-700/70 rounded-full px-2.5 py-1.5 bg-sepia-900/40"
+                  >
+                    Más
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMoreMenu ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showMoreMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        className="absolute right-0 top-full mt-3 w-56 rounded-xl border border-sepia-700 bg-sepia-950/95 p-2 shadow-2xl backdrop-blur-md z-50"
+                      >
+                        {secondaryLinks.map(({ label, onClick, icon: Icon }) => (
+                          <button
+                            key={label}
+                            onClick={() => {
+                              onClick();
+                              setShowMoreMenu(false);
+                            }}
+                            className="w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[10px] sm:text-[11px] xl:text-xs uppercase tracking-[0.18em] text-sepia-100 hover:bg-sepia-800/80 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              {Icon && <Icon className="w-3.5 h-3.5" />}
+                              {label}
+                            </span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
