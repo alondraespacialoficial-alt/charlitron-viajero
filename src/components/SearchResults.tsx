@@ -175,6 +175,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                               <img
                                 src={story.thumbnail}
                                 alt={story.title}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-16 h-16 rounded-lg object-cover sepia-filter group-hover:sepia-0 transition-all"
                               />
                               <div className="flex-1 min-w-0">
