@@ -1077,6 +1077,92 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setTimeout(() => setMessage(null), 6000);
     }
   };
+
+  // Portada de Historia: sube master original + variantes físicas generadas
+  // en navegador (web ~1800px y thumbnail ~600px, WebP) para reducir egress.
+  // Mismo patrón que handleProductImageUpload. No aplica a URLs externas pegadas.
+  const handleStoryCoverUpload = async (file: File) => {
+    if (!editingStory) return;
+    setIsUploading(true);
+    try {
+      const [webFile, thumbnailFile] = await Promise.all([
+        imageCompression(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1800,
+          useWebWorker: true,
+          fileType: 'image/webp',
+          initialQuality: 0.82,
+        }),
+        imageCompression(file, {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 600,
+          useWebWorker: true,
+          fileType: 'image/webp',
+          initialQuality: 0.8,
+        }),
+      ]);
+
+      const storyId = editingStory.id || crypto.randomUUID();
+      const uploadId = crypto.randomUUID();
+      const masterExtension = file.name.match(/\.([^.]+)$/)?.[1]?.toLowerCase() || 'bin';
+      const getVariantExtension = (image: File) => {
+        if (image.type === 'image/webp') return 'webp';
+        if (image.type === 'image/jpeg') return 'jpg';
+        return image.type.split('/')[1]?.replace(/[^a-z0-9]/g, '') || 'img';
+      };
+      const paths = {
+        master: `stories/master/${storyId}/${uploadId}.${masterExtension}`,
+        web: `stories/web/${storyId}/${uploadId}.${getVariantExtension(webFile)}`,
+        thumbnail: `stories/thumb/${storyId}/${uploadId}.${getVariantExtension(thumbnailFile)}`,
+      };
+      const bucket = supabase.storage.from('images');
+      const uploadedPaths: string[] = [];
+
+      const upload = async (path: string, image: File) => {
+        const { error } = await bucket.upload(path, image, {
+          contentType: image.type || 'application/octet-stream',
+          upsert: false,
+        });
+        if (error) throw error;
+        uploadedPaths.push(path);
+        return bucket.getPublicUrl(path).data.publicUrl;
+      };
+
+      let masterUrl: string;
+      let webUrl: string;
+      let thumbnailUrl: string;
+      try {
+        masterUrl = await upload(paths.master, file);
+        webUrl = await upload(paths.web, webFile);
+        thumbnailUrl = await upload(paths.thumbnail, thumbnailFile);
+      } catch (uploadError) {
+        if (uploadedPaths.length > 0) {
+          try {
+            const { error: cleanupError } = await bucket.remove(uploadedPaths);
+            if (cleanupError) console.warn('Could not remove incomplete story cover upload:', cleanupError);
+          } catch (cleanupError) {
+            console.warn('Could not remove incomplete story cover upload:', cleanupError);
+          }
+        }
+        throw uploadError;
+      }
+
+      setEditingStory(current => current ? {
+        ...current,
+        id: current.id || storyId,
+        thumbnail: masterUrl, // master queda como fallback legacy
+        thumbnail_web_url: webUrl,
+        thumbnail_thumb_url: thumbnailUrl,
+      } : current);
+      setMessage({ type: 'success', text: '✅ Portada subida con variantes (master + web + thumbnail)' });
+    } catch (err: any) {
+      console.error('Error uploading story cover variants:', err);
+      setMessage({ type: 'error', text: `No se subieron las variantes de la portada: ${err.message || 'Error desconocido'}` });
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setMessage(null), 6000);
+    }
+  };
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1125,7 +1211,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const storyToSave = {
         ...editingStory,
         id: storyId,
-        gallery: editingStory.gallery || [],
+        // Solo incluir gallery si está cargada: una historia parcial (listado
+        // sin galería) no debe pisar la galería existente con un array vacío.
+        ...(editingStory.gallery !== undefined ? { gallery: editingStory.gallery } : {}),
         // Guardar slug para que los links compartidos funcionen correctamente
         slug: editingStory.slug || generateSlug(editingStory.title || '', storyId),
       };
@@ -1504,7 +1592,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div key={story.id} className="group">
                     <div 
                       className={`p-4 rounded-xl transition-all cursor-pointer flex items-center justify-between ${editingStory?.id === story.id ? 'bg-sepia-800/50 border border-sepia-500/30' : 'hover:bg-sepia-900/50 border border-transparent'}`}
-                      onClick={() => setEditingStory(story)}
+                      onClick={async () => {
+                        // Hidratar antes de editar: el listado ya no trae
+                        // fullNarrative/gallery; editar datos parciales podría
+                        // pisar la galería existente al guardar.
+                        if (story.gallery === undefined) {
+                          const { data } = await supabase.from('stories').select('*').eq('id', story.id).single();
+                          setEditingStory(data || story);
+                        } else {
+                          setEditingStory(story);
+                        }
+                      }}
                     >
                       <div className="overflow-hidden">
                         <h4 className="text-sepia-100 font-medium truncate">{story.title}</h4>
@@ -3384,12 +3482,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
-                              const url = await handleImageUpload(file);
-                              if (url) setEditingStory({...editingStory, thumbnail: url});
+                              await handleStoryCoverUpload(file);
                             }}
                           />
                         </label>
                       </div>
+                      <p className="text-[10px] text-sepia-500 italic">
+                        * Al subir se generan variantes ligeras (WebP) para cards y detalle; el original se conserva. Si pegas una URL externa, se usa tal cual.
+                      </p>
                     </div>
 
                     <div className="space-y-2">

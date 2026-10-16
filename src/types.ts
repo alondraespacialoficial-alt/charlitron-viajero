@@ -14,6 +14,10 @@ export interface Story {
   year: string;
   category: string;
   thumbnail: string;
+  // Variantes físicas de la portada (generadas en navegador al subir).
+  // NULL en historias antiguas: la app hace fallback a `thumbnail` (master).
+  thumbnail_thumb_url?: string | null; // ~600px WebP — cards, grids, búsqueda, favoritos
+  thumbnail_web_url?: string | null;   // ~1800px WebP — portada del detalle, og:image
   videoUrl: string;
   audioUrl?: string;
   mapsUrl?: string;

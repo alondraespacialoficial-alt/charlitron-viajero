@@ -33,6 +33,7 @@ const AvatarSection     = lazy(() => import('./components/AvatarSection').then(m
 const FamilyTreeManager = lazy(() => import('./components/FamilyTreeManager').then(m => ({ default: m.FamilyTreeManager })));
 const MemorialGardenSection = lazy(() => import('./components/MemorialGardenSection').then(m => ({ default: m.MemorialGardenSection })));
 import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags, setSectionMetaTags } from './seoUtils';
+import { resolveStoryCover } from './imageVariants';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
 
@@ -75,7 +76,7 @@ const Timeline = ({ stories, onSelectStory }: { stories: Story[], onSelectStory:
                     >
                       <div className="aspect-[4/3] rounded-xl overflow-hidden mb-3 border border-sepia-800">
                         <img 
-                          src={story.thumbnail} 
+                          src={resolveStoryCover(story, 'thumbnail')} 
                           alt={story.title} 
                           className="w-full h-full object-cover sepia-filter group-hover/item:sepia-0 transition-all duration-500 pointer-events-none select-none"
                           loading="lazy"
@@ -994,7 +995,7 @@ const StoryCard = ({ story, onClick }: { story: Story, onClick: () => void }) =>
     <div className="relative h-64 overflow-hidden bg-sepia-200">
       {story.thumbnail ? (
         <img 
-          src={story.thumbnail} 
+          src={resolveStoryCover(story, 'thumbnail')} 
           alt={story.title} 
           loading="lazy"
           className="w-full h-full object-cover sepia-filter group-hover:scale-110 transition-transform duration-700"
@@ -1159,7 +1160,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
     updateMetaTags(
       story.title,
       story.description || story.fullNarrative.slice(0, 160),
-      story.thumbnail,
+      resolveStoryCover(story, 'web') || story.thumbnail,
       slug,
       story.category,
       story.year
@@ -1251,7 +1252,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
         await removeFromFavorites('story', story.id);
         setIsFav(false);
       } else {
-        await addToFavorites('story', story.id, story.title, story.thumbnail);
+        await addToFavorites('story', story.id, story.title, resolveStoryCover(story, 'thumbnail'));
         setIsFav(true);
       }
     } catch (err) {
@@ -1452,7 +1453,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
             >
               <div className={`${story.isVideoVertical ? 'w-48 md:w-64 aspect-[9/16]' : 'w-80 md:w-[500px] aspect-video'} bg-sepia-950 rounded-3xl overflow-hidden shadow-2xl relative mb-6 transition-all duration-500 group-hover:scale-105 group-hover:shadow-sepia-500/20`}>
                 <img 
-                  src={story.thumbnail} 
+                  src={resolveStoryCover(story, 'web')} 
                   alt={story.title} 
                   className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500"
                   referrerPolicy="no-referrer"
@@ -1476,7 +1477,7 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
           <section className="mb-24 flex justify-center">
             <div className="w-full bg-sepia-950 rounded-3xl overflow-hidden shadow-2xl relative group flex items-center justify-center">
               <img 
-                src={story.thumbnail} 
+                src={resolveStoryCover(story, 'web')} 
                 alt={story.title} 
                 className="w-full max-h-[85vh] object-contain opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none select-none"
                 referrerPolicy="no-referrer"
@@ -1933,6 +1934,10 @@ export default function App() {
   const [hasLoadedSearchProducts, setHasLoadedSearchProducts] = useState(false);
   const [isLoadingSearchProducts, setIsLoadingSearchProducts] = useState(false);
   const searchProductsRequestStarted = React.useRef(false);
+  // Narrativas para la búsqueda: el listado ya no trae fullNarrative; se cargan
+  // bajo demanda (solo texto) la primera vez que se abre el buscador.
+  const [hasLoadedStoryNarratives, setHasLoadedStoryNarratives] = useState(false);
+  const storyNarrativesRequestStarted = React.useRef(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [introVideoUrl, setIntroVideoUrl] = useState('');
   const [introVideoIsVertical, setIntroVideoIsVertical] = useState(false);
@@ -2151,11 +2156,47 @@ export default function App() {
   }, [showSearchResults, hasLoadedSearchProducts]);
 
   useEffect(() => {
+    if (!showSearchResults || hasLoadedStoryNarratives || storyNarrativesRequestStarted.current) return;
+    storyNarrativesRequestStarted.current = true;
+
+    const fetchStoryNarratives = async () => {
+      const pageSize = 100;
+      const narrativeById = new Map<string, string>();
+      try {
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase
+            .from('stories')
+            .select('id, fullNarrative')
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) throw error;
+          const page = data || [];
+          page.forEach(s => narrativeById.set(s.id, s.fullNarrative));
+          if (page.length < pageSize) break;
+        }
+        setStories(prev => prev.map(s =>
+          s.fullNarrative === undefined && narrativeById.has(s.id)
+            ? { ...s, fullNarrative: narrativeById.get(s.id)! }
+            : s
+        ));
+        setHasLoadedStoryNarratives(true);
+      } catch (err) {
+        console.error('Error fetching story narratives for search:', err);
+        storyNarrativesRequestStarted.current = false;
+      }
+    };
+
+    void fetchStoryNarratives();
+  }, [showSearchResults, hasLoadedStoryNarratives]);
+
+  useEffect(() => {
     const fetchStories = async () => {
       try {
+        // Listado liviano: SIN fullNarrative, gallery, audioUrl, mapsUrl ni password.
+        // El detalle se hidrata al abrir una historia (ver useEffect de hidratación).
         const { data, error } = await supabase
           .from('stories')
-          .select('*');
+          .select('id, title, description, year, category, thumbnail, thumbnail_thumb_url, thumbnail_web_url, videoUrl, isVideoVertical, isPrivate, slug, historian_id, historian_name, historian_photo, likes, expires_at, created_at');
         
         if (error) throw error;
         
@@ -2440,6 +2481,31 @@ export default function App() {
     // Registrar vista de historia
     trackPageView('story', story.id, story.title);
   };
+
+  // Hidratación del detalle: como el listado ya no descarga fullNarrative/gallery,
+  // al abrir una historia (cards, búsqueda, QR, mapa, Jardín o deep-link) se trae
+  // el detalle completo una sola vez y se cachea en el estado de la lista.
+  useEffect(() => {
+    if (!selectedStory || selectedStory.gallery !== undefined) return;
+    let cancelled = false;
+    const hydrateStory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('stories')
+          .select('*')
+          .eq('id', selectedStory.id)
+          .single();
+        if (error) throw error;
+        if (cancelled || !data) return;
+        setSelectedStory(current => (current && current.id === data.id ? { ...current, ...data } : current));
+        setStories(prev => prev.map(s => (s.id === data.id ? { ...s, ...data } : s)));
+      } catch (err) {
+        console.error('Error loading story detail:', err);
+      }
+    };
+    void hydrateStory();
+    return () => { cancelled = true; };
+  }, [selectedStory?.id]);
 
   const handleSeeAll = () => {
     const element = document.getElementById('historias');
@@ -2875,11 +2941,18 @@ export default function App() {
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.8, ease: "circOut" }}
           >
-            <StoryDetail 
-              story={selectedStory} 
-              onBack={() => { setSelectedStory(null); setIsPresentationMode(false); }} 
-              onLike={handleStoryLike}
-            />
+            {selectedStory.gallery === undefined ? (
+              <div className="min-h-screen bg-sepia-100 flex flex-col items-center justify-center gap-4">
+                <div className="w-10 h-10 border-4 border-sepia-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sepia-500 font-serif italic">Cargando historia...</p>
+              </div>
+            ) : (
+              <StoryDetail 
+                story={selectedStory} 
+                onBack={() => { setSelectedStory(null); setIsPresentationMode(false); }} 
+                onLike={handleStoryLike}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

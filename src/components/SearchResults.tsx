@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Scroll, Users, Camera, Image as ImageIcon, ShoppingBag, MapPin } from 'lucide-react';
 import { Story, Historian, RestoredPhoto, TravelPhoto, Product } from '../types';
-import { resolveImageVariant } from '../imageVariants';
+import { resolveImageVariant, resolveStoryCover } from '../imageVariants';
 
 interface SearchResultsProps {
   isOpen: boolean;
@@ -173,7 +173,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                           >
                             <div className="flex items-start gap-4">
                               <img
-                                src={story.thumbnail}
+                                src={resolveStoryCover(story, 'thumbnail')}
                                 alt={story.title}
                                 loading="lazy"
                                 decoding="async"
