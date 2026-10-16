@@ -1163,6 +1163,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setTimeout(() => setMessage(null), 6000);
     }
   };
+
+  // Galería de Historia (Fase 2 egress): UNA sola versión optimizada WebP
+  // (máx ~1600px) por foto. Decisión de producto: NO se conserva master en
+  // galería; la URL optimizada reemplaza a la original dentro de gallery
+  // (TEXT[]). Las URLs antiguas o pegadas a mano se mantienen tal cual.
+  const handleStoryGalleryUpload = async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    try {
+      const optimizedFile = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+        fileType: 'image/webp',
+        initialQuality: 0.82,
+      });
+
+      const storyId = editingStory?.id || 'shared';
+      const uploadId = crypto.randomUUID();
+      const path = `stories/gallery/${storyId}/${uploadId}.webp`;
+      const bucket = supabase.storage.from('images');
+
+      const { error: uploadError } = await bucket.upload(path, optimizedFile, {
+        contentType: optimizedFile.type || 'image/webp',
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+
+      setMessage({ type: 'success', text: '✅ Foto de galería optimizada (WebP) y subida' });
+      return bucket.getPublicUrl(path).data.publicUrl;
+    } catch (err: any) {
+      console.error('Error uploading optimized gallery image:', err);
+      setMessage({ type: 'error', text: `No se pudo subir la foto de galería: ${err.message || 'Error desconocido'}` });
+      return null;
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setMessage(null), 6000);
+    }
+  };
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -3649,7 +3687,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
-                                  const uploaded = await handleImageUpload(file);
+                                  const uploaded = await handleStoryGalleryUpload(file);
                                   if (uploaded) {
                                     const newGallery = [...(editingStory.gallery || [])];
                                     newGallery[idx] = uploaded;
@@ -3694,7 +3732,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 if (!files.length) return;
                                 const urls: string[] = [];
                                 for (const file of files) {
-                                  const uploaded = await handleImageUpload(file);
+                                  const uploaded = await handleStoryGalleryUpload(file);
                                   if (uploaded) urls.push(uploaded);
                                 }
                                 if (urls.length) {
@@ -3707,6 +3745,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             />
                           </label>
                         </div>
+                        <p className="text-[10px] text-sepia-500 italic">
+                          * Al subir, cada foto se optimiza a WebP (máx ~1600px) y NO se conserva el original en la galería. Las URLs pegadas a mano se usan tal cual.
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -1523,6 +1523,8 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
                 <img 
                   src={img} 
                   alt={`Gallery ${idx}`} 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full max-h-[320px] object-contain sepia-filter group-hover:sepia-0 transition-all duration-500 pointer-events-none select-none"
                   referrerPolicy="no-referrer"
                   onContextMenu={(e) => e.preventDefault()}
