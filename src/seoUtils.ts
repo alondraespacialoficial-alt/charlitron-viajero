@@ -209,6 +209,31 @@ export const generateShareUrl = (
 };
 
 /**
+ * Enlaces de compartir ligeros para una historia (URLs sharer, sin SDKs).
+ * Siempre apuntan a la URL canónica /historia/{slug}.
+ */
+export interface StoryShareLinks {
+  url: string;
+  whatsapp: string;
+  facebook: string;
+  x: string;
+}
+
+export const getStoryShareLinks = (
+  title: string,
+  slug: string,
+  description?: string
+): StoryShareLinks => {
+  const url = `https://charlitronviajerodeltiempo.com/historia/${slug}`;
+  return {
+    url,
+    whatsapp: generateShareUrl(title, slug, description),
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+  };
+};
+
+/**
  * Actualiza meta tags al navegar a una sección de la app
  */
 const SECTION_META: Record<string, { title: string; description: string; path: string }> = {
