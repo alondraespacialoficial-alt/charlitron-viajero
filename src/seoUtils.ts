@@ -32,7 +32,8 @@ export const updateMetaTags = (
   image: string,
   slug: string,
   category?: string,
-  year?: string
+  year?: string,
+  createdAt?: string
 ) => {
   const baseUrl = 'https://charlitronviajerodeltiempo.com';
   const url = `${baseUrl}/historia/${slug}`;
@@ -70,7 +71,7 @@ export const updateMetaTags = (
   updateBreadcrumbSchema(title, slug, category);
   
   // Article Schema (JSON-LD)
-  updateArticleSchema(title, description, image, slug, category, year);
+  updateArticleSchema(title, description, image, slug, category, year, createdAt);
 };
 
 /**
@@ -140,11 +141,12 @@ const updateArticleSchema = (
   image: string,
   slug: string,
   category?: string,
-  year?: string
+  year?: string,
+  createdAt?: string
 ) => {
   const schema = {
     "@context": "https://schema.org",
-    "@type": "NewsArticle",
+    "@type": "Article",
     "headline": title,
     "description": description,
     "image": {
@@ -153,7 +155,8 @@ const updateArticleSchema = (
       "width": 1200,
       "height": 630
     },
-    "datePublished": new Date().toISOString(),
+    // Fecha real de la historia; si no se conoce, se omite (nunca now()).
+    ...(createdAt ? { "datePublished": createdAt } : {}),
     "author": {
       "@type": "Organization",
       "name": "Charlitron® Viajero del Tiempo"

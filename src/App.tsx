@@ -1167,7 +1167,8 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
       resolveStoryCover(story, 'web') || story.thumbnail,
       slug,
       story.category,
-      story.year
+      story.year,
+      story.created_at
     );
     
     // Check if user already liked this story in this session/localstorage

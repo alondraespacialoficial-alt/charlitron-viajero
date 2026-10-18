@@ -119,6 +119,76 @@ try {
   process.exit(0);
 }
 
+// ---------- entidades GEO (traveler_map_points vinculados por story_id) ----------
+// Solo puntos publicados y solo los campos almacenados: nunca se inventan
+// entidades ni se infieren direcciones.
+let pointsByStory = new Map();
+const storyIds = (rows ?? []).map((r) => r.id).filter(Boolean);
+if (storyIds.length) {
+  try {
+    const pEndpoint = `${SUPABASE_URL}/rest/v1/traveler_map_points?select=name,category,address,neighborhood,latitude,longitude,story_id,published&published=eq.true&story_id=in.(${storyIds.join(',')})`;
+    const pRes = await fetch(pEndpoint, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!pRes.ok) throw new Error(`HTTP ${pRes.status}`);
+    const points = await pRes.json();
+    for (const p of points ?? []) {
+      if (!pointsByStory.has(p.story_id)) pointsByStory.set(p.story_id, []);
+      pointsByStory.get(p.story_id).push(p);
+    }
+  } catch (err) {
+    console.warn(`⚠️  [prerender] traveler_map_points no disponible (${err.message}); los schemas salen sin entidades.`);
+  }
+}
+
+// Ubicación general de la ciudad SOLO cuando no hay un punto más específico.
+const SLP_DEFAULT_LOCATION = { '@type': 'Place', name: 'San Luis Potosí, México' };
+// Mapeo conservador a schema.org (sin asumir que un comercio histórico sigue operando).
+const CATEGORY_TYPE = { Lugar: 'Place', Barrio: 'Place', Comercio: 'Place', Personaje: 'Person', Suceso: 'Event', Recuerdo: 'Thing' };
+
+const pointToEntity = (p) => {
+  const entity = { '@type': CATEGORY_TYPE[p.category] || 'Thing', name: String(p.name).trim() };
+  const hasAddr = !!p.address?.trim();
+  const hasGeo = p.latitude != null && p.longitude != null;
+  const hasBarrio = !!p.neighborhood?.trim();
+  if (entity['@type'] === 'Event') {
+    if (hasAddr || hasGeo || hasBarrio) {
+      entity.location = { '@type': 'Place' };
+      if (hasBarrio) entity.location.name = p.neighborhood.trim();
+      if (hasAddr) entity.location.address = { '@type': 'PostalAddress', streetAddress: p.address.trim() };
+      if (hasGeo) entity.location.geo = { '@type': 'GeoCoordinates', latitude: p.latitude, longitude: p.longitude };
+    }
+  } else if (entity['@type'] === 'Place') {
+    if (hasAddr) entity.address = { '@type': 'PostalAddress', streetAddress: p.address.trim() };
+    if (hasGeo) entity.geo = { '@type': 'GeoCoordinates', latitude: p.latitude, longitude: p.longitude };
+    if (hasBarrio) entity.containedInPlace = { '@type': 'Place', name: p.neighborhood.trim() };
+  }
+  return entity;
+};
+
+/** contentLocation / about / mentions del Article, solo con datos reales y sin duplicados. */
+const buildArticleEntities = (storyId) => {
+  const points = pointsByStory.get(storyId) || [];
+  const places = [];
+  const about = [];
+  const mentions = [];
+  const seen = new Set();
+  for (const p of points) {
+    const entity = pointToEntity(p);
+    const key = `${entity['@type']}:${entity.name.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (p.category === 'Lugar') places.push(entity);
+    else if (p.category === 'Recuerdo') mentions.push(entity);
+    else about.push(entity);
+  }
+  return {
+    contentLocation: places.length ? places : [SLP_DEFAULT_LOCATION],
+    ...(about.length ? { about } : {}),
+    ...(mentions.length ? { mentions } : {}),
+  };
+};
+
 // ---------- plantilla ----------
 const templatePath = join(ROOT, 'dist', 'index.html');
 if (!existsSync(templatePath)) {
@@ -170,6 +240,7 @@ for (const story of rows ?? []) {
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     ...(story.category ? { articleSection: story.category } : {}),
+    ...buildArticleEntities(story.id),
   };
 
   const breadcrumbSchema = {
