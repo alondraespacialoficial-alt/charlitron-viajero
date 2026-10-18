@@ -144,6 +144,12 @@ const updateArticleSchema = (
   year?: string,
   createdAt?: string
 ) => {
+  // Si el HTML estático (prerender) ya trae el Article enriquecido de ESTA
+  // misma historia, conservarlo: la hidratación no debe degradarlo.
+  const existingArticle = document.getElementById('json-ld-article') as HTMLScriptElement | null;
+  if (existingArticle?.dataset.prerendered === 'true' && existingArticle.dataset.storySlug === slug) {
+    return;
+  }
   const schema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -193,6 +199,9 @@ const updateJsonLdSchema = (id: string, schema: object) => {
     document.head.appendChild(script);
   }
   
+  // Al escribir un schema dinámico se limpia cualquier marca de prerender previa.
+  delete script.dataset.prerendered;
+  delete script.dataset.storySlug;
   script.innerHTML = JSON.stringify(schema);
 };
 

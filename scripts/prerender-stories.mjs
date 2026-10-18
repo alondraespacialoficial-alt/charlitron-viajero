@@ -282,7 +282,7 @@ for (const story of rows ?? []) {
 
   const injection = `
     <!-- prerendered: /historia/${escapeHtml(story.slug)} -->
-    <script type="application/ld+json" id="json-ld-article">
+    <script type="application/ld+json" id="json-ld-article" data-prerendered="true" data-story-slug="${story.slug}">
 ${jsonLd(articleSchema)}
     </script>
     <script type="application/ld+json" id="json-ld-breadcrumb">
