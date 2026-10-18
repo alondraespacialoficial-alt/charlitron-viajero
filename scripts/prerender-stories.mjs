@@ -1,20 +1,21 @@
 /**
- * Prerender build-time de historias públicas — PILOTO controlado (Fase 0/1).
+ * Prerender build-time de TODAS las historias públicas (Fase 1 + sitemap).
  *
  * Genera HTML estático por historia en dist/historia/<slug>/index.html con
  * meta/OG/Twitter/canonical/JSON-LD propios, para que crawlers y previews
- * sociales no dependan de JS. Vercel sirve filesystem antes que los rewrites
- * del SPA, así que estas rutas quedan estáticas sin tocar vercel.json.
+ * sociales no dependan de JS. También genera dist/sitemap.xml dinámico
+ * (secciones estáticas + una URL por historia). Vercel sirve filesystem antes
+ * que los rewrites del SPA, así que nada de esto requiere tocar vercel.json.
  *
- * Reglas del piloto:
- * - Solo las slugs de PILOT_SLUGS (+ slugs extra por argv para probar filtros).
+ * Reglas:
  * - Anon key de solo lectura. NUNCA service_role. No toca RLS ni privacidad.
- * - Filtros defensivos: se salta historias privadas, con password, expiradas
- *   o sin slug (aunque estén en la lista piloto).
+ * - Filtros defensivos (en query Y en código): se omiten historias privadas,
+ *   con password, expiradas, sin slug o con slug no válido para URL.
  * - Nunca rompe el deploy: ante cualquier error avisa y sale 0
  *   (export PRERENDER_STRICT=1 para que falle el build en vez de avisar).
  *
- * Uso:  node scripts/prerender-stories.mjs [slug-extra ...]
+ * Uso:  node scripts/prerender-stories.mjs            → todo el catálogo
+ *       node scripts/prerender-stories.mjs <slug>...  → modo prueba (solo esas)
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -27,14 +28,10 @@ const BASE_URL = 'https://charlitronviajerodeltiempo.com';
 const BRAND_IMAGE =
   'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png';
 
-// Historias seleccionadas del piloto (públicas, vigentes, con portada y description).
-const PILOT_SLUGS = [
-  'el-alma-y-corazon-del-festival-del-desierto', // variante web WebP (~1800px)
-  'restaurante-galicia-una-historia-servida-de-generacion-en-generacion', // master legacy en supabase.co
-  'hotel-del-comercio-al-hotel-imperial-17745', // portada legacy externa (image2url)
-];
-
 const STRICT = process.env.PRERENDER_STRICT === '1';
+
+// Slug URL-safe: ASCII minúsculas/dígitos/guiones, empieza con alfanumérico.
+const VALID_SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 const fail = (msg) => {
   console.error(`❌ [prerender] ${msg}`);
@@ -100,12 +97,15 @@ const replaceTag = (html, re, replacement, label) => {
 };
 
 // ---------- fetch (anon, solo lectura) ----------
-const extraSlugs = process.argv.slice(2);
-const wantedSlugs = [...new Set([...PILOT_SLUGS, ...extraSlugs])];
+// Sin argv: TODAS las historias con isPrivate=false (los demás filtros
+// defensivos se aplican igualmente en código). Con argv: modo prueba.
+const testSlugs = process.argv.slice(2);
 const select =
   'id,slug,title,description,year,category,historian_name,created_at,expires_at,isPrivate,password,thumbnail,thumbnail_thumb_url,thumbnail_web_url';
-const orFilter = `or=(${wantedSlugs.map((s) => `slug.eq.${s}`).join(',')})`;
-const endpoint = `${SUPABASE_URL}/rest/v1/stories?select=${select}&${orFilter}`;
+const filter = testSlugs.length
+  ? `or=(${testSlugs.map((s) => `slug.eq.${s}`).join(',')})`
+  : 'isPrivate=eq.false&limit=1000';
+const endpoint = `${SUPABASE_URL}/rest/v1/stories?select=${select}&${filter}`;
 
 let rows;
 try {
@@ -131,6 +131,7 @@ const template = readFileSync(templatePath, 'utf8');
 const now = new Date();
 let generated = 0;
 let skipped = 0;
+const generatedStories = [];
 
 for (const story of rows ?? []) {
   const label = story.slug || story.id;
@@ -140,6 +141,7 @@ for (const story of rows ?? []) {
   if (story.password) { console.warn(`⏭️  [prerender] ${label}: protegida con password, se omite`); skipped++; continue; }
   if (story.expires_at && new Date(story.expires_at) <= now) { console.warn(`⏭️  [prerender] ${label}: expirada (${story.expires_at}), se omite`); skipped++; continue; }
   if (!story.slug) { console.warn(`⏭️  [prerender] ${story.id}: sin slug, se omite`); skipped++; continue; }
+  if (!VALID_SLUG.test(story.slug)) { console.warn(`⏭️  [prerender] "${story.slug}": slug no válido para URL, se omite (corregir en DB)`); skipped++; continue; }
 
   const url = `${BASE_URL}/historia/${story.slug}`;
   const title = story.title?.trim() || 'Historia';
@@ -222,7 +224,30 @@ ${jsonLd(breadcrumbSchema)}
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'index.html'), html);
   console.log(`✅ [prerender] /historia/${story.slug}  (og:image: ${cover === BRAND_IMAGE ? 'fallback marca' : 'portada propia'})`);
+  generatedStories.push({ slug: story.slug, title, created_at: story.created_at, cover, hasOwnCover: cover !== BRAND_IMAGE });
   generated++;
+}
+
+// ---------- sitemap dinámico ----------
+// Se escribe en dist/ (NO modifica public/sitemap.xml): conserva las entradas
+// estáticas de secciones y agrega una <url> por historia prerenderizada, con
+// lastmod=created_at e <image:image> solo cuando hay portada propia.
+// En modo prueba (argv) no se toca el sitemap.
+if (!testSlugs.length) try {
+  const staticSitemap = readFileSync(join(ROOT, 'public', 'sitemap.xml'), 'utf8');
+  const staticUrls = [...staticSitemap.matchAll(/<url>[\s\S]*?<\/url>/g)].map((m) => m[0]);
+  const storyUrls = generatedStories.map(({ slug, title, created_at, cover, hasOwnCover }) => {
+    const lastmod = new Date(created_at).toISOString().slice(0, 10);
+    const img = hasOwnCover
+      ? `\n    <image:image>\n      <image:loc>${escapeHtml(cover)}</image:loc>\n      <image:title>${escapeHtml(title)}</image:title>\n    </image:image>`
+      : '';
+    return `  <url>\n    <loc>${BASE_URL}/historia/${slug}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>${img}\n  </url>`;
+  });
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"\n        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0">\n\n${staticUrls.join('\n\n')}\n\n  <!-- Historias públicas (generado en build) -->\n${storyUrls.join('\n\n')}\n</urlset>\n`;
+  writeFileSync(join(ROOT, 'dist', 'sitemap.xml'), sitemap);
+  console.log(`🗺️  [prerender] sitemap.xml: ${staticUrls.length} secciones + ${storyUrls.length} historias`);
+} catch (err) {
+  fail(`No se pudo generar el sitemap: ${err.message}`);
 }
 
 console.log(`[prerender] Listo: ${generated} generadas, ${skipped} omitidas de ${rows?.length ?? 0} encontradas.`);
