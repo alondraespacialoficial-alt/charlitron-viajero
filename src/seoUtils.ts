@@ -32,7 +32,8 @@ export const updateMetaTags = (
   image: string,
   slug: string,
   category?: string,
-  year?: string
+  year?: string,
+  createdAt?: string
 ) => {
   const baseUrl = 'https://charlitronviajerodeltiempo.com';
   const url = `${baseUrl}/historia/${slug}`;
@@ -70,7 +71,7 @@ export const updateMetaTags = (
   updateBreadcrumbSchema(title, slug, category);
   
   // Article Schema (JSON-LD)
-  updateArticleSchema(title, description, image, slug, category, year);
+  updateArticleSchema(title, description, image, slug, category, year, createdAt);
 };
 
 /**
@@ -140,11 +141,18 @@ const updateArticleSchema = (
   image: string,
   slug: string,
   category?: string,
-  year?: string
+  year?: string,
+  createdAt?: string
 ) => {
+  // Si el HTML estático (prerender) ya trae el Article enriquecido de ESTA
+  // misma historia, conservarlo: la hidratación no debe degradarlo.
+  const existingArticle = document.getElementById('json-ld-article') as HTMLScriptElement | null;
+  if (existingArticle?.dataset.prerendered === 'true' && existingArticle.dataset.storySlug === slug) {
+    return;
+  }
   const schema = {
     "@context": "https://schema.org",
-    "@type": "NewsArticle",
+    "@type": "Article",
     "headline": title,
     "description": description,
     "image": {
@@ -153,7 +161,8 @@ const updateArticleSchema = (
       "width": 1200,
       "height": 630
     },
-    "datePublished": new Date().toISOString(),
+    // Fecha real de la historia; si no se conoce, se omite (nunca now()).
+    ...(createdAt ? { "datePublished": createdAt } : {}),
     "author": {
       "@type": "Organization",
       "name": "Charlitron® Viajero del Tiempo"
@@ -190,6 +199,9 @@ const updateJsonLdSchema = (id: string, schema: object) => {
     document.head.appendChild(script);
   }
   
+  // Al escribir un schema dinámico se limpia cualquier marca de prerender previa.
+  delete script.dataset.prerendered;
+  delete script.dataset.storySlug;
   script.innerHTML = JSON.stringify(schema);
 };
 
@@ -206,6 +218,31 @@ export const generateShareUrl = (
     `📚 *${title}*\n\n${description || 'Mira esta historia en Charlitron®'}\n\n${url}`
   );
   return `https://wa.me/?text=${text}`;
+};
+
+/**
+ * Enlaces de compartir ligeros para una historia (URLs sharer, sin SDKs).
+ * Siempre apuntan a la URL canónica /historia/{slug}.
+ */
+export interface StoryShareLinks {
+  url: string;
+  whatsapp: string;
+  facebook: string;
+  x: string;
+}
+
+export const getStoryShareLinks = (
+  title: string,
+  slug: string,
+  description?: string
+): StoryShareLinks => {
+  const url = `https://charlitronviajerodeltiempo.com/historia/${slug}`;
+  return {
+    url,
+    whatsapp: generateShareUrl(title, slug, description),
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+  };
 };
 
 /**

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useSyncExternalStore, Suspense, lazy } from 'react';
-import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, ChevronDown, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download } from 'lucide-react';
+import { Search, Play, Image as ImageIcon, Share2, Clock, Camera, MessageCircle, ArrowLeft, Menu, X, Facebook, Calendar, Volume2, Send, ChevronRight, ChevronLeft, ChevronDown, Heart, MapPin, ExternalLink, Maximize2, Scroll, Shield, Users, ShoppingBag, Trophy, Frame, Ticket, BookOpen, Video, Loader2, Flower2, QrCode, Download, Link2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import QRCode from 'qrcode';
 import { STORIES, WHATSAPP_LINK, FACEBOOK_LINK, TIKTOK_LINK } from './constants';
@@ -32,7 +32,7 @@ const CollaboratorsSection = lazy(() => import('./components/CollaboratorsSectio
 const AvatarSection     = lazy(() => import('./components/AvatarSection').then(m => ({ default: m.AvatarSection })));
 const FamilyTreeManager = lazy(() => import('./components/FamilyTreeManager').then(m => ({ default: m.FamilyTreeManager })));
 const MemorialGardenSection = lazy(() => import('./components/MemorialGardenSection').then(m => ({ default: m.MemorialGardenSection })));
-import { updateMetaTags, generateSlug, generateShareUrl, resetMetaTags, setSectionMetaTags } from './seoUtils';
+import { updateMetaTags, generateSlug, getStoryShareLinks, resetMetaTags, setSectionMetaTags } from './seoUtils';
 import { resolveStoryCover } from './imageVariants';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
@@ -1149,6 +1149,10 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
   const [showQr, setShowQr] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [copied, setCopied] = useState(false);
+  // Mejora progresiva: Web Share API solo donde existe
+  const [canNativeShare] = useState(() => typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  const shareSlug = story.slug || generateSlug(story.title, story.id);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -1163,7 +1167,8 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
       resolveStoryCover(story, 'web') || story.thumbnail,
       slug,
       story.category,
-      story.year
+      story.year,
+      story.created_at
     );
     
     // Check if user already liked this story in this session/localstorage
@@ -1221,10 +1226,34 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
     }
   };
 
-  const handleShare = () => {
-    const slug = story.slug || generateSlug(story.title, story.id);
-    const shareUrl = generateShareUrl(story.title, slug, story.description);
-    window.open(shareUrl, '_blank');
+  // Enlaces de compartir ligeros (URLs sharer, sin SDKs) sobre la URL canónica
+  const shareLinks = getStoryShareLinks(story.title, shareSlug, story.description);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLinks.url);
+    } catch {
+      // Fallback sin Clipboard API (contextos no seguros o navegadores viejos)
+      const ta = document.createElement('textarea');
+      ta.value = shareLinks.url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({ title: story.title, text: story.description || story.title, url: shareLinks.url });
+    } catch {
+      /* El usuario canceló o el dispositivo no completó: no hay acción */
+    }
   };
 
   useEffect(() => {
@@ -1326,17 +1355,71 @@ const StoryDetail = ({ story, onBack, onLike }: { story: Story, onBack: () => vo
           </button>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-all"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-widest">Compartir</span>
-            </button>
+            <div className="flex items-center gap-2" role="group" aria-label="Compartir esta historia">
+              <a
+                href={shareLinks.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Compartir por WhatsApp"
+                title="Compartir por WhatsApp"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </a>
+              <a
+                href={shareLinks.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Compartir en Facebook"
+                title="Compartir en Facebook"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+              >
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a
+                href={shareLinks.x}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Compartir en X"
+                title="Compartir en X"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-sepia-950 text-sepia-100 hover:bg-sepia-800 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sepia-500 focus-visible:ring-offset-2"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                aria-label={copied ? 'Enlace copiado' : 'Copiar enlace de la historia'}
+                title={copied ? '¡Copiado!' : 'Copiar enlace'}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-sepia-200 text-sepia-700 hover:bg-sepia-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sepia-500 focus-visible:ring-offset-2"
+              >
+                {copied ? <Check className="w-4 h-4 text-green-700" /> : <Link2 className="w-4 h-4" />}
+              </button>
+              {canNativeShare && (
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  aria-label="Compartir con aplicaciones del dispositivo"
+                  title="Compartir…"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-sepia-200 text-sepia-700 hover:bg-sepia-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sepia-500 focus-visible:ring-offset-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              )}
+              {copied && (
+                <span role="status" className="text-xs font-bold text-green-700 uppercase tracking-widest">
+                  ¡Copiado!
+                </span>
+              )}
+            </div>
 
             <button
               onClick={() => setShowQr(v => !v)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-sepia-200 text-sepia-700 hover:bg-sepia-300 transition-all"
+              aria-label="Mostrar código QR de la historia"
+              title="Código QR"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-sepia-200 text-sepia-700 hover:bg-sepia-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sepia-500 focus-visible:ring-offset-2"
             >
               <QrCode className="w-4 h-4" />
               <span className="text-xs font-bold uppercase tracking-widest">QR</span>
@@ -2364,7 +2447,9 @@ export default function App() {
       newPath = '/avatares-legal';
     } else if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
-      newPath = `/${slug}`;
+      // URL canónica de historia: /historia/{slug}. Las URLs legacy /{slug}
+      // siguen resolviendo (parser) y este efecto las reescribe a la canónica.
+      newPath = `/historia/${slug}`;
     } else if (showGallery) {
       newPath = '/galeria';
     } else if (showShop) {
