@@ -2364,7 +2364,9 @@ export default function App() {
       newPath = '/avatares-legal';
     } else if (selectedStory) {
       const slug = selectedStory.slug || generateSlug(selectedStory.title, selectedStory.id);
-      newPath = `/${slug}`;
+      // URL canónica de historia: /historia/{slug}. Las URLs legacy /{slug}
+      // siguen resolviendo (parser) y este efecto las reescribe a la canónica.
+      newPath = `/historia/${slug}`;
     } else if (showGallery) {
       newPath = '/galeria';
     } else if (showShop) {
