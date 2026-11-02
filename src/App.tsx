@@ -2061,6 +2061,7 @@ export default function App() {
   const [adminToken, setAdminToken] = useState('');
   const [adminLoginLoading, setAdminLoginLoading] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
 
   const fetchIntroVideo = async () => {
     try {
@@ -2594,6 +2595,8 @@ export default function App() {
     return () => { cancelled = true; };
   }, [selectedStory?.id]);
 
+  const isFeatureViewOpen = !!selectedStory || showGallery || showShop || showInvestigation || showContests || showConferences || showCourses || showMural || showCollaborators || showAvatars || showJardin || showTravelerMap || showFamilyTree;
+
   const handleSeeAll = () => {
     const element = document.getElementById('historias');
     element?.scrollIntoView({ behavior: 'smooth' });
@@ -2602,7 +2605,7 @@ export default function App() {
   return (
     <div className="min-h-screen selection:bg-sepia-500 selection:text-sepia-950">
       <InstallPrompt />
-      {supabaseRestriction && (
+      {supabaseRestriction && isAdminAuthenticated && (
         <div
           role="status"
           aria-live="polite"
@@ -2611,6 +2614,16 @@ export default function App() {
           {supabaseRestriction === 'payment_required'
             ? 'Supabase requiere atención de facturación. La navegación continúa, pero algunos datos remotos no están disponibles.'
             : 'Supabase no responde temporalmente. Las solicitudes están pausadas; la siguiente consulta comprobará la conexión después de una espera.'}
+        </div>
+      )}
+      {supabaseRestriction && !isAdminAuthenticated && isFeatureViewOpen && !noticeDismissed && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-24 left-4 z-[300] flex max-w-xs items-start gap-2 rounded-lg border border-amber-700/50 bg-sepia-950/90 px-3 py-2 text-xs text-amber-200/90 shadow-lg"
+        >
+          <span>Algunos contenidos no están disponibles por ahora. Intenta de nuevo más tarde.</span>
+          <button type="button" aria-label="Cerrar aviso" onClick={() => setNoticeDismissed(true)} className="text-amber-200/70 hover:text-amber-100">×</button>
         </div>
       )}
       <AIChatBubble />
