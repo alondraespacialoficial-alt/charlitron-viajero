@@ -21,6 +21,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPERIENCE_PAGES, renderExperienceDocument } from '../src/experienceContent.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASE_URL = 'https://charlitronviajerodeltiempo.com';
@@ -54,9 +55,9 @@ loadEnvFile(join(ROOT, '.env'));
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+if (!hasSupabaseConfig) {
   fail('Faltan VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY. Se omite el prerender.');
-  process.exit(0);
 }
 
 // ---------- helpers ----------
@@ -107,16 +108,17 @@ const filter = testSlugs.length
   : 'isPrivate=eq.false&limit=1000';
 const endpoint = `${SUPABASE_URL}/rest/v1/stories?select=${select}&${filter}`;
 
-let rows;
-try {
-  const res = await fetch(endpoint, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-  rows = await res.json();
-} catch (err) {
-  fail(`No se pudieron obtener las historias: ${err.message}. Se omite el prerender.`);
-  process.exit(0);
+let rows = [];
+if (hasSupabaseConfig) {
+  try {
+    const res = await fetch(endpoint, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    rows = await res.json();
+  } catch (err) {
+    fail(`No se pudieron obtener las historias: ${err.message}. Se omite el prerender.`);
+  }
 }
 
 // ---------- entidades GEO (traveler_map_points vinculados por story_id) ----------
@@ -297,6 +299,15 @@ ${jsonLd(breadcrumbSchema)}
   console.log(`✅ [prerender] /historia/${story.slug}  (og:image: ${cover === BRAND_IMAGE ? 'fallback marca' : 'portada propia'})`);
   generatedStories.push({ slug: story.slug, title, created_at: story.created_at, cover, hasOwnCover: cover !== BRAND_IMAGE });
   generated++;
+}
+
+for (const [key, page] of Object.entries(EXPERIENCE_PAGES)) {
+  const outputPath = key === 'historia'
+    ? join(ROOT, 'dist', 'index.html')
+    : join(ROOT, 'dist', page.path.slice(1), 'index.html');
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, renderExperienceDocument(template, page));
+  console.log(`✅ [prerender] página pública /${page.path.replace(/^\//, '')} con contenido inicial`);
 }
 
 // ---------- sitemap dinámico ----------

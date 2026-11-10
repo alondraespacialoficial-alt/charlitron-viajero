@@ -10,8 +10,10 @@ import { Memorial, MemorialGesture, MemorialGuestbookEntry, Story } from '../typ
 import { memorialRequest } from '../memorialApi';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
-import { updateMemorialMetaTags, generateMemorialShareUrl, setSectionMetaTags } from '../seoUtils';
+import { setMemorialDetailMetaTags, generateMemorialShareUrl, setSectionMetaTags } from '../seoUtils';
 import { MemorialFamilyPanel } from './MemorialFamilyPanel';
+import { EXPERIENCE_PAGES } from '../experienceContent.js';
+import { ExperienceOverview } from './ExperienceOverview';
 
 const REQUEST_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me gustaría solicitar un memorial en el Jardín de la Memoria para un ser querido.')}`;
 
@@ -157,7 +159,6 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       } else {
         const m = result.memorial;
         setMemorial(m);
-        updateMemorialMetaTags(m.full_name, m.epitaph, m.photo_url, m.slug);
         setGestures(result.gestures || []);
         const entries = result.guestbook || [];
         setGuestbook(entries);
@@ -174,7 +175,10 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
   };
 
   useEffect(() => {
-    if (activeSlug) loadMemorial(activeSlug);
+    if (activeSlug) {
+      setMemorialDetailMetaTags();
+      loadMemorial(activeSlug);
+    }
     else { setMemorial(null); setGestures([]); setGuestbook([]); setLinkedMemorial(null); setRequiresCode(false); }
   }, [activeSlug]); // eslint-disable-line
 
@@ -197,7 +201,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
       setLinkedFamilyMember(result.linkedFamilyMember || null);
       setLinkedMemorial(result.linkedMemorial || null);
       setRequiresCode(false);
-      updateMemorialMetaTags(result.memorial.full_name, result.memorial.epitaph, result.memorial.photo_url, result.memorial.slug);
+      setMemorialDetailMetaTags();
       setCodeError('');
     } catch {
       setCodeError('Código incorrecto. Verifica que lo hayas copiado tal cual te lo entregamos.');
@@ -665,7 +669,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
           <div className="absolute inset-0 bg-gradient-to-b from-sepia-950/50 via-sepia-950/70 to-sepia-950" />
         </div>
       )}
-      <div className="max-w-3xl mx-auto px-6 relative z-10">
+      <div className="max-w-5xl mx-auto px-6 relative z-10">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-sepia-400 hover:text-sepia-100 transition-colors text-sm uppercase tracking-widest mb-8"
@@ -673,14 +677,9 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
           <ArrowLeft className="w-4 h-4" /> Regresar
         </button>
 
-        <div className="text-center space-y-3 mb-10">
-          <span className="text-5xl">🌷</span>
-          <h1 className="text-sepia-100 font-serif text-3xl md:text-4xl">Jardín de la Memoria</h1>
-          <p className="text-sepia-500 max-w-xl mx-auto">
-            Un espacio tranquilo para conservar y visitar la memoria de quienes ya no están.
-          </p>
-        </div>
+        <ExperienceOverview page={EXPERIENCE_PAGES.jardin} />
 
+        <div className="mx-auto max-w-3xl">
         {introVideoUrl && (
           <div
             className={`mx-auto mb-10 bg-black rounded-2xl overflow-hidden border border-sepia-800 shadow-xl ${
@@ -705,7 +704,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
           </div>
         )}
 
-        <form onSubmit={runSearch} className="flex gap-2 mb-8">
+        <form id="jardin-busqueda" onSubmit={runSearch} className="flex gap-2 mb-8 scroll-mt-24">
           <input
             type="text"
             value={query}
@@ -762,6 +761,7 @@ export const MemorialGardenSection: React.FC<MemorialGardenSectionProps> = ({ on
           >
             <Flower2 className="w-4 h-4" /> Solicitar un memorial
           </a>
+        </div>
         </div>
       </div>
     </div>
