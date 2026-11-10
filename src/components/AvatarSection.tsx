@@ -4,6 +4,8 @@ import { Lock, Loader2, X, AlertCircle, ChevronLeft, MessageCircle, KeyRound, Sh
 import { Avatar } from '../types';
 import { supabase } from '../supabase';
 import { WHATSAPP_NUMBER } from '../constants';
+import { EXPERIENCE_PAGES } from '../experienceContent.js';
+import { ExperienceOverview } from './ExperienceOverview';
 
 const AVATAR_WA_LINK = `https://wa.me/52${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola Charlitron! Me interesa acceder a la Galería de Avatares Históricos. ¿Cómo obtengo mi código de acceso?')}`;
 
@@ -471,17 +473,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
           style={{ backgroundImage: `url(${avatarsBgUrl})`, opacity: 0.07 }}
         />
       )}
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-10">
-          <p className="text-sepia-500 text-xs uppercase tracking-[0.25em] mb-3">Charlitron® Viajero del Tiempo</p>
-          <h2 className="text-sepia-100 font-serif text-3xl md:text-4xl uppercase tracking-widest mb-4">
-            Galería de Avatares Históricos™
-          </h2>
-          <p className="text-sepia-400 text-sm md:text-base tracking-wide max-w-xl mx-auto leading-relaxed">
-            Conversaciones con la historia, la memoria y la inteligencia artificial responsable.
-          </p>
-        </div>
-
+      <div className="w-full max-w-5xl">
         <AnimatePresence mode="wait">
 
           {step === 'select' && (
@@ -492,73 +484,12 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-10"
             >
-              {/* ── Introducción ─────────────────────────────────────── */}
-              <div className="space-y-6 text-center">
-                <p className="text-sepia-200 font-serif text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
-                  Explora conversaciones inmersivas con personajes históricos, figuras simbólicas
-                  y memorias interpretadas mediante inteligencia artificial de forma responsable.
-                </p>
-
-                <div className="space-y-4 text-left max-w-2xl mx-auto bg-sepia-900/30 border border-sepia-800/60 rounded-2xl p-6 md:p-8">
-                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
-                    En este espacio, la historia no solo se observa: también se conversa. La{' '}
-                    <strong className="text-sepia-200">Galería de Avatares Históricos Charlitron®</strong> de
-                    Charlitron® Viajero del Tiempo reúne experiencias digitales creadas a partir
-                    de investigación, memoria documentada y reconstrucción narrativa para acercarte
-                    al pasado de una forma viva, accesible y educativa.
-                  </p>
-                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
-                    Cada avatar ha sido diseñado con fines culturales, educativos y de divulgación.
-                    Sus respuestas forman parte de una{' '}
-                    <strong className="text-sepia-200">representación interpretativa</strong> basada
-                    en fuentes, contexto histórico y criterios curatoriales del proyecto, por lo
-                    que no deben entenderse como declaraciones literales o auténticas de las
-                    personas representadas.
-                  </p>
-                  <p className="text-sepia-300 text-sm md:text-base leading-relaxed">
-                    Nuestro objetivo es preservar la memoria, despertar curiosidad por la historia
-                    y promover un uso ético y responsable de la inteligencia artificial en la
-                    difusión del patrimonio cultural.
-                  </p>
-                </div>
-
-                {/* ── Aviso legal visible ──────────────────────────────── */}
-                <div
-                  role="note"
-                  aria-label="Aviso importante sobre los avatares"
-                  className="flex items-start gap-3 bg-amber-950/40 border border-amber-800/60 rounded-xl px-5 py-4 max-w-2xl mx-auto text-left"
-                >
-                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" aria-hidden="true" />
-                  <p className="text-amber-200/80 text-xs md:text-sm leading-relaxed">
-                    <strong className="text-amber-300">Aviso importante:</strong> Los avatares de
-                    esta sección son recreaciones interpretativas asistidas por inteligencia
-                    artificial para fines educativos, culturales y de divulgación.
-                  </p>
-                </div>
-              </div>
-
-              {/* ── ¿Qué puedes hacer? ───────────────────────────────── */}
-              <div className="bg-sepia-900/40 border border-sepia-800 rounded-2xl p-6 max-w-lg mx-auto w-full">
-                <p className="text-sepia-200 font-serif text-base mb-4 text-center">
-                  ¿Qué puedes hacer aquí?
-                </p>
-                <ul className="space-y-2.5 text-sepia-400 text-sm">
-                  {[
-                    'Conversar con personajes históricos',
-                    'Explorar épocas a través de su mirada',
-                    'Descubrir matices históricos a partir de una experiencia interpretativa',
-                    'Sentir cómo pensaban… cómo hablaban… cómo veían el mundo',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="text-sepia-600 mt-0.5 select-none">—</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ExperienceOverview page={EXPERIENCE_PAGES.avatares} />
 
               {/* ── Línea del tiempo histórica ───────────────────────── */}
-              <HistoricalTimeline activePeriod={activePeriod} onSelect={setActivePeriod} />
+              <div id="avatar-periodos" className="scroll-mt-24">
+                <HistoricalTimeline activePeriod={activePeriod} onSelect={setActivePeriod} />
+              </div>
 
               {/* ── Cards de avatares ─────────────────────────────────── */}
               {!loadingAvatars && avatars.length > 0 && (
@@ -631,8 +562,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   <p className="text-amber-300 font-serif text-base">Acceso privado de cliente</p>
                 </div>
                 <p className="text-sepia-400 text-xs leading-relaxed">
-                  Si adquiriste un avatar personalizado, accede aquí con tu código.
-                  Nadie más puede verlo ni usarlo.
+                  Si recibiste acceso a un avatar privado, ingresa aquí con tu código. Es una recreación digital, no un contacto real con la persona representada.
                 </p>
                 <button
                   onClick={handleStartPrivate}
@@ -641,31 +571,6 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
                   <KeyRound className="w-4 h-4" />
                   Iniciar acceso privado
                 </button>
-              </motion.div>
-
-              {/* ── CTA — ¿Quieres acceder? ─────────────────────────── */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-gradient-to-br from-sepia-900/60 to-sepia-950/80 border border-sepia-700/60 rounded-2xl p-6 max-w-lg mx-auto w-full text-center space-y-4"
-              >
-                <p className="text-sepia-200 font-serif text-base md:text-lg leading-snug">
-                  ¿Te interesa conversar con un avatar?
-                </p>
-                <p className="text-sepia-400 text-sm leading-relaxed">
-                  Cada avatar requiere un <strong className="text-sepia-300">código de acceso personalizado</strong>.
-                  Contáctanos por WhatsApp, realiza tu pago y te enviamos tu código en minutos.
-                </p>
-                <a
-                  href={AVATAR_WA_LINK}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2.5 bg-[#25D366] hover:bg-[#1ebe5d] active:scale-95 text-white font-bold uppercase tracking-widest text-xs px-6 py-3.5 rounded-full shadow-lg transition-all"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Quiero mi código de acceso
-                </a>
               </motion.div>
 
             </motion.div>

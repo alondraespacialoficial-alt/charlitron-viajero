@@ -33,6 +33,8 @@ const AvatarSection     = lazy(() => import('./components/AvatarSection').then(m
 const FamilyTreeManager = lazy(() => import('./components/FamilyTreeManager').then(m => ({ default: m.FamilyTreeManager })));
 const MemorialGardenSection = lazy(() => import('./components/MemorialGardenSection').then(m => ({ default: m.MemorialGardenSection })));
 import { updateMetaTags, generateSlug, getStoryShareLinks, resetMetaTags, setSectionMetaTags } from './seoUtils';
+import { EXPERIENCE_PAGES } from './experienceContent.js';
+import { ExperienceOverview } from './components/ExperienceOverview';
 import { resolveStoryCover } from './imageVariants';
 import { trackPageView, getPageViews, formatViewCount } from './analyticsUtils';
 import { addToFavorites, removeFromFavorites, isFavorited } from './favoritesUtils';
@@ -586,7 +588,7 @@ const Hero = ({ onSearch, onSeeAll, onGallery, onInvestigation, investigationEna
             Charlitron® Viajero del Tiempo
           </h2>
           <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif text-sepia-100 mb-6 leading-tight">
-            Bienvenido al Baúl de los Recuerdos
+            Cada historia merece seguir siendo contada
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-sepia-200 font-light mb-12 italic">
             Las memorias no se guardan. Se vuelven legado.
@@ -715,7 +717,7 @@ const About = ({ logoUrl }: { logoUrl: string }) => (
         <span className="text-sepia-600 uppercase tracking-[0.3em] text-sm font-bold mb-4 block">Charlitron® Viajero del Tiempo</span>
         <h2 className="text-4xl md:text-5xl font-serif mb-8">Un archivo vivo de memoria</h2>
         <p className="text-xl text-sepia-800 leading-relaxed font-light">
-          El Baúl de los Recuerdos del Viajero del Tiempo es el primer espacio creado para transformar historias de familias, negocios y lugares en recuerdos vivos que nunca dejen de respirarse.
+          Charlitron® Viajero del Tiempo es un proyecto cultural nacido en San Luis Potosí que combina investigación histórica, memoria familiar, narrativa humana e inteligencia artificial para conservar y compartir historias.
         </p>
       </motion.div>
     </div>
@@ -2943,6 +2945,7 @@ export default function App() {
               logoUrl={logoUrl}
             />
             <About logoUrl={logoUrl} />
+            <ExperienceOverview page={EXPERIENCE_PAGES.historia} />
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

@@ -1,6 +1,7 @@
 /**
  * Utilidades para SEO y URLs amigables
  */
+import { EXPERIENCE_PAGES } from './experienceContent.js';
 
 /**
  * Genera un slug válido a partir de un título
@@ -40,6 +41,7 @@ export const updateMetaTags = (
   
   // Actualizar título de la página
   document.title = `${title} | Charlitron®`;
+  updateOrCreateMetaTag('robots', 'index, follow', false);
   
   // Meta tags generales
   updateOrCreateMetaTag('description', description);
@@ -260,8 +262,8 @@ const SECTION_META: Record<string, { title: string; description: string; path: s
     path: 'tienda',
   },
   avatares: {
-    title: 'Museo de Avatares Interactivos | Charlitron®',
-    description: 'Conversa con personajes históricos recreados con inteligencia artificial. Experiencias educativas e inmersivas para explorar la historia de México.',
+    title: EXPERIENCE_PAGES.avatares.title,
+    description: EXPERIENCE_PAGES.avatares.description,
     path: 'avatares',
   },
   cursos: {
@@ -300,8 +302,8 @@ const SECTION_META: Record<string, { title: string; description: string; path: s
     path: 'investiga',
   },
   jardin: {
-    title: 'Jardín de la Memoria | Charlitron®',
-    description: 'Un espacio digital de homenaje para conservar y visitar la memoria de un ser querido: fotos, historia, música y recuerdos de familia.',
+    title: EXPERIENCE_PAGES.jardin.title,
+    description: EXPERIENCE_PAGES.jardin.description,
     path: 'jardin',
   },
 };
@@ -309,13 +311,23 @@ const SECTION_META: Record<string, { title: string; description: string; path: s
 export const setSectionMetaTags = (section: string) => {
   const meta = SECTION_META[section];
   if (!meta) return;
+  if (section === 'jardin' && /^\/jardin\/[^/]+\/?$/.test(window.location.pathname)) {
+    setMemorialDetailMetaTags();
+    return;
+  }
   const url = `https://charlitronviajerodeltiempo.com/${meta.path}`;
   document.title = meta.title;
+  updateOrCreateMetaTag('robots', 'index, follow', false);
   updateOrCreateMetaTag('description', meta.description);
   updateOrCreateMetaTag('og:title', meta.title);
   updateOrCreateMetaTag('og:description', meta.description);
   updateOrCreateMetaTag('og:url', url);
   updateOrCreateMetaTag('og:type', 'website');
+  if (section === 'avatares' || section === 'jardin') {
+    updateOrCreateMetaTag('twitter:title', meta.title, false);
+    updateOrCreateMetaTag('twitter:description', meta.description, false);
+    updateOrCreateMetaTag('twitter:url', url, false);
+  }
   const canonical = document.querySelector('link[rel="canonical"]');
   if (canonical) canonical.setAttribute('href', url);
 };
@@ -324,42 +336,40 @@ export const setSectionMetaTags = (section: string) => {
  * Restaura los meta tags a los valores generales
  */
 export const resetMetaTags = () => {
-  document.title = 'Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos';
-  updateOrCreateMetaTag(
-    'description',
-    'Charlitron® Viajero del Tiempo: Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial y narrativa emocional.'
-  );
+  const title = EXPERIENCE_PAGES.historia.title;
+  const description = EXPERIENCE_PAGES.historia.description;
+  document.title = title;
+  updateOrCreateMetaTag('robots', 'index, follow', false);
   
   const baseUrl = 'https://charlitronviajerodeltiempo.com';
-  updateOrCreateMetaTag('og:title', 'Charlitron® Viajero del Tiempo - El Baúl de los Recuerdos');
-  updateOrCreateMetaTag(
-    'og:description',
-    'Rescatamos historias, revitalizamos recuerdos y reconstruimos legados con inteligencia artificial.'
-  );
-  updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png');
-  updateOrCreateMetaTag('og:url', baseUrl);
-  updateOrCreateMetaTag('og:type', 'website');
-};
-
-/**
- * Meta tags para un memorial individual del Jardín de la Memoria
- */
-export const updateMemorialMetaTags = (
-  fullName: string,
-  epitaph: string | null | undefined,
-  photoUrl: string | null | undefined,
-  slug: string
-) => {
-  const url = `https://charlitronviajerodeltiempo.com/jardin/${slug}`;
-  const title = `${fullName} | Jardín de la Memoria · Charlitron®`;
-  const description = epitaph || `Visita el espacio de memoria de ${fullName} en el Jardín de la Memoria.`;
-  document.title = title;
   updateOrCreateMetaTag('description', description);
   updateOrCreateMetaTag('og:title', title);
   updateOrCreateMetaTag('og:description', description);
-  if (photoUrl) updateOrCreateMetaTag('og:image', photoUrl);
+  updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png');
+  updateOrCreateMetaTag('og:url', baseUrl);
+  updateOrCreateMetaTag('og:type', 'website');
+  updateOrCreateMetaTag('twitter:title', title, false);
+  updateOrCreateMetaTag('twitter:description', description, false);
+  updateOrCreateMetaTag('twitter:url', baseUrl, false);
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', baseUrl);
+};
+
+/** Uses only general Jardín metadata on individual memorial routes. */
+export const setMemorialDetailMetaTags = () => {
+  const page = EXPERIENCE_PAGES.jardin;
+  const url = `https://charlitronviajerodeltiempo.com${page.path}`;
+  document.title = page.title;
+  updateOrCreateMetaTag('robots', 'noindex, follow', false);
+  updateOrCreateMetaTag('description', page.description);
+  updateOrCreateMetaTag('og:title', page.title);
+  updateOrCreateMetaTag('og:description', page.description);
+  updateOrCreateMetaTag('og:image', 'https://image2url.com/r2/default/images/1774764678756-4358cc7c-d0f5-41d9-8651-20f927c83bae.png');
   updateOrCreateMetaTag('og:url', url);
-  updateOrCreateMetaTag('og:type', 'profile');
+  updateOrCreateMetaTag('og:type', 'website');
+  updateOrCreateMetaTag('twitter:title', page.title, false);
+  updateOrCreateMetaTag('twitter:description', page.description, false);
+  updateOrCreateMetaTag('twitter:url', url, false);
   const canonical = document.querySelector('link[rel="canonical"]');
   if (canonical) canonical.setAttribute('href', url);
 };
